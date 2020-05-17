@@ -11,7 +11,7 @@ typedef struct fm {
     char *name;
     char *seq;
     int length;
-    // suffixArray
+    int *suffixArray;
     // firstBWM
     // lastBWM
     // occTable

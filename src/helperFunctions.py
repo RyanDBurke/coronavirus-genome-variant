@@ -668,5 +668,4 @@ def writeToSam(index, output, out_sam):
 
 
 
-    return None    
-    
+    return None   

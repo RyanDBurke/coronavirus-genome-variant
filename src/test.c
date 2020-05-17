@@ -3,28 +3,36 @@
 #include <string.h>
 #include <ctype.h>
 #include "fasta.h"
+#include "auxiliary.h"
+
+typedef struct sa {
+    int *suffixArray;
+} suffArr;
 
 void test();
 
 int main () {
-    
-    int *num = malloc(sizeof(int*) * 4);
-    test(num);
-    int i;
-    for (i = 0; i < 10; i++) {
-        printf("%d\n", num[i]);
-    }
 
-    free(num);
+    char *seq = "banana";
+
+    suffArr *s = malloc(sizeof(suffArr));
+
+    s->suffixArray = (int*)(buildSuffixArray(seq, 6));
+
+    // int *sa = buildSuffixArray(seq, 6);
+
+    printSA(s->suffixArray, 6);
+
+
+
+    /*
+    for (int i = 0; i < 6; i++) {
+        printf("%d\n", s->suffixArray[i]);
+    }
+    */
+
+   free(s->suffixArray);
+    free(s);
 
     return 0;
-}
-
-void test(int *a) {
-
-    int i;
-    for (i = 0; i < 10; i++) {
-        a[i] = i;
-    }
-    return a;
 }

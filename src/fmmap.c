@@ -27,27 +27,27 @@ int main(int argc, char **argv) {
     /* string path to each file */
     char *ref_seq = argv[1];
     char *indexOut = argv[2];
-    char *reads = argv[3];
-    char *alignOut = argv[4];
+    // char *reads = argv[3];
+    // char *alignOut = argv[4];
 
-    /* run fmIndex */
+    /* fmIndex */
     fmIndex(ref_seq, indexOut);
 
    return 0;
 }
 
-/* reference is a path to a .fa contains a genetic-sequence */
+/* reference is a path to a .fa containing a genetic-sequence */
 int fmIndex(char *reference, char *output) {
 
     /* parse .fa file contains our reference sequence and build fm-index */
     FASTAFILE *ffp;
     char *seq;
     char *name;
-    int L;
+    int length;
 
     ffp = OpenFASTA(reference);
     FM *fm = malloc(sizeof(FM));
-    while (ReadFASTA(ffp, &seq, &name, &L)) {
+    while (ReadFASTA(ffp, &seq, &name, &length)) {
 
         /* name */
         fm->name = malloc(strlen(name) + 1);
@@ -58,9 +58,10 @@ int fmIndex(char *reference, char *output) {
         strcpy(fm->seq, seq);
         
         /* length of seq */
-        fm->length = L;
+        fm->length = length;
 
-        /* suffix array */
+        /*  suffix array */
+        fm->suffixArray = (int*)(buildSuffixArray(seq, length));
 
         /* first BWM */
 
@@ -75,8 +76,8 @@ int fmIndex(char *reference, char *output) {
     CloseFASTA(ffp);
 
     /* free our fm-index */
-    free(fm->name);
     free(fm->seq);
+    free(fm->name);
     free(fm);
 
     return 0;
