@@ -9,30 +9,31 @@ typedef struct sa {
     int *suffixArray;
 } suffArr;
 
-void test();
+void test(bool t);
 
 int main () {
 
-    char *seq = "banana";
+    char *s = "ryan";
+    char *a = malloc(4 + 1);
+    char *b = malloc(4 + 1);
 
-    suffArr *s = malloc(sizeof(suffArr));
+    strcpy(a, (s + 1));
+    strncpy(b, s, 1);
+    strcat(a, b);
 
-    s->suffixArray = (int*)(buildSuffixArray(seq, 6));
+    free(b);
+    free(a);
 
-    // int *sa = buildSuffixArray(seq, 6);
+    printf("%s\n", a);
 
-    printSA(s->suffixArray, 6);
-
-
-
-    /*
-    for (int i = 0; i < 6; i++) {
-        printf("%d\n", s->suffixArray[i]);
-    }
-    */
-
-   free(s->suffixArray);
-    free(s);
-
+    
     return 0;
+}
+
+void test(bool t) {
+    if (!t) {
+        printf("false");
+    } else {
+        printf("true");
+    }
 }

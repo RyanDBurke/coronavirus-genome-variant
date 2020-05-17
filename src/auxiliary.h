@@ -4,8 +4,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdbool.h>
 
-int *buildSuffixArray(char *seq, int length);
+int *buildSuffixArray(char *seq, int length, bool BWM);
+
 void printSA(int *sa, int length);
 
 /* suffix array struct */
@@ -14,11 +16,11 @@ typedef struct suffixArray {
     char *suffix;
 } SA;
 
-/* comparison sort function */
-int cmp(const void *a, const void *b) {
+/* comparison sort function for suffix arrays */
+int cmpSA(const void *a, const void *b) {
     const SA *da = (const SA *) a;
     const SA *db = (const SA *) b;
-    
+
     return strcmp(da->suffix, db->suffix);
 }
 
@@ -29,14 +31,16 @@ int *buildSuffixArray(char *seq, int length) {
     SA suffixes[length];
 
     /* starting adding SA objects to array */
+
     for (int i = 0; i < length; i++) {
         suffixes[i].suffix = malloc(strlen(seq + i) + 1);
         strcpy(suffixes[i].suffix, (seq + i));
         suffixes[i].offset = i;
     }
 
+
     /* sort suffixes */
-    qsort(suffixes, length, sizeof(SA), &cmp);
+    qsort(suffixes, length, sizeof(SA), &cmpSA);
 
     /* build suffix array */
     int *sa = malloc(sizeof(int) * length);
@@ -46,6 +50,11 @@ int *buildSuffixArray(char *seq, int length) {
     }
 
     return sa;
+}
+
+/* build burrows-wheeler matrix */
+int *bw(char *seq, int length) {
+
 }
 
 /* prints suffix array */

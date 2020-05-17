@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdbool.h>
 
 #include "fasta.h"
 #include "fm.h"
@@ -60,12 +61,11 @@ int fmIndex(char *reference, char *output) {
         /* length of seq */
         fm->length = length;
 
-        /*  suffix array */
-        fm->suffixArray = (int*)(buildSuffixArray(seq, length));
+        /* suffix array */
+        fm->suffixArray = (int*)(buildSuffixArray(seq, length, false));
 
-        /* first BWM */
+        /* burrows-wheeler matrix (bwm) */
 
-        /* lastBWM */
 
         /* occTable */
 
