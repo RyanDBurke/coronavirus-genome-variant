@@ -16,6 +16,12 @@ typedef struct suffixArray {
     char *suffix;
 } SA;
 
+/* rotation struct for bwm */
+typedef struct R {
+    int offset;
+    char *rotation;
+} R;
+
 /* comparison sort function for suffix arrays */
 int cmpSA(const void *a, const void *b) {
     const SA *da = (const SA *) a;
@@ -38,7 +44,6 @@ int *buildSuffixArray(char *seq, int length) {
         suffixes[i].offset = i;
     }
 
-
     /* sort suffixes */
     qsort(suffixes, length, sizeof(SA), &cmpSA);
 
@@ -52,10 +57,10 @@ int *buildSuffixArray(char *seq, int length) {
     return sa;
 }
 
-/* build burrows-wheeler matrix */
-int *bw(char *seq, int length) {
-
-}
+/* 
+build burrows-wheeler matrix
+int *bw(char *seq, int length) {}
+*/
 
 /* prints suffix array */
 void printSA(int *sa, int length) {
