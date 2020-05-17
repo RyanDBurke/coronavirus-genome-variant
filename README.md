@@ -1,4 +1,4 @@
-# <ins>Burrows-Wheeler Transform and Genome Variant </ins>
+# <ins>Burrows-Wheeler Transform and COVID-19 Genome Variant </ins>
 
 ## 
 
