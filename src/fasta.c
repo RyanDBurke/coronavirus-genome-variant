@@ -1,22 +1,9 @@
-/* fasta.h */
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 
-#define FASTA_MAXLINE 512 /* Requires FASTA file lines to be <512 characters */
-
-typedef struct fastafile_s {
-  FILE *fp;
-  char  buffer[FASTA_MAXLINE];
-} FASTAFILE;
-
-/*
-extern FASTAFILE *OpenFASTA(char *seqfile);
-extern int        ReadFASTA(FASTAFILE *fp, char **ret_seq, char **ret_name, int *ret_L);
-extern void       CloseFASTA(FASTAFILE *ffp);
-*/
+#include "fasta.h"
 
 FASTAFILE *
 OpenFASTA(char *seqfile)
@@ -89,5 +76,3 @@ CloseFASTA(FASTAFILE *ffp)
   fclose(ffp->fp);
   free(ffp);
 }
-
-
