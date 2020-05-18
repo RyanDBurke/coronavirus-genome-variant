@@ -52,7 +52,6 @@ int fmIndex(char *reference, char *output) {
 
     ffp = OpenFASTA(reference);
     FM *fm = malloc(sizeof(FM));
-    // B *m = malloc(sizeof(B));
     while (ReadFASTA(ffp, &seq, &name, &length)) {
 
         /* name */
@@ -68,14 +67,11 @@ int fmIndex(char *reference, char *output) {
 
         /* suffix array */
         fm->suffixArray = (int *)(buildSuffixArray(seq, length));
+        printSA(fm->suffixArray, length);
 
         /* burrows-wheeler matrix (bwm) */
         fm->bwm = (char **)bw(seq, length);
-        for (int i = 0; i < length; i++) {
-            fm->bwm[i][length] = '\0';
-        }
         printBWM(fm->bwm, length);
-        printf("length: %d\n", length);
 
         /* occTable */
 
@@ -86,17 +82,11 @@ int fmIndex(char *reference, char *output) {
     CloseFASTA(ffp);
 
     /* free our fm-index */
-    for (int i = 0; i < length; i++) {
-        free((fm->bwm)[i]);
-    }
     free(fm->bwm);
+    free(fm->suffixArray);
     free(fm->seq);
     free(fm->name);
     free(fm);
-    /*
-    free(m->b);
-    free(m);
-    */
 
     return 0;
 }

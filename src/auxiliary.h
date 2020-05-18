@@ -9,6 +9,7 @@
 int *buildSuffixArray(char *seq, int length);
 char **bw(char *seq, int length);
 void printSA(int *sa, int length);
+void printBWM(char **b, int length);
 
 /* suffix array struct */
 typedef struct suffixArray {
@@ -78,7 +79,7 @@ char **bw(char *seq, int length) {
 
         /* build rotation */
         char *prefix = malloc(i + 1);
-        bwMatrix[i].rotation = malloc(strlen(seq + i) + 1);
+        bwMatrix[i].rotation = malloc(length);
         strcpy(bwMatrix[i].rotation, (seq + i));
         strncpy(prefix, seq, i);
         strcat(bwMatrix[i].rotation, prefix);
@@ -91,12 +92,11 @@ char **bw(char *seq, int length) {
     qsort(bwMatrix, length, sizeof(R), &cmpBMW);
 
     /* stores the actual matrix, with just the rotations */
-    char **matrix = malloc((length + 1) * (length + 1));
-
+    char **matrix = malloc(sizeof(char *) * length);
 
     /* fill matrix */
     for (int i = 0; i < length; i++) {
-        matrix[i] = malloc(length*length);
+        matrix[i] = malloc(sizeof(char) * length);
         strcpy(matrix[i], bwMatrix[i].rotation);
         free(bwMatrix[i].rotation);
     }
