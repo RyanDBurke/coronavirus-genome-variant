@@ -14,6 +14,8 @@ $ make
 $ ./fmmap ref_seq <index output file> reads <align output file>
 ```
 
+##
+
 ### <ins>Structure</ins>
     BWT
     ├── README                   
