@@ -7,10 +7,6 @@
 
 ## 
 
-### <ins>Dependencies</ins>
-* [FASTA parser](https://github.com/eturro/mmseq/blob/master/src/fasta.c)
-* [nCov-19 Genome](https://www.ncbi.nlm.nih.gov/nuccore/NC_045512.2?report=fasta)
-
 ### <ins>Execution</ins>
 ```
 $ cd src/
@@ -24,11 +20,16 @@ $ ./fmmap ref_seq <index output file> reads <align output file>
     └── src
         ├── Makefile                    (build executables)
         ├── fmmap.c                     (builds our FM-Index and Aligner)
-        ├── auxiliary.h                 (auxiliary functions)
-        ├── fasta.h                     (FASTA parser)
+        ├── fmmap.h                     (header)
         ├── ref_CoV19.fa                (nCov-19 Genome)
         ├── reads.fa.gz                 (simulated coronavirus variant reads)
         └── index_out                   (output of FM-Index built)   
+##
+
+### <ins>External</ins>
+* [FASTA parser](https://github.com/eturro/mmseq/blob/master/src/fasta.c)
+* [nCov-19 Genome](https://www.ncbi.nlm.nih.gov/nuccore/NC_045512.2?report=fasta)
+
 ##
 
 ### <ins> Future Goals </ins>
