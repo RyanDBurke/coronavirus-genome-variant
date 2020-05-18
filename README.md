@@ -7,6 +7,10 @@
 
 ## 
 
+### <ins>Dependencies</ins>
+* [FASTA parser](https://github.com/eturro/mmseq/blob/master/src/fasta.c)
+* [nCov-19 Genome](https://www.ncbi.nlm.nih.gov/nuccore/NC_045512.2?report=fasta)
+
 ### <ins>Execution</ins>
 ```
 $ cd src/
