@@ -67,20 +67,17 @@ int *buildSuffixArray(char *seq, int length) {
 /* build burrows-wheeler matrix */
 char **bw(char *seq, int length) {
 
-    /* store bwm and their offset */
+    /* store rotations and their offset */
     R bwMatrix[length];
 
-    /* stores the actual matrix, with just the rotations */
-    char **matrix = malloc(length);
-
-    /* starting adding R objects to matrix */
+    /* starting adding rotations */
     for (int i = 0; i < length; i++) {
 
         /* offset */
         bwMatrix[i].offset = i;
 
         /* build rotation */
-        char *prefix = malloc(strlen(seq + i) + 1);
+        char *prefix = malloc(i + 1);
         bwMatrix[i].rotation = malloc(strlen(seq + i) + 1);
         strcpy(bwMatrix[i].rotation, (seq + i));
         strncpy(prefix, seq, i);
@@ -93,9 +90,13 @@ char **bw(char *seq, int length) {
     /* sort rotations */
     qsort(bwMatrix, length, sizeof(R), &cmpBMW);
 
+    /* stores the actual matrix, with just the rotations */
+    char **matrix = malloc((length + 1) * (length + 1));
+
+
     /* fill matrix */
     for (int i = 0; i < length; i++) {
-        matrix[i] = malloc(length);
+        matrix[i] = malloc(length*length);
         strcpy(matrix[i], bwMatrix[i].rotation);
         free(bwMatrix[i].rotation);
     }
@@ -107,6 +108,13 @@ char **bw(char *seq, int length) {
 void printSA(int *sa, int length) {
     for (int i = 0; i < length; i++) {
         printf("%d\n", sa[i]);
+    }
+}
+
+/* prints bwm */
+void printBWM(char **b, int length) {
+    for (int i = 0; i < length; i++) {
+        printf("%s\n", b[i]);
     }
 }
 

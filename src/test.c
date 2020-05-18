@@ -9,30 +9,24 @@ typedef struct sa {
     int *suffixArray;
 } suffArr;
 
+typedef struct B {
+    char **b;
+} B;
+
 void test(bool t);
 
 int main () {
 
-    char *seq = "banana$";
-    char **m = (char **)bw(seq, 7);
+    char *seq = "ATTAAAGGTTTATACCTTCCCAGAG";
+    int length = strlen(seq);
+    printf("%d\n", length);
 
-    for (int i = 0; i < 7; i++) {
-        printf("%s\n", m[i]);
-    }
+    B *m = malloc(sizeof(B));
+    m->b = (char **)bw(seq, length);
+    printBWM(m->b, length);
 
+    free(m->b);
     free(m);
-
-
-    /* allocate memory for number of strings
-    char **b = malloc(3);
-
-    for (int i = 0; i < 3; i++) {
-        b[i] = malloc (50 * sizeof(char));
-        strcpy(b[i], "hey");
-        printf("%s\n", b[i]);
-    }
-
-    */
     
     return 0;
 }
