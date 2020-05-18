@@ -52,12 +52,12 @@ int fmIndex(char *reference, char *output) {
         /* length of seq */
         fm->length = length;
 
-        /* suffix */
-        fm->suffixArray = (buildSuffixArray(seq, length));
-        // printSA(fm->suffixArray, length);
+        /* suffix array */
+        fm->suffixArray = (buildSuffixArray(seq, length + 1));
+        // printSA(fm->suffixArray, length + 1);
 
         /* burrows-wheeler matrix (bwm) */
-        fm->bwm = bw(seq, length);
+        fm->bwm = (bw(seq, length));
         // printBWM(fm->bwm, length);
 
         /* occTable */
@@ -111,9 +111,16 @@ int *buildSuffixArray(char *seq, int length) {
 
     /* starting adding SA objects to array */
     for (int i = 0; i < length; i++) {
+
+        /* offset */
+        suffixes[i].offset = i;
+
+        /* build suffix */
         suffixes[i].suffix = malloc(strlen(seq + i) + 1);
         strcpy(suffixes[i].suffix, (seq + i));
-        suffixes[i].offset = i;
+
+        /* add null character */
+        (suffixes[i].suffix)[length] = '\0';
     }
 
     /* sort suffixes */
