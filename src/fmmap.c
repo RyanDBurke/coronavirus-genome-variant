@@ -62,10 +62,10 @@ int fmIndex(char *reference, char *output) {
         fm->length = length;
 
         /* suffix array */
-        fm->suffixArray = (int*)(buildSuffixArray(seq, length, false));
+        fm->suffixArray = (int*)(buildSuffixArray(seq, length));
 
         /* burrows-wheeler matrix (bwm) */
-
+        fm->bwm = (char **)(bw(seq, length));
 
         /* occTable */
 

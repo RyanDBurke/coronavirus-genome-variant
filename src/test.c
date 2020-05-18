@@ -13,19 +13,26 @@ void test(bool t);
 
 int main () {
 
-    char *s = "ryan";
-    char *a = malloc(4 + 1);
-    char *b = malloc(4 + 1);
+    char *seq = "banana$";
+    char **m = (char **)bw(seq, 7);
 
-    strcpy(a, (s + 1));
-    strncpy(b, s, 1);
-    strcat(a, b);
+    for (int i = 0; i < 7; i++) {
+        printf("%s\n", m[i]);
+    }
 
-    free(b);
-    free(a);
+    free(m);
 
-    printf("%s\n", a);
 
+    /* allocate memory for number of strings
+    char **b = malloc(3);
+
+    for (int i = 0; i < 3; i++) {
+        b[i] = malloc (50 * sizeof(char));
+        strcpy(b[i], "hey");
+        printf("%s\n", b[i]);
+    }
+
+    */
     
     return 0;
 }

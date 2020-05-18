@@ -6,8 +6,8 @@
 #include <ctype.h>
 #include <stdbool.h>
 
-int *buildSuffixArray(char *seq, int length, bool BWM);
-
+int *buildSuffixArray(char *seq, int length);
+char **bw(char *seq, int length);
 void printSA(int *sa, int length);
 
 /* suffix array struct */
@@ -30,6 +30,14 @@ int cmpSA(const void *a, const void *b) {
     return strcmp(da->suffix, db->suffix);
 }
 
+/* comparison sort function for bwm */
+int cmpBMW(const void *a, const void *b) {
+    const R *da = (const R *) a;
+    const R *db = (const R *) b;
+
+    return strcmp(da->rotation, db->rotation);
+}
+
 /* builds suffix array */
 int *buildSuffixArray(char *seq, int length) {
 
@@ -37,7 +45,6 @@ int *buildSuffixArray(char *seq, int length) {
     SA suffixes[length];
 
     /* starting adding SA objects to array */
-
     for (int i = 0; i < length; i++) {
         suffixes[i].suffix = malloc(strlen(seq + i) + 1);
         strcpy(suffixes[i].suffix, (seq + i));
@@ -57,10 +64,44 @@ int *buildSuffixArray(char *seq, int length) {
     return sa;
 }
 
-/* 
-build burrows-wheeler matrix
-int *bw(char *seq, int length) {}
-*/
+/* build burrows-wheeler matrix */
+char **bw(char *seq, int length) {
+
+    /* store bwm and their offset */
+    R bwMatrix[length];
+
+    /* stores the actual matrix, with just the rotations */
+    char **matrix = malloc(length);
+
+    /* starting adding R objects to matrix */
+    for (int i = 0; i < length; i++) {
+
+        /* offset */
+        bwMatrix[i].offset = i;
+
+        /* build rotation */
+        char *prefix = malloc(strlen(seq + i) + 1);
+        bwMatrix[i].rotation = malloc(strlen(seq + i) + 1);
+        strcpy(bwMatrix[i].rotation, (seq + i));
+        strncpy(prefix, seq, i);
+        strcat(bwMatrix[i].rotation, prefix);
+
+        /* free used memory */
+        free(prefix);
+    }
+
+    /* sort rotations */
+    qsort(bwMatrix, length, sizeof(R), &cmpBMW);
+
+    /* fill matrix */
+    for (int i = 0; i < length; i++) {
+        matrix[i] = malloc(length);
+        strcpy(matrix[i], bwMatrix[i].rotation);
+        free(bwMatrix[i].rotation);
+    }
+    
+    return matrix;
+}
 
 /* prints suffix array */
 void printSA(int *sa, int length) {
