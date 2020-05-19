@@ -28,7 +28,7 @@ $ ./fmmap ref_seq <index output file> reads <align output file>
         └── index_out                   (output of FM-Index built)   
 ##
 
-### <ins>External</ins>
+### <ins>Auxiliary Links</ins>
 * [FASTA parser](https://github.com/eturro/mmseq/blob/master/src/fasta.c)
 * [nCov-19 Genome](https://www.ncbi.nlm.nih.gov/nuccore/NC_045512.2?report=fasta)
 
