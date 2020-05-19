@@ -53,12 +53,10 @@ int fmIndex(char *reference, char *output) {
         fm->length = length;
 
         /* suffix array */
-        fm->suffixArray = (buildSuffixArray(seq, length + 1));
-        // printSA(fm->suffixArray, length + 1);
+        fm->suffixArray = (buildSuffixArray(seq, length));
 
         /* burrows-wheeler matrix (bwm) */
         fm->bwm = (bw(seq, length));
-        // printBWM(fm->bwm, length);
 
         /* occTable */
 
@@ -116,12 +114,9 @@ int *buildSuffixArray(char *seq, int length) {
         suffixes[i].offset = i;
 
         /* build suffix */
-        suffixes[i].suffix = malloc(strlen(seq + i) + 1);
-        strcpy(suffixes[i].suffix, (seq + i));
-
-        /* add null character */
-        /* do i need this */
-        (suffixes[i].suffix)[length] = '\0';
+        char* currentSuffix = (seq + i);
+        suffixes[i].suffix = malloc(strlen(currentSuffix) + 1); // for some reason doesn't need free
+        strcpy(suffixes[i].suffix, currentSuffix);
     }
 
     /* sort suffixes */
@@ -130,8 +125,9 @@ int *buildSuffixArray(char *seq, int length) {
     /* build suffix array */
     int *sa = malloc(sizeof(int) * length);
     for (int i = 0; i < length; i++) {
+
+        /* store offset in our suffix array */
         sa[i] = suffixes[i].offset;
-        free(suffixes[i].suffix);
     }
 
     return sa;
@@ -151,13 +147,12 @@ char **bw(char *seq, int length) {
 
         /* build rotation */
         char *prefix = malloc(i + 1);
-        bwMatrix[i].rotation = malloc(length);
-        strcpy(bwMatrix[i].rotation, (seq + i));
+        char *suffix = (seq + i);
+        bwMatrix[i].rotation = malloc(length + 1); // for some reason doesn't need free
+        strcpy(bwMatrix[i].rotation, suffix);
         strncpy(prefix, seq, i);
+        prefix[i] = '\0'; // add null terminator to prefix (crucial!)
         strcat(bwMatrix[i].rotation, prefix);
-
-        /* remember to add null character! */
-        (bwMatrix[i].rotation)[length] = '\0';
 
         /* free used memory */
         free(prefix);
@@ -167,14 +162,12 @@ char **bw(char *seq, int length) {
     qsort(bwMatrix, length, sizeof(R), &cmpBMW);
 
     /* stores the actual matrix, with just the rotations */
-    char **matrix = malloc(sizeof(char *) * length);
+    char **matrix = malloc(sizeof(char *) * (length + 1));
 
     /* fill matrix */
     for (int i = 0; i < length; i++) {
         matrix[i] = malloc(sizeof(char) * length);
-        // *matrix = malloc(sizeof(char) * length);
         strcpy(matrix[i], bwMatrix[i].rotation);
-        free(bwMatrix[i].rotation);
     }
     
     return matrix;
@@ -183,7 +176,11 @@ char **bw(char *seq, int length) {
 /* prints suffix array */
 void printSA(int *sa, int length) {
     for (int i = 0; i < length; i++) {
-        printf("%d\n", sa[i]);
+        if (i == length - 1) {
+            printf("%d\n", sa[i]);
+        } else {
+            printf("%d, ", sa[i]);
+        }
     }
 }
 
