@@ -60,6 +60,7 @@ int fmIndex(char *reference, char *output) {
         /* burrows-wheeler matrix (bwm) */
         fm->bwm = (buildBWM(seq, length));
 
+
         /* occTable */
 
         free(seq);
