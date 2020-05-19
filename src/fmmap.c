@@ -1,9 +1,3 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdbool.h>
-
 #include "fmmap.h"
 
 /* runs align and fmIndex */
@@ -72,8 +66,9 @@ int fmIndex(char *reference, char *output) {
         fm->L = malloc(length + 1);
         getFL(fm->F, fm->L, fm->bwm, length);
         // printFL(fm->F, fm->L, length);
-        
 
+        /* occTable */
+        
         free(seq);
         free(name);
     }
@@ -83,6 +78,7 @@ int fmIndex(char *reference, char *output) {
     /* free our fm-index */
     destroy(fm);
 
+    /* successful */
     return 0;
 }
 
@@ -125,7 +121,7 @@ int *buildSuffixArray(char *seq, int length) {
 
         /* build suffix */
         char* currentSuffix = (seq + i);
-        suffixes[i].suffix = malloc(strlen(currentSuffix) + 1); // for some reason doesn't need free
+        suffixes[i].suffix = malloc(strlen(currentSuffix) + 1);
         strcpy(suffixes[i].suffix, currentSuffix);
     }
 
@@ -158,13 +154,13 @@ char **buildBWM(char *seq, int length) {
         /* build rotation */
         char *prefix = malloc(i + 1);
         char *suffix = (seq + i);
-        bwMatrix[i].rotation = malloc(length + 1); // for some reason doesn't need free
+        bwMatrix[i].rotation = malloc(length + 1);
         strcpy(bwMatrix[i].rotation, suffix);
         strncpy(prefix, seq, i);
         prefix[i] = '\0'; // add null terminator to prefix (crucial!)
         strcat(bwMatrix[i].rotation, prefix);
 
-        /* free used memory */
+        /* free prefix, we don't need it anymore */
         free(prefix);
     }
 
@@ -197,7 +193,6 @@ void getFL(char *F, char *L, char **BWM, int length) {
         L[i] = BWM[i][length - 1];
     }
 }
-
 
 /* prints suffix array */
 void printSA(int *sa, int length) {

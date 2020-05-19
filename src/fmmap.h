@@ -10,32 +10,32 @@
 
 /* struct for FM-Index */
 typedef struct fm {
-    char *name;         // sequence name
-    char *seq;          // actual sequence string
-    int length;         // length of sequence
-    int *suffixArray;   // suffix array of sequence
-    char **bwm;         // burrows-wheeler matrix
-    char *bwt;          // burrows-wheeler transform
-    char *F;            // (F)irst column of bwm
-    char *L;            // (L)ast column of bwm
+    char    *name;         // sequence name
+    char    *seq;          // actual sequence string
+    int     length;        // length of sequence
+    int     *suffixArray;  // suffix array of sequence
+    char    **bwm;         // burrows-wheeler matrix
+    char    *bwt;          // burrows-wheeler transform
+    char    *F;            // (F)irst column of bwm
+    char    *L;            // (L)ast column of bwm
     // occTable
 } FM;
 
 /* suffix array struct */
 typedef struct suffixArray {
-    int offset;
-    char *suffix;
+    int     offset;
+    char    *suffix;
 } SA;
 
 /* rotation struct for burrows-wheeler matrix */
 typedef struct Rotation {
-    int offset;
-    char *rotation;
+    int     offset;
+    char    *rotation;
 } R;
 
 /* FASTA files */
 typedef struct fastafile_s {
-  FILE *fp;
+  FILE  *fp;
   char  buffer[FASTA_MAXLINE];
 } FASTAFILE;
 
