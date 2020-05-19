@@ -37,3 +37,5 @@ $ ./fmmap ref_seq <index output file> reads <align output file>
 ### <ins> Future Goals </ins>
 * [Compressed suffix array](https://www.cs.cmu.edu/~dga/csa.pdf), for more efficient look-ups
 
+## 
+Written for my Bioinformatic Algorithms, Databases, and Tools course
