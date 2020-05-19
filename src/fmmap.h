@@ -6,7 +6,7 @@
 #include <ctype.h>
 #include <stdbool.h>
 
-#define FASTA_MAXLINE 512 /* Requires FASTA file lines to be <512 characters */
+#define FASTA_MAXLINE 512	/* Requires FASTA file lines to be <512 characters */
 
 /* struct for FM-Index */
 typedef struct fm {
