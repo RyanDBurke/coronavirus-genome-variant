@@ -62,7 +62,17 @@ int fmIndex(char *reference, char *output) {
         fm->bwm = (buildBWM(seq, length));
         // printBWM(fm->bwm, length);
 
-        /* occTable */
+        /* burrows-wheeler transform (bwt) */
+        fm->bwt = malloc(length + 1);
+        buildBWT(fm->bwt, fm->bwm, length);
+        // printBWT(fm->bwt, length);
+
+        /* (F)irst and (L)ast columns of bwm */
+        fm->F = malloc(length + 1);
+        fm->L = malloc(length + 1);
+        getFL(fm->F, fm->L, fm->bwm, length);
+        // printFL(fm->F, fm->L, length);
+        
 
         free(seq);
         free(name);
@@ -71,11 +81,7 @@ int fmIndex(char *reference, char *output) {
     CloseFASTA(ffp);
 
     /* free our fm-index */
-    free(fm->bwm);
-    free(fm->suffixArray);
-    free(fm->seq);
-    free(fm->name);
-    free(fm);
+    destroy(fm);
 
     return 0;
 }
@@ -177,12 +183,29 @@ char **buildBWM(char *seq, int length) {
     return matrix;
 }
 
+/* builds burrows-wheeler transform (i.e last column) */
+void buildBWT(char *bwt, char **BWM, int length) {
+    for (int i = 0; i < length; i++) {
+        bwt[i] = BWM[i][length - 1];
+    }
+}
+
+/* gets (F)irst and (L)ast columns of our burrows-wheeler matrix */
+void getFL(char *F, char *L, char **BWM, int length) {
+    for (int i = 0; i < length; i++) {
+        F[i] = BWM[i][0];
+        L[i] = BWM[i][length - 1];
+    }
+}
+
 
 /* prints suffix array */
 void printSA(int *sa, int length) {
+
+    printf("Suffix Array\n");
     for (int i = 0; i < length; i++) {
         if (i == length - 1) {
-            printf("%d\n", sa[i]);
+            printf("%d\n\n", sa[i]);
         } else {
             printf("%d, ", sa[i]);
         }
@@ -191,9 +214,42 @@ void printSA(int *sa, int length) {
 
 /* prints bwm */
 void printBWM(char **b, int length) {
+
+    printf("Burrows-Wheeler Matrix\n");
     for (int i = 0; i < length; i++) {
-        printf("%s\n", b[i]);
+        if (i == length - 1) {
+            printf("%s\n\n", b[i]);
+        } else {
+            printf("%s\n", b[i]);
+        }
     }
+}
+
+/* prints bwt */
+void printBWT(char *bwt, int length) {
+    printf("BWT: ");
+    printf("%s\n\n", bwt);
+}
+
+/* prints F and L */
+void printFL(char *F, char *L, int length) {
+    printf("F: ");
+    printf("%s\n", F);
+
+    printf("L: ");
+    printf("%s\n\n", L);
+}
+
+/* destroys our FM-Index*/
+void destroy(FM *fm) {
+    free(fm->bwt);
+    free(fm->F);
+    free(fm->L);
+    free(fm->bwm);
+    free(fm->suffixArray);
+    free(fm->seq);
+    free(fm->name);
+    free(fm);
 }
 
 

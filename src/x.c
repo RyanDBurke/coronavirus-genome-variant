@@ -5,16 +5,16 @@
 
 #include "fmmap.h"
 
-void test(char **f);
+void test(char *F);
 
 int main() {
 
     FM *fm = malloc(sizeof(FM));
     fm->F = malloc(6);
-    strcpy(fm->F, "hello");
+    //strcpy(fm->F, "hello");
     // printf("%s\n", fm->F);
-    test(&(fm->F));
-    // printf("%s\n", fm->F);
+    test(fm->F);
+    printf("%s\n", fm->F);
     free(fm->F);
     free(fm); // why not free?
 
@@ -22,6 +22,6 @@ int main() {
 
 }
 
-void test(char **F) {
-    *F = "ryan";
+void test(char *F) {
+    strcpy(F, "bagel");
 }

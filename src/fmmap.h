@@ -10,13 +10,14 @@
 
 /* struct for FM-Index */
 typedef struct fm {
-    char *name;
-    char *seq;
-    int length;
-    int *suffixArray;
-    char **bwm;
-    char *F;
-    char *L;
+    char *name;         // sequence name
+    char *seq;          // actual sequence string
+    int length;         // length of sequence
+    int *suffixArray;   // suffix array of sequence
+    char **bwm;         // burrows-wheeler matrix
+    char *bwt;          // burrows-wheeler transform
+    char *F;            // (F)irst column of bwm
+    char *L;            // (L)ast column of bwm
     // occTable
 } FM;
 
@@ -64,6 +65,12 @@ int *buildSuffixArray(char *seq, int length);
  */
 char **buildBWM(char *seq, int length);
 
+/* builds burrows-wheeler transform (i.e last column)
+    * @param BWM: our burrows-wheeler matrix
+    * @param length: length of sequence
+ */
+void buildBWT(char *bwt, char **BWM, int length);
+
 /* builds occurence table
     * @param: occF: address to a map-like struct <character: occurence #>
     * @param: occL: address to a map-like struct <character: occurence #>
@@ -72,13 +79,13 @@ char **buildBWM(char *seq, int length);
  */
 void buildOccTable(char **occF, char **occL, char **BWM); // char for now, change later
 
-/* gets (F)irst and (L)ast columns of our burrows-wheeler matrix
+/* return (F)irst and (L)ast columns of our burrows-wheeler matrix in F and L
     * @param F: char array of the first column
     * @param L: char array of last column
     * @param BWM: our burrows-wheeler matrix
-    * we'd pass in &F and &L
+    * @param length: length of sequence
  */
-void getFL(char **F, char **L, char **BWM, int length);
+void getFL(char *F, char *L, char **BWM, int length);
 
 /* comparison sort functions for suffix arrays and BWM */
 int cmpSA(const void *a, const void *b);
@@ -87,4 +94,8 @@ int cmpBMW(const void *a, const void *b);
 /* print methods */
 void printSA(int *sa, int length);
 void printBWM(char **b, int length);
+void printBWT(char *bwt, int length);
 void printFL(char *F, char *L, int length);
+
+/* destroys our FM-Index */
+void destroy(FM *fm);
