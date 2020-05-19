@@ -2,8 +2,8 @@
 
 ## 
 
-> Implements string macthing using seed-and-extend strategy 
-> on exact matching using the FM-Index and semi-global read-aligning.
+> A read-alignment tool that utilizes the seed-and-extend paradigm, FM-Index, suffix arrays, and the burrows-wheeler matrix
+> to provide for efficient seed-searching to discover variants in the COVID-19 genome.
 
 ## 
 
