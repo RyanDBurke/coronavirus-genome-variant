@@ -15,6 +15,8 @@ typedef struct fm {
     int length;
     int *suffixArray;
     char **bwm;
+    char *F;
+    char *L;
     // occTable
 } FM;
 
@@ -25,7 +27,7 @@ typedef struct suffixArray {
 } SA;
 
 /* rotation struct for burrows-wheeler matrix */
-typedef struct R {
+typedef struct Rotation {
     int offset;
     char *rotation;
 } R;
@@ -76,7 +78,7 @@ void buildOccTable(char **occF, char **occL, char **BWM); // char for now, chang
     * @param BWM: our burrows-wheeler matrix
     * we'd pass in &F and &L
  */
-void getFL(char *F, char *L, char **BWM);
+void getFL(char **F, char **L, char **BWM, int length);
 
 /* comparison sort functions for suffix arrays and BWM */
 int cmpSA(const void *a, const void *b);
@@ -85,3 +87,4 @@ int cmpBMW(const void *a, const void *b);
 /* print methods */
 void printSA(int *sa, int length);
 void printBWM(char **b, int length);
+void printFL(char *F, char *L, int length);

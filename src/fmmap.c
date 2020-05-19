@@ -56,10 +56,11 @@ int fmIndex(char *reference, char *output) {
 
         /* suffix array */
         fm->suffixArray = (buildSuffixArray(seq, length));
+        // printSA(fm->suffixArray, length);
 
         /* burrows-wheeler matrix (bwm) */
         fm->bwm = (buildBWM(seq, length));
-
+        // printBWM(fm->bwm, length);
 
         /* occTable */
 
@@ -175,6 +176,7 @@ char **buildBWM(char *seq, int length) {
     
     return matrix;
 }
+
 
 /* prints suffix array */
 void printSA(int *sa, int length) {
