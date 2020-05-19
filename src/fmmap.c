@@ -120,6 +120,7 @@ int *buildSuffixArray(char *seq, int length) {
         strcpy(suffixes[i].suffix, (seq + i));
 
         /* add null character */
+        /* do i need this */
         (suffixes[i].suffix)[length] = '\0';
     }
 
@@ -171,6 +172,7 @@ char **bw(char *seq, int length) {
     /* fill matrix */
     for (int i = 0; i < length; i++) {
         matrix[i] = malloc(sizeof(char) * length);
+        // *matrix = malloc(sizeof(char) * length);
         strcpy(matrix[i], bwMatrix[i].rotation);
         free(bwMatrix[i].rotation);
     }
