@@ -17,13 +17,13 @@ int main(int argc, char **argv) {
     }
     */
 
-    /* string path to each file */
+    /* string path to each relevant file */
     char *ref_seq = argv[1];
     char *indexOut = argv[2];
     // char *reads = argv[3];
     // char *alignOut = argv[4];
 
-    /* fmIndex */
+    /* run fmIndex */
     fmIndex(ref_seq, indexOut);
 
    return 0;
@@ -36,9 +36,11 @@ int fmIndex(char *reference, char *output) {
     char *name;
     int length;
 
+    /* our FM-Index struct */
+    FM *fm = malloc(sizeof(FM));
+
     /* parse .fa file contains our reference sequence and build fm-index */
     ffp = OpenFASTA(reference);
-    FM *fm = malloc(sizeof(FM));
     while (ReadFASTA(ffp, &seq, &name, &length)) {
 
         /* name */
@@ -56,7 +58,7 @@ int fmIndex(char *reference, char *output) {
         fm->suffixArray = (buildSuffixArray(seq, length));
 
         /* burrows-wheeler matrix (bwm) */
-        fm->bwm = (bw(seq, length));
+        fm->bwm = (buildBWM(seq, length));
 
         /* occTable */
 
@@ -134,7 +136,7 @@ int *buildSuffixArray(char *seq, int length) {
 }
 
 /* build burrows-wheeler matrix */
-char **bw(char *seq, int length) {
+char **buildBWM(char *seq, int length) {
 
     /* store rotations and their offset */
     R bwMatrix[length];
@@ -161,7 +163,7 @@ char **bw(char *seq, int length) {
     /* sort rotations */
     qsort(bwMatrix, length, sizeof(R), &cmpBMW);
 
-    /* stores the actual matrix, with just the rotations */
+    /* stores the actual matrix (rotations sorted) */
     char **matrix = malloc(sizeof(char *) * (length + 1));
 
     /* fill matrix */
