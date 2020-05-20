@@ -105,7 +105,6 @@ int fmIndex(FM *fm, char *reference, char *output) {
 /* remember, reads have the letter "N" */
 int align(FM *fm, char *reads, char *output) {
 
-
     FASTAFILE *ffp;
     char *seq;
     char *name;
@@ -114,24 +113,34 @@ int align(FM *fm, char *reads, char *output) {
     double ninf = -INFINITY;
     int gap = 5;
 
-    /* parse .fa file containing our 100bp reads */
+    /* parse .fa file containing our n-amount of 100bp reads */
     ffp = OpenFASTA(reads);
     while (ReadFASTA(ffp, &seq, &name, &length)) {
 
         double best_score = ninf;
         int seedPos = 0;
         int skip = seedSkip(length);
-        // alignments array
+        Alignment A[length]; // is length the correct array size here?
 
+        /* for each (read-length / 5.0) seed (20bp seed in our case, since we have 100bp reads) */
         for (int seedStart = 0; seedStart < length; seedStart += skip) {
             int seedEnd = min(length, seedStart + skip);
 
             /* finding match interval */
-            Interval *interval = malloc(sizeof(Interval));
+            Interval *interval = malloc(sizeof(Interval)); // I should have to free this, right?
             int matchLength = 0;
-            char *partialSeq = substring(seq, seedStart, seedEnd);
-            getInterval(interval, &matchLength, fm, partialSeq);
+            char *seed = malloc(strlen(seq) + 1); // I should have to free this, right?
+            substring(seed, seq, seedStart, seedEnd);
+            getInterval(interval, &matchLength, fm, seed);
+
+
+            /* free memory */
+            free(seed);
+            free(interval);
         }
+
+        free(seq);
+        free(name);
     }
 
     CloseFASTA(ffp);
@@ -145,22 +154,60 @@ int align(FM *fm, char *reads, char *output) {
 /**************************/
 
 /* preforms backwards search and return a interval and matchLength */
-void getInterval(Interval *interval, int *matchLength, FM *fm, char* partialSeq) {
+void getInterval(Interval *interval, int *matchLength, FM *fm, char* seed) {
 
+    /* reset interval to -1 */
+    interval->start = -1;
+    interval->end = -1;
 
-    /* free substring created from substring() method */
-    free(partialSeq);
+    /* length of our original reference sequence (coronavirus genome) */
+    int refSeqLength = fm->length;
+
+    /* iterate thru suffix array to find matches to our seed */
+    for (int i = 0; i < refSeqLength; i++) {
+
+        /* index in coronavirus genome where this particular suffix begins */
+        int offset = fm->suffixArray[i];
+
+        /* current coronavirus suffix */
+        char *suffix = (fm->seq + offset);
+
+        /* substring of suffix */
+        char *subSuffix = malloc(strlen(suffix) + 1); // I should have to free this, right?
+        substring(subSuffix, suffix, 0, strlen(seed));
+
+        /* match seed to suffix */
+        int match = strcmp(subSuffix, seed);
+
+        /* if they match and this is the first match */
+        if (match == 0 && (interval->start == -1)) {
+            interval->start = i;
+        }
+
+        /* if they don't match, but we've seen a match before -- then this is the end of interval */
+        if (match != 0 && (interval->start != -1)) {
+            interval->end = i;
+            break; // break loop, we have our interval!
+        }
+
+        /* free substring created from substring() method */
+        free(subSuffix);
+    }
+
+    /* matchLength = 0 if no match found, but = strlen(seed) */
+    if ((interval->start == -1) && (interval->end == -1)) {
+        *matchLength = 0;
+    } else {
+        *matchLength = strlen(seed);
+    }
 }
 
-/* return substring from [start, end) */
-char *substring(char* string, int start, int end) {
+/* return substring of string from [start, end) */
+void substring(char* res, char* string, int start, int end) {
     char *temp = string + start;
     int n = end - start;
-    char *res = malloc(n + 1);
     res = strncpy(res, temp, n);
     res[n] = '\0';
-
-    return res;
 }
 
 /* seed skip */

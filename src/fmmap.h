@@ -22,6 +22,12 @@ typedef struct fm {
     // occTable
 } FM;
 
+/* struct for an alignment and its score */
+typedef struct singleAlignment {
+    char    *alignment;
+    int     score;
+} Alignment;
+
 /* tuple for interval [start, end) */
 typedef struct interval {
     int start;
@@ -74,10 +80,15 @@ int align(FM *fm, char *reads, char *output);
     * @param fm: fm-index
     * @param partialSeq: substring of our current read sequence from seedStart:seedEnd
  */
-void getInterval(Interval *interval, int *matchLength, FM *fm, char* partialSeq);
+void getInterval(Interval *interval, int *matchLength, FM *fm, char* seed);
 
-/* return substring from [start, end) */
-char *substring(char* string, int start, int end);
+/* return substring from [start, end)
+    * @param res: output for substring
+    * @param string: entire string
+    * @param start: start of substring
+    * @param end: end of string
+ */
+void substring(char *res, char* string, int start, int end);
 
 /* returns our seed skip interval */
 int seedSkip(int L);

@@ -7,27 +7,31 @@
 #include "fmmap.h"
 void test(int x);
 void change(int *a);
-char *susbtring(char* string, int start, int end);
+void susbtring(char *res, char* string, int start, int end);
 
 int main() {
 
-    char *sub = susbtring("ryan", 1, 2);
+    char *string = "ryanryanryanryan";
+    char *sub = malloc(strlen(string) + 1);
+    susbtring(sub, string, 1, 7);
     printf("%s\n", sub);
+    int l = strlen(sub);
+    printf("%d\n", l);
+    
+
+    free(sub);
 
     return 0;
 
 }
 
 /* [start, end) */
-char *susbtring(char* string, int start, int end) {
+void susbtring(char *res, char* string, int start, int end) {
 
     char *s = string + start;
     int n = end - start;
-    char *res = malloc(n + 1);
     res = strncpy(res, s, n);
     res[n] = '\0';
-
-    return res;
 }
 
 void change(int *a) {
