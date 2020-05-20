@@ -81,7 +81,6 @@ void buildBWT(char *bwt, char **BWM, int length);
     * @param: occF: address to a map-like struct <character: occurence #>
     * @param: occL: address to a map-like struct <character: occurence #>
     * @param: BWM: our burrows-wheeler matrix (useful for extracting (F)irst and (L)ast columns)
-    * pass in &occF and &occL
  */
 void buildOccTable(char **occF, char **occL, char **BWM); // char for now, change later
 
@@ -93,7 +92,7 @@ void buildOccTable(char **occF, char **occL, char **BWM); // char for now, chang
  */
 void getFL(char *F, char *L, char **BWM, int length);
 
-/* seed skip
+/* returns our seed skip interval
     * @param L: length of sequence
  */
 int seedSkip(int L);

@@ -104,7 +104,7 @@ int fmIndex(FM *fm, char *reference, char *output) {
 /* remember reads have the letter "N" */
 int align(FM *fm, char *reads, char *output) {
 
-    /*
+
     FASTAFILE *ffp;
     char *seq;
     char *name;
@@ -112,9 +112,8 @@ int align(FM *fm, char *reads, char *output) {
 
     double ninf = -INFINITY;
     int gap = 5;
-    */
 
-    /* parse .fa file containing our 100bp reads
+    /* parse .fa file containing our 100bp reads */
     ffp = OpenFASTA(reads);
     while (ReadFASTA(ffp, &seq, &name, &length)) {
 
@@ -129,7 +128,6 @@ int align(FM *fm, char *reads, char *output) {
     }
 
     CloseFASTA(ffp);
-    */
 
     /* successful */
     return 0;
@@ -139,11 +137,11 @@ int align(FM *fm, char *reads, char *output) {
 /* AUX FUNTIONS */
 /****************/
 
-/* seed skip 
+/* seed skip */
 int seedSkip(int L) {
-    return floor(L / 5.0);
+    int s = L / 5.0;
+    return s;
 }
-*/
 
 /* comparison sort function for suffix arrays */
 int cmpSA(const void *a, const void *b) {

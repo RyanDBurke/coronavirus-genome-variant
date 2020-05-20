@@ -1,27 +1,22 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 
 #include "fmmap.h"
-
-void test(char *F);
+void test(int x);
 
 int main() {
 
-    FM *fm = malloc(sizeof(FM));
-    fm->F = malloc(6);
-    //strcpy(fm->F, "hello");
-    // printf("%s\n", fm->F);
-    test(fm->F);
-    printf("%s\n", fm->F);
-    free(fm->F);
-    free(fm); // why not free?
+   double ninf = -INFINITY;
+   printf("%f\n", ninf);
 
     return 0;
 
 }
 
-void test(char *F) {
-    strcpy(F, "bagel");
+void test(int x) {
+    int h = x / 5.0;
+    printf("%d\n", h);
 }
