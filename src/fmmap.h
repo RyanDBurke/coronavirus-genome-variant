@@ -5,6 +5,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <math.h>
 
 #define FASTA_MAXLINE 512	/* Requires FASTA file lines to be <512 characters */
 
@@ -45,13 +46,18 @@ extern int        ReadFASTA(FASTAFILE *fp, char **ret_seq, char **ret_name, int 
 extern void       CloseFASTA(FASTAFILE *ffp);
 
 /* takes a ref-sequence, builds fmIndex, and writes to output
+    * @param fm: fm-index
     * @param reference: .fa file
     * @param output: file output we will write to
  */
-int fmIndex(char *reference, char *output);
+int fmIndex(FM *fm, char *reference, char *output);
 
-/* takes the fmIndex of a ref-sequence, a .fa of reads, and aligns them */
-int align();
+/* takes the fmIndex of a ref-sequence, a .fa of reads, and aligns them 
+    * @param fm: fm-index
+    * @param reads: FASTA file of 100bp reads
+    * @param output: file output we will write to
+ */
+int align(FM *fm, char *reads, char *output);
 
 /* builds suffix array
     * @param seq: .fa file
@@ -87,9 +93,17 @@ void buildOccTable(char **occF, char **occL, char **BWM); // char for now, chang
  */
 void getFL(char *F, char *L, char **BWM, int length);
 
+/* seed skip
+    * @param L: length of sequence
+ */
+int seedSkip(int L);
+
 /* comparison sort functions for suffix arrays and BWM */
 int cmpSA(const void *a, const void *b);
 int cmpBMW(const void *a, const void *b);
+
+/* write our fm-index to output */
+void write(FM *fm, FILE *f, int length);
 
 /* print methods */
 void printSA(int *sa, int length);

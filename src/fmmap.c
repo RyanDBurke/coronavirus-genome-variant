@@ -14,24 +14,30 @@ int main(int argc, char **argv) {
     /* string path to each relevant file */
     char *ref_seq = argv[1];
     char *indexOut = argv[2];
-    // char *reads = argv[3];
-    // char *alignOut = argv[4];
+    char *reads = argv[3];
+    char *alignOut = argv[4];
+
+    /* our FM-Index struct */
+    FM *fm = malloc(sizeof(FM));
 
     /* run fmIndex */
-    fmIndex(ref_seq, indexOut);
+    fmIndex(fm, ref_seq, indexOut);
+
+    /* run aligner */
+    align(fm, reads, alignOut);
+
+    /* free our fm-index */
+    destroy(fm);
 
    return 0;
 }
 
-int fmIndex(char *reference, char *output) {
+int fmIndex(FM *fm, char *reference, char *output) {
 
     FASTAFILE *ffp;
     char *seq;
     char *name;
     int length;
-
-    /* our FM-Index struct */
-    FM *fm = malloc(sizeof(FM));
 
     /* parse .fa file contains our reference sequence and build fm-index */
     ffp = OpenFASTA(reference);
@@ -68,6 +74,7 @@ int fmIndex(char *reference, char *output) {
         // printFL(fm->F, fm->L, length);
 
         /* occTable */
+        /* man do I even need this? */
         
         free(seq);
         free(name);
@@ -75,14 +82,56 @@ int fmIndex(char *reference, char *output) {
 
     CloseFASTA(ffp);
 
-    /* free our fm-index */
-    destroy(fm);
+    /* write FM-Index to output */
+    FILE *f;
+    if (length <= 512) {
+        f = fopen(output, "w");
+        if (f == NULL) {
+            printf("error opening file.\n");
+            exit(1);
+        }
+        write(fm, f, length);
+    } else {
+        printf("Sequences over 512 in length are not written to file.\n");
+        printf("Your sequence length : %d\n", length);
+
+    }
 
     /* successful */
     return 0;
 }
 
-int align() {
+/* remember reads have the letter "N" */
+int align(FM *fm, char *reads, char *output) {
+
+    /*
+    FASTAFILE *ffp;
+    char *seq;
+    char *name;
+    int length;
+
+    double ninf = -INFINITY;
+    int gap = 5;
+    */
+
+    /* parse .fa file containing our 100bp reads
+    ffp = OpenFASTA(reads);
+    while (ReadFASTA(ffp, &seq, &name, &length)) {
+
+        double best_score = ninf;
+        int seedPos = 0;
+        int skip = seedSkip(length);
+        // alignments array
+
+        for (int seedStart = 0; seedStart < length; seedStart += 5) {
+            int seedEnd;
+        }
+    }
+
+    CloseFASTA(ffp);
+    */
+
+    /* successful */
     return 0;
 }
 
@@ -90,6 +139,11 @@ int align() {
 /* AUX FUNTIONS */
 /****************/
 
+/* seed skip 
+int seedSkip(int L) {
+    return floor(L / 5.0);
+}
+*/
 
 /* comparison sort function for suffix arrays */
 int cmpSA(const void *a, const void *b) {
@@ -192,6 +246,58 @@ void getFL(char *F, char *L, char **BWM, int length) {
         F[i] = BWM[i][0];
         L[i] = BWM[i][length - 1];
     }
+}
+
+
+/************************/
+/* WRITE/PRINT FUNTIONS */
+/************************/
+
+
+/* write our fm-index to output */
+void write(FM *fm, FILE *f, int length) {
+
+    /* name */
+    fprintf(f, "> %s\n", fm->name);
+
+    /* sequence length */
+    fprintf(f, "length: %d\n\n", fm->length);
+
+    /* write sequence if its under 512 chars */
+    fprintf(f, "Sequence\n");
+    fprintf(f, "%s\n\n", fm->seq);
+
+    /* suffix array */
+    fprintf(f, "Suffix Array\n");
+    for (int i = 0; i < length; i++) {
+        if (i == length - 1) {
+            fprintf(f, "%d\n\n", fm->suffixArray[i]);
+        } else {
+            fprintf(f, "%d, ", fm->suffixArray[i]);
+        }
+    }
+
+    /* bwm */
+    fprintf(f, "Burrows-Wheeler Matrix\n");
+    for (int i = 0; i < length; i++) {
+        if (i == length - 1) {
+            fprintf(f, "%s\n\n", fm->bwm[i]);
+        } else {
+            fprintf(f, "%s\n", fm->bwm[i]);
+        }
+    }
+
+    /* bwt */
+    fprintf(f, "BWT: ");
+    fprintf(f, "%s\n\n", fm->bwt);
+
+    /* F and L */
+    fprintf(f, "F: ");
+    fprintf(f, "%s\n", fm->F);
+    fprintf(f, "L: ");
+    fprintf(f, "%s\n", fm->L);
+
+    fclose(f);
 }
 
 /* prints suffix array */

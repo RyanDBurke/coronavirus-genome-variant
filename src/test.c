@@ -48,7 +48,7 @@ int main () {
         // printSA(m->suffixArray, length);
 
         /* burrows-wheeler matrix (bwm) */
-        m->bwm = bw(seq, length);
+        m->bwm = buildBWM(seq, length);
         printf("\n\nmatrix: \n");
         printBWM(m->bwm, length);
 
@@ -110,7 +110,7 @@ int *buildSuffixArray(char *seq, int length) {
 }
 
 /* build burrows-wheeler matrix */
-char **bw(char *seq, int length) {
+char **buildBWM(char *seq, int length) {
 
     /* store rotations and their offset */
     R bwMatrix[length];
