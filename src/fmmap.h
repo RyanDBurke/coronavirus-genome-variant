@@ -23,10 +23,10 @@ typedef struct fm {
 } FM;
 
 /* tuple for interval [start, end) */
-typedef struct tuple {
+typedef struct interval {
     int start;
     int end; // exclusive
-} Tuple;
+} Interval;
 
 /* suffix array struct */
 typedef struct suffixArray {
@@ -68,13 +68,13 @@ int align(FM *fm, char *reads, char *output);
 /* AUX FUNTIONS FOR ALIGN */
 /**************************/
 
-/* preforms backwards search and return a interval and matchLength
-    * @param t: a tuple struct
+/* preforms backwards search and returns a interval and matchLength
+    * @param interval: a Interval struct
     * @param matchLength: length of string matched
     * @param fm: fm-index
     * @param partialSeq: substring of our current read sequence from seedStart:seedEnd
  */
-void getInterval(Tuple *interval, int *matchLength, FM *fm, char* partialSeq);
+void getInterval(Interval *interval, int *matchLength, FM *fm, char* partialSeq);
 
 /* return substring from [start, end) */
 char *substring(char* string, int start, int end);

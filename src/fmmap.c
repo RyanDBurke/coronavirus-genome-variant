@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
     fmIndex(fm, ref_seq, indexOut);
 
     /* run aligner */
-    // align(fm, reads, alignOut);
+    align(fm, reads, alignOut);
 
     /* free our fm-index */
     destroy(fm);
@@ -127,7 +127,7 @@ int align(FM *fm, char *reads, char *output) {
             int seedEnd = min(length, seedStart + skip);
 
             /* finding match interval */
-            Tuple *interval = malloc(sizeof(Tuple));
+            Interval *interval = malloc(sizeof(Interval));
             int matchLength = 0;
             char *partialSeq = substring(seq, seedStart, seedEnd);
             getInterval(interval, &matchLength, fm, partialSeq);
@@ -145,7 +145,7 @@ int align(FM *fm, char *reads, char *output) {
 /**************************/
 
 /* preforms backwards search and return a interval and matchLength */
-void getInterval(Tuple *interval, int *matchLength, FM *fm, char* partialSeq) {
+void getInterval(Interval *interval, int *matchLength, FM *fm, char* partialSeq) {
 
 
     /* free substring created from substring() method */
