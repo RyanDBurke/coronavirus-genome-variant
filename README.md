@@ -1,4 +1,4 @@
-# <ins>COVID-19 Genome Variant, Burrows-Wheeler Transform, and FM-Index </ins>
+## <ins>COVID-19 Genome Variant, Burrows-Wheeler Transform, and FM-Index </ins>
 
 ## 
 
