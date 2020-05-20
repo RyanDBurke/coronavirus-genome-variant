@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
     fmIndex(fm, ref_seq, indexOut);
 
     /* run aligner */
-    align(fm, reads, alignOut);
+    // align(fm, reads, alignOut);
 
     /* free our fm-index */
     destroy(fm);
@@ -56,22 +56,18 @@ int fmIndex(FM *fm, char *reference, char *output) {
 
         /* suffix array */
         fm->suffixArray = (buildSuffixArray(seq, length));
-        // printSA(fm->suffixArray, length);
 
         /* burrows-wheeler matrix (bwm) */
         fm->bwm = (buildBWM(seq, length));
-        // printBWM(fm->bwm, length);
 
         /* burrows-wheeler transform (bwt) */
         fm->bwt = malloc(length + 1);
         buildBWT(fm->bwt, fm->bwm, length);
-        // printBWT(fm->bwt, length);
 
         /* (F)irst and (L)ast columns of bwm */
         fm->F = malloc(length + 1);
         fm->L = malloc(length + 1);
         getFL(fm->F, fm->L, fm->bwm, length);
-        // printFL(fm->F, fm->L, length);
 
         /* occTable */
         /* man do I even need this? */
@@ -84,7 +80,7 @@ int fmIndex(FM *fm, char *reference, char *output) {
 
     /* write FM-Index to output */
     FILE *f;
-    if (length <= 512) {
+    if (length <= 50) {
         f = fopen(output, "w");
         if (f == NULL) {
             printf("error opening file.\n");
@@ -92,8 +88,13 @@ int fmIndex(FM *fm, char *reference, char *output) {
         }
         write(fm, f, length);
     } else {
-        printf("Sequences over 512 in length are not written to file.\n");
-        printf("Your sequence length : %d\n", length);
+        printf("> Sequences over 50 in length are not written to file.\n\n");
+        printf("> Your sequence length: %d\n\n", length);
+        printf("> Use ");
+        printf("\033[1;31m");
+        printf("./smallFasta.fa ");
+        printf("\033[0m");
+        printf("to see what a serialized FM-Index looks like.\n");
 
     }
 
@@ -101,7 +102,7 @@ int fmIndex(FM *fm, char *reference, char *output) {
     return 0;
 }
 
-/* remember reads have the letter "N" */
+/* remember, reads have the letter "N" */
 int align(FM *fm, char *reads, char *output) {
 
 
@@ -122,8 +123,14 @@ int align(FM *fm, char *reads, char *output) {
         int skip = seedSkip(length);
         // alignments array
 
-        for (int seedStart = 0; seedStart < length; seedStart += 5) {
-            int seedEnd;
+        for (int seedStart = 0; seedStart < length; seedStart += skip) {
+            int seedEnd = min(length, seedStart + skip);
+
+            /* finding match interval */
+            Tuple *interval = malloc(sizeof(Tuple));
+            int matchLength = 0;
+            char *partialSeq = substring(seq, seedStart, seedEnd);
+            getInterval(interval, &matchLength, fm, partialSeq);
         }
     }
 
@@ -133,9 +140,28 @@ int align(FM *fm, char *reads, char *output) {
     return 0;
 }
 
-/****************/
-/* AUX FUNTIONS */
-/****************/
+/**************************/
+/* AUX FUNTIONS FOR ALIGN */
+/**************************/
+
+/* preforms backwards search and return a interval and matchLength */
+void getInterval(Tuple *interval, int *matchLength, FM *fm, char* partialSeq) {
+
+
+    /* free substring created from substring() method */
+    free(partialSeq);
+}
+
+/* return substring from [start, end) */
+char *substring(char* string, int start, int end) {
+    char *temp = string + start;
+    int n = end - start;
+    char *res = malloc(n + 1);
+    res = strncpy(res, temp, n);
+    res[n] = '\0';
+
+    return res;
+}
 
 /* seed skip */
 int seedSkip(int L) {
@@ -143,21 +169,19 @@ int seedSkip(int L) {
     return s;
 }
 
-/* comparison sort function for suffix arrays */
-int cmpSA(const void *a, const void *b) {
-    const SA *da = (const SA *) a;
-    const SA *db = (const SA *) b;
-
-    return strcmp(da->suffix, db->suffix);
+/* min */
+int min(int a, int b) {
+    return (a > b) ? b : a;
 }
 
-/* comparison sort function for bwm */
-int cmpBMW(const void *a, const void *b) {
-    const R *da = (const R *) a;
-    const R *db = (const R *) b;
-
-    return strcmp(da->rotation, db->rotation);
+/* max */
+int max(int a, int b) {
+    return (a > b) ? a : b;
 }
+
+/*****************************/
+/* AUX FUNTIONS FOR FM-INDEX */
+/*****************************/
 
 /* builds suffix array */
 int *buildSuffixArray(char *seq, int length) {
@@ -246,14 +270,28 @@ void getFL(char *F, char *L, char **BWM, int length) {
     }
 }
 
+/* comparison sort function for suffix arrays */
+int cmpSA(const void *a, const void *b) {
+    const SA *da = (const SA *) a;
+    const SA *db = (const SA *) b;
 
-/************************/
-/* WRITE/PRINT FUNTIONS */
-/************************/
+    return strcmp(da->suffix, db->suffix);
+}
 
+/* comparison sort function for bwm */
+int cmpBMW(const void *a, const void *b) {
+    const R *da = (const R *) a;
+    const R *db = (const R *) b;
+
+    return strcmp(da->rotation, db->rotation);
+}
 
 /* write our fm-index to output */
 void write(FM *fm, FILE *f, int length) {
+
+    fprintf(f, "************\n");
+    fprintf(f, "* FM-INDEX *\n");
+    fprintf(f, "************\n\n");
 
     /* name */
     fprintf(f, "> %s\n", fm->name);
@@ -266,10 +304,15 @@ void write(FM *fm, FILE *f, int length) {
     fprintf(f, "%s\n\n", fm->seq);
 
     /* suffix array */
+    int lineCount = 0;
     fprintf(f, "Suffix Array\n");
     for (int i = 0; i < length; i++) {
+        lineCount++;
         if (i == length - 1) {
             fprintf(f, "%d\n\n", fm->suffixArray[i]);
+        } else if (lineCount == 14) {
+            fprintf(f, "%d,\n", fm->suffixArray[i]);
+            lineCount = 0;
         } else {
             fprintf(f, "%d, ", fm->suffixArray[i]);
         }
@@ -350,7 +393,6 @@ void destroy(FM *fm) {
     free(fm->name);
     free(fm);
 }
-
 
 /****************/
 /* FASTA PARSER */

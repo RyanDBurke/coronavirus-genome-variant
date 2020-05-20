@@ -22,6 +22,12 @@ typedef struct fm {
     // occTable
 } FM;
 
+/* tuple for interval [start, end) */
+typedef struct tuple {
+    int start;
+    int end; // exclusive
+} Tuple;
+
 /* suffix array struct */
 typedef struct suffixArray {
     int     offset;
@@ -40,10 +46,9 @@ typedef struct fastafile_s {
   char  buffer[FASTA_MAXLINE];
 } FASTAFILE;
 
-/* FASTA parser */
-extern FASTAFILE *OpenFASTA(char *seqfile);
-extern int        ReadFASTA(FASTAFILE *fp, char **ret_seq, char **ret_name, int *ret_L);
-extern void       CloseFASTA(FASTAFILE *ffp);
+/******************/
+/* MAIN FUNCTIONS */
+/******************/
 
 /* takes a ref-sequence, builds fmIndex, and writes to output
     * @param fm: fm-index
@@ -58,6 +63,32 @@ int fmIndex(FM *fm, char *reference, char *output);
     * @param output: file output we will write to
  */
 int align(FM *fm, char *reads, char *output);
+
+/**************************/
+/* AUX FUNTIONS FOR ALIGN */
+/**************************/
+
+/* preforms backwards search and return a interval and matchLength
+    * @param t: a tuple struct
+    * @param matchLength: length of string matched
+    * @param fm: fm-index
+    * @param partialSeq: substring of our current read sequence from seedStart:seedEnd
+ */
+void getInterval(Tuple *interval, int *matchLength, FM *fm, char* partialSeq);
+
+/* return substring from [start, end) */
+char *substring(char* string, int start, int end);
+
+/* returns our seed skip interval */
+int seedSkip(int L);
+
+/* min and max */
+int min(int a, int b);
+int max(int a, int b);
+
+/*****************************/
+/* AUX FUNTIONS FOR FM-INDEX */
+/*****************************/
 
 /* builds suffix array
     * @param seq: .fa file
@@ -92,11 +123,6 @@ void buildOccTable(char **occF, char **occL, char **BWM); // char for now, chang
  */
 void getFL(char *F, char *L, char **BWM, int length);
 
-/* returns our seed skip interval
-    * @param L: length of sequence
- */
-int seedSkip(int L);
-
 /* comparison sort functions for suffix arrays and BWM */
 int cmpSA(const void *a, const void *b);
 int cmpBMW(const void *a, const void *b);
@@ -112,3 +138,11 @@ void printFL(char *F, char *L, int length);
 
 /* destroys our FM-Index */
 void destroy(FM *fm);
+
+/****************/
+/* FASTA PARSER */
+/****************/
+
+extern FASTAFILE *OpenFASTA(char *seqfile);
+extern int        ReadFASTA(FASTAFILE *fp, char **ret_seq, char **ret_name, int *ret_L);
+extern void       CloseFASTA(FASTAFILE *ffp);
