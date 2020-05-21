@@ -64,7 +64,7 @@ typedef struct fastafile_s {
  */
 int fmIndex(FM *fm, char *reference, char *output);
 
-/* takes the fmIndex of a ref-sequence, a .fa of reads, and aligns them 
+/* takes the fmIndex of a ref-sequence, a .fa of single-end reads, and aligns them 
     * @param fm: fm-index
     * @param reads: FASTA file of 100bp reads
     * @param output: file output we will write to
@@ -75,8 +75,8 @@ int align(FM *fm, char *reads, char *output);
 /* AUX FUNTIONS FOR ALIGN */
 /**************************/
 
-/* preforms backwards search and returns a interval and matchLength
-    * @param interval: a Interval struct
+/* performs backwards search and returns a interval and matchLength
+    * @param interval: interval where seed matched reference genome (query via suffix array)
     * @param matchLength: length of string matched
     * @param fm: fm-index
     * @param partialSeq: substring of our current read sequence from seedStart:seedEnd
@@ -98,9 +98,9 @@ int referencePos(int *refPos, Interval *interval, int matchLength, FM *fm, int s
     * @param start: start of substring
     * @param end: end of string
  */
-void substring(char *res, char* string, int start, int end);
+void substring(char *result, char* string, int start, int end);
 
-/* returns our seed skip interval */
+/* returns our seed skip interval, and intuitively, our seed length */
 int seedSkip(int L);
 
 /* min and max */

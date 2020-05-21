@@ -17,6 +17,14 @@ int main(int argc, char **argv) {
     char *reads = argv[3];
     char *alignOut = argv[4];
 
+    /* [./fmmap default] executes with default inputs */
+    if (strcmp(argv[1], "default") == 0) {
+        ref_seq = "./ref-small.fa";
+        indexOut = "./index_out.txt";
+        reads = "./reads-small.fa";
+        alignOut = "";
+    } 
+
     /* our FM-Index struct */
     FM *fm = malloc(sizeof(FM));
 
@@ -87,6 +95,10 @@ int fmIndex(FM *fm, char *reference, char *output) {
             exit(1);
         }
         write(fm, f, length);
+        printf("You can find the serialized FM-Index for \"%s\" in: ", reference);
+        printf("\033[1;31m");
+        printf("%s\n", output);
+        printf("\033[0m");
     } else {
         printf("> Sequences over 50 in length are not written to file.\n\n");
         printf("> Your sequence length: %d\n\n", length);
@@ -209,7 +221,7 @@ void getInterval(Interval *interval, int *matchLength, FM *fm, char* seed) {
             break; // break loop, we have our interval!
         }
 
-        /* free substring created from substring() method */
+        /* free subSuffix substring memory */
         free(subSuffix);
     }
 
@@ -240,11 +252,11 @@ int referencePos(int *refPos, Interval *interval, int matchLength, FM *fm, int s
 }
 
 /* return substring of string from [start, end) */
-void substring(char* res, char* string, int start, int end) {
+void substring(char* result, char* string, int start, int end) {
     char *temp = string + start;
     int n = end - start;
-    res = strncpy(res, temp, n);
-    res[n] = '\0';
+    result = strncpy(result, temp, n);
+    result[n] = '\0';
 }
 
 /* seed skip */
@@ -403,7 +415,7 @@ void write(FM *fm, FILE *f, int length) {
     }
 
     /* suffixes */
-    fprintf(f, "suffixes\n");
+    fprintf(f, "Suffixes\n");
     for (int i = 0; i < length; i++) {
         int offset = fm->suffixArray[i];
         char *suffix = (fm->seq + offset);

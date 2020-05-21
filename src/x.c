@@ -10,19 +10,9 @@ void change(int *a);
 void susbtring(char *res, char* string, int start, int end);
 int intArray(int *a, int x, int y);
 
-int main() {
+int main(int argc, char **argv) {
 
-    for (int i = 0; i < 5; i++) {
-        for (int j = 5; j < 10; j++) {
-            if ( j == 7) {
-                break;
-            } else {
-                printf("j: %d\n", j);
-            }
-        }
-
-        printf("i: %d\n", i);
-    }
+    printf("%s\n", argv[1]);
 
     return 0;
 
