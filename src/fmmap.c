@@ -133,6 +133,10 @@ int align(FM *fm, char *reads, char *output) {
             substring(seed, seq, seedStart, seedEnd);
             getInterval(interval, &matchLength, fm, seed);
 
+            printf("> %s\n", name);
+            printf("seed: %s\n", seed);
+            printf("Interval (%d, %d]\n\n", interval->start, interval->end);
+
 
             /* free memory */
             free(seed);
