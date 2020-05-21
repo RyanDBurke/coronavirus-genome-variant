@@ -8,10 +8,24 @@ to provide for efficient seed-searching to discover variants in the COVID-19 gen
 ## 
 
 ### <ins>Execution</ins>
+
+#### Default Execution
 ```
 $ cd src/
 $ make
-$ ./fmmap ref_seq <index output file> reads <align output file>
+$ ./fmmap default
+```
+#### Example Execution
+```
+$ cd src/
+$ make
+$ ./fmmap ref-CoV19.fa index_out.txt reads.fa.gz alignments.sam
+```
+#### General Execution
+```
+$ cd src/
+$ make
+$ ./fmmap <reference-sequence>.fa <index output file> <reads>.fa <align output file>.sam
 ```
 
 ##
