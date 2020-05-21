@@ -8,21 +8,34 @@
 void test(int x);
 void change(int *a);
 void susbtring(char *res, char* string, int start, int end);
+int intArray(int *a, int x, int y);
 
 int main() {
 
-    char *string = "ryanryanryanryan";
-    char *sub = malloc(strlen(string) + 1);
-    susbtring(sub, string, 1, 7);
-    printf("%s\n", sub);
-    int l = strlen(sub);
-    printf("%d\n", l);
-    
+    for (int i = 0; i < 5; i++) {
+        for (int j = 5; j < 10; j++) {
+            if ( j == 7) {
+                break;
+            } else {
+                printf("j: %d\n", j);
+            }
+        }
 
-    free(sub);
+        printf("i: %d\n", i);
+    }
 
     return 0;
 
+}
+
+int intArray(int *a, int x, int y) {
+
+    int index = 0;
+    for (int i = x; i < y; i++) {
+        a[index] = i;
+        index++;
+    }
+    return index;
 }
 
 /* [start, end) */

@@ -133,12 +133,27 @@ int align(FM *fm, char *reads, char *output) {
             substring(seed, seq, seedStart, seedEnd);
             getInterval(interval, &matchLength, fm, seed);
 
+            /*
+            printf("skip: %d\n", skip);
             printf("> %s\n", name);
             printf("seed: %s\n", seed);
             printf("Interval (%d, %d]\n\n", interval->start, interval->end);
+            */
 
+            /* if there wasn't a match, break out of this seed */
+            if (matchLength == 0) {
+                break;
+            }
+
+            /* reference position */
+            int *refPos = malloc((interval->end - interval->start));
+            int refPosLength = referencePos(refPos, interval, matchLength, fm, seedEnd);
+
+            /* fitting alignment */
+            
 
             /* free memory */
+            free(refPos);
             free(seed);
             free(interval);
         }
@@ -198,12 +213,30 @@ void getInterval(Interval *interval, int *matchLength, FM *fm, char* seed) {
         free(subSuffix);
     }
 
-    /* matchLength = 0 if no match found, but = strlen(seed) */
+    /* matchLength = 0 if no match found, otherwise matchLength = strlen(seed) */
     if ((interval->start == -1) && (interval->end == -1)) {
         *matchLength = 0;
     } else {
         *matchLength = strlen(seed);
     }
+}
+
+/* returns reference positions of current seed */
+int referencePos(int *refPos, Interval *interval, int matchLength, FM *fm, int seedEnd) {
+
+    /* interval: [start, end) */
+    int start = interval->start;
+    int end = interval->end;
+
+    /* find reference positions in reference genome */
+    int refPosLength = 0;
+    for (int i = start; i < end; i++) {
+        int pos = (fm->suffixArray[i]) - (seedEnd - matchLength);
+        refPos[refPosLength] = pos;
+    }
+
+    /* we're returning the length of refPos int-array */
+    return refPosLength;
 }
 
 /* return substring of string from [start, end) */
@@ -366,6 +399,19 @@ void write(FM *fm, FILE *f, int length) {
             lineCount = 0;
         } else {
             fprintf(f, "%d, ", fm->suffixArray[i]);
+        }
+    }
+
+    /* suffixes */
+    fprintf(f, "suffixes\n");
+    for (int i = 0; i < length; i++) {
+        int offset = fm->suffixArray[i];
+        char *suffix = (fm->seq + offset);
+
+        if (i == length - 1) {
+            fprintf(f, "%d:\t %s\n\n", i, suffix);
+        } else {
+            fprintf(f, "%d:\t %s\n", i, suffix);
         }
     }
 

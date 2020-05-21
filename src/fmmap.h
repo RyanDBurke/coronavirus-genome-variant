@@ -26,6 +26,7 @@ typedef struct fm {
 typedef struct singleAlignment {
     char    *alignment;
     int     score;
+    int     pos;
 } Alignment;
 
 /* tuple for interval [start, end) */
@@ -81,6 +82,15 @@ int align(FM *fm, char *reads, char *output);
     * @param partialSeq: substring of our current read sequence from seedStart:seedEnd
  */
 void getInterval(Interval *interval, int *matchLength, FM *fm, char* seed);
+
+/* returns refPos-array length and reference positions to its parameter
+    * @param refPos: int-array of all reference positions
+    * @param interval: interval where seed matched reference genome
+    * @param matchLength: length of string matched to seed
+    * @param fm: fm-index
+    * @param seedEnd: index where current seed ends
+ */
+int referencePos(int *refPos, Interval *interval, int matchLength, FM *fm, int seedEnd);
 
 /* return substring from [start, end)
     * @param res: output for substring
