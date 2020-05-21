@@ -12,7 +12,16 @@ int intArray(int *a, int x, int y);
 
 int main(int argc, char **argv) {
 
-    printf("%s\n", argv[1]);
+    int y = 10;
+    int x = 4;
+    int *a = malloc(y - x);
+    int length = intArray(a, x, y);
+
+    for (int i = 0; i < length; i++) {
+        printf("%d\n", a[i]);
+    }
+
+    free(a);
 
     return 0;
 

@@ -19,9 +19,9 @@ int main(int argc, char **argv) {
 
     /* [./fmmap default] executes with default inputs */
     if (strcmp(argv[1], "default") == 0) {
-        ref_seq = "./ref-small.fa";
-        indexOut = "./index_out.txt";
-        reads = "./reads-small.fa";
+        ref_seq = "ref-small.fa";
+        indexOut = "index_out.txt";
+        reads = "reads-small.fa";
         alignOut = "";
     } 
 
@@ -132,7 +132,7 @@ int align(FM *fm, char *reads, char *output) {
         double best_score = ninf;
         int seedPos = 0;
         int skip = seedSkip(length);
-        Alignment A[length]; // is length the correct array size here?
+        Alignment alignments[length]; // is length the correct array size here?
 
         /* for each (read-length / 5.0) seed (20bp seed in our case, since we have 100bp reads) */
         for (int seedStart = 0; seedStart < length; seedStart += skip) {
@@ -145,13 +145,6 @@ int align(FM *fm, char *reads, char *output) {
             substring(seed, seq, seedStart, seedEnd);
             getInterval(interval, &matchLength, fm, seed);
 
-            /*
-            printf("skip: %d\n", skip);
-            printf("> %s\n", name);
-            printf("seed: %s\n", seed);
-            printf("Interval (%d, %d]\n\n", interval->start, interval->end);
-            */
-
             /* if there wasn't a match, break out of this seed */
             if (matchLength == 0) {
                 break;
@@ -161,10 +154,28 @@ int align(FM *fm, char *reads, char *output) {
             int *refPos = malloc((interval->end - interval->start));
             int refPosLength = referencePos(refPos, interval, matchLength, fm, seedEnd);
 
-            /* fitting alignment */
+            /*
+            printf("skip: %d\n", skip);
+            printf("> %s\n", name);
+            printf("seed: %s\n", seed);
+            printf("Interval (%d, %d]\n", interval->start, interval->end);
+            printf("reference positions\n");
+            for (int i = 0; i < refPosLength; i++) {
+                if (i == refPosLength - 1) {
+                    printf("refPos: %d\n\n", refPos[i]);
+                } else {
+                    printf("refPos: %d\n", refPos[i]);
+                }
+            }
+            */
+            
 
+            /* fitting alignment, add it to alignments array  */
+            Alignment *A = malloc(sizeof(Alignment));
+            alignment(A, seq, fm->seq, refPos, gap);
 
             /* free memory */
+            free(A);
             free(refPos);
             free(seed);
             free(interval);
@@ -245,10 +256,21 @@ int referencePos(int *refPos, Interval *interval, int matchLength, FM *fm, int s
     for (int i = start; i < end; i++) {
         int pos = (fm->suffixArray[i]) - (seedEnd - matchLength);
         refPos[refPosLength] = pos;
+        refPosLength++;
     }
 
     /* we're returning the length of refPos int-array */
     return refPosLength;
+}
+
+/* return a single alignment struct to output parameter A */
+void alignment(Alignment *A, char *read, char *ref, int *refPos, int gap) {
+
+    /* x and y-axis strings we will align */
+    char *x;
+    char *y;
+
+    /* perform alignment! */
 }
 
 /* return substring of string from [start, end) */

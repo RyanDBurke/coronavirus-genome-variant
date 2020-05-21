@@ -24,7 +24,8 @@ typedef struct fm {
 
 /* struct for an alignment and its score */
 typedef struct singleAlignment {
-    char    *alignment;
+    char    *alignmentX; // because we would need two, correct?
+    char    *alignmentY;
     int     score;
     int     pos;
 } Alignment;
@@ -91,6 +92,15 @@ void getInterval(Interval *interval, int *matchLength, FM *fm, char* seed);
     * @param seedEnd: index where current seed ends
  */
 int referencePos(int *refPos, Interval *interval, int matchLength, FM *fm, int seedEnd);
+
+/* return a single alignment struct to output parameter A
+    * @param A: a single alignment struct, containing updated values
+    * @param read: our current read-sequence
+    * @param ref: our reference genome sequence
+    * @param refPos: int-array of all reference positions in our reference genome
+    * @param gap: our gap penalty
+ */ 
+void alignment(Alignment *A, char *read, char *ref, int *refPos, int gap);
 
 /* return substring from [start, end)
     * @param res: output for substring
