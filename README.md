@@ -34,12 +34,12 @@ $ ./fmmap <reference-sequence>.fa <index output file> <reads>.fa <align output f
     BWT
     ├── README                   
     └── src
-        ├── Makefile                    (build executables)
-        ├── fmmap.c                     (builds our FM-Index and Aligner)
-        ├── fmmap.h                     (header)
-        ├── ref_CoV19.fa                (nCov-19 Genome)
-        ├── reads.fa.gz                 (simulated coronavirus variant reads)
-        └── index_out                   (output of FM-Index built)   
+        ├── Makefile                    # build executables
+        ├── fmmap.c                     # builds our FM-Index and Aligner
+        ├── fmmap.h                     # header
+        ├── ref_CoV19.fa                # nCov-19 Genome
+        ├── reads.fa.gz                 # simulated coronavirus variant reads
+        └── index_out                   # output of FM-Index built)  
 ##
 
 ### <ins>Auxiliary Links</ins>
