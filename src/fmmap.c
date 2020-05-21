@@ -150,7 +150,7 @@ int align(FM *fm, char *reads, char *output) {
             int refPosLength = referencePos(refPos, interval, matchLength, fm, seedEnd);
 
             /* fitting alignment */
-            
+
 
             /* free memory */
             free(refPos);
@@ -172,7 +172,7 @@ int align(FM *fm, char *reads, char *output) {
 /* AUX FUNTIONS FOR ALIGN */
 /**************************/
 
-/* preforms backwards search and return a interval and matchLength */
+/* preforms backwards search and return an interval and matchLength */
 void getInterval(Interval *interval, int *matchLength, FM *fm, char* seed) {
 
     /* reset interval to -1 */
