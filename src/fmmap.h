@@ -98,9 +98,10 @@ int referencePos(int *refPos, Interval *interval, int matchLength, FM *fm, int s
     * @param read: our current read-sequence
     * @param ref: our reference genome sequence
     * @param refPos: int-array of all reference positions in our reference genome
+    * @param refPosLength: length of refPos int-array
     * @param gap: our gap penalty
  */ 
-void alignment(Alignment *A, char *read, char *ref, int *refPos, int gap);
+void alignment(Alignment *A, char *read, char *ref, int *refPos, int refPosLength, int gap);
 
 /* return substring from [start, end)
     * @param res: output for substring

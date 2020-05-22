@@ -91,7 +91,10 @@ int fmIndex(FM *fm, char *reference, char *output) {
     if (length <= 50) {
         f = fopen(output, "w");
         if (f == NULL) {
-            printf("error opening file.\n");
+            printf("error opening file: ");
+            printf("\033[1;31m");
+            printf("%s\n", output);
+            printf("\033[0m");
             exit(1);
         }
         write(fm, f, length);
@@ -172,7 +175,7 @@ int align(FM *fm, char *reads, char *output) {
 
             /* fitting alignment, add it to alignments array  */
             Alignment *A = malloc(sizeof(Alignment));
-            alignment(A, seq, fm->seq, refPos, gap);
+            alignment(A, seq, fm->seq, refPos, refPosLength, gap);
 
             /* free memory */
             free(A);
@@ -264,13 +267,39 @@ int referencePos(int *refPos, Interval *interval, int matchLength, FM *fm, int s
 }
 
 /* return a single alignment struct to output parameter A */
-void alignment(Alignment *A, char *read, char *ref, int *refPos, int gap) {
+void alignment(Alignment *A, char *read, char *ref, int *refPos, int refPosLength, int gap) {
 
-    /* x and y-axis strings we will align */
-    char *x;
-    char *y;
+    /* X-axis is our corona reference genome slice */
+    /* Y-axis is our read we wish to align to our reference */
 
-    /* perform alignment! */
+    /* for each reference positions in our reference genome */
+    for (int pos = 0; i < refPosLength; i++) {
+
+        /* x and y-axis strings we will align */
+        char *x = malloc(strlen(read) + 10 + 1); // len(read) + (2 * gap) + null terminator = 111
+                                                 // (100)     + (10)      + 1               = 111
+        /* slice out reference genome with 5-gap on each side (110 total length) */
+        /* we use max and min here to avoid going below 0 or above length in index */
+        /* given that, our slice from reference genome is: 105 <= length <= 110 */
+        substring(x, ref, max(refPos[pos] - 5, 0), min(refPos[pos] + strlen(read) + 5, strlen(ref)));
+
+        /* setting y-axis is trivial */
+        char *y = read;
+
+        /* n and m are lengths of our current sliced-genome and read */
+        int n = strlen(x); /* 105 <= length <= 110 */
+        int m = strlen(read); /* length = 100 */
+
+        /* from here we need to build our OPT-matrix using dynamic programming
+            * build OPT-matrix
+            * store edit-distance between x and y at OPT(n, m)
+            * backtrace to find alignment
+            * store alignment in A (we may need another alignment array here?)
+         */
+
+        /* free variables */
+        free(x);
+    }
 }
 
 /* return substring of string from [start, end) */
