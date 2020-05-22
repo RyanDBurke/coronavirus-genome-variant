@@ -8,6 +8,11 @@ A read-alignment tool that utilizes the seed-and-extend paradigm, FM-Index, suff
 
 ## 
 
+### <ins>Clone</ins>
+```
+git clone https://github.com/RyanDBurke/coronavirus-genome-variant.git
+```
+
 ### <ins>Execution</ins>
 
 #### Default Execution
