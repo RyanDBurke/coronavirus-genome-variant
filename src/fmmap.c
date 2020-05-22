@@ -17,8 +17,8 @@ int main(int argc, char **argv) {
     char *reads = argv[3];
     char *alignOut = argv[4];
 
-    /* [./fmmap default] executes with default inputs */
-    if (strcmp(argv[1], "default") == 0) {
+    /* [./fmmap default] executes with small default inputs */
+    if (strcmp(lower(argv[1]), "default") == 0) {
         ref_seq = "ref-small.fa";
         indexOut = "index_out.txt";
         reads = "reads-small.fa";
@@ -135,7 +135,7 @@ int align(FM *fm, char *reads, char *output) {
         double best_score = ninf;
         int seedPos = 0;
         int skip = seedSkip(length);
-        Alignment alignments[length]; // is length the correct array size here?
+        Alignment *alignments = malloc(sizeof(Alignment) * length); // is length the correct array size here?
 
         /* for each (read-length / 5.0) seed (20bp seed in our case, since we have 100bp reads) */
         for (int seedStart = 0; seedStart < length; seedStart += skip) {
@@ -174,15 +174,16 @@ int align(FM *fm, char *reads, char *output) {
             
 
             /* fitting alignment, add it to alignments array  */
-            Alignment *A = malloc(sizeof(Alignment));
-            alignment(A, seq, fm->seq, refPos, refPosLength, gap);
+            alignment(alignments, seq, fm->seq, refPos, refPosLength, gap);
 
             /* free memory */
-            free(A);
             free(refPos);
             free(seed);
             free(interval);
+            free(alignments);
         }
+
+        /* for each alignment in alignments, write to .sam file */
 
         free(seq);
         free(name);
@@ -267,13 +268,16 @@ int referencePos(int *refPos, Interval *interval, int matchLength, FM *fm, int s
 }
 
 /* return a single alignment struct to output parameter A */
-void alignment(Alignment *A, char *read, char *ref, int *refPos, int refPosLength, int gap) {
+void alignment(Alignment *alignments, char *read, char *ref, int *refPos, int refPosLength, int gap) {
 
     /* X-axis is our corona reference genome slice */
     /* Y-axis is our read we wish to align to our reference */
 
     /* for each reference positions in our reference genome */
     for (int pos = 0; pos < refPosLength; pos++) {
+
+        /* our current alignment we may or may not add to *alignments */
+        Alignment *currentAlignment = malloc(sizeof(Alignment)); // need to free this somewhere
 
         /* x and y-axis strings we will align */
         char *x = malloc(strlen(read) + 10 + 1); // len(read) + (2 * gap) + null terminator = 111
@@ -288,8 +292,8 @@ void alignment(Alignment *A, char *read, char *ref, int *refPos, int refPosLengt
         char *y = read;
 
         /* n and m are lengths of our current sliced-genome and read */
-        int n = strlen(x); /* 105 <= length <= 110 */
-        int m = strlen(read); /* length = 100 */
+        int n = strlen(x) + 1; /* 105 <= length <= 110 */
+        int m = strlen(read) + 1; /* length = 100 */
 
         /* from here we need to build our OPT-matrix using dynamic programming
             * build OPT-matrix
@@ -299,8 +303,53 @@ void alignment(Alignment *A, char *read, char *ref, int *refPos, int refPosLengt
             * We should make a recursive method here to fill in our OPT-matrix
          */
 
+        /* our OPT matrix containing edit-distance between x and y */
+        int OPT[MAXROW][MAXCOL];
+
+        /* our edit-distance */
+        int edit = editDistance(OPT, x, y, n, m, gap);
+
+        /* calculate edit distance between x and y */
+
         /* free variables */
         free(x);
+    }
+}
+
+/* builds OPT-matrix, and returns OPT[n][m] -- which is the edit distance between x and y */
+int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int gap) {
+
+    /* add our initial gap penalties to the first column of each row */
+    for (int i = 0; i < n; i++) {OPT[i][0] = 0;}
+
+    /* add our initial gap penalties to the first row of each column */
+    for (int j = 0; j < m; j++) {OPT[0][j] = 0;}
+
+    for (int i = 1; i <= n; i++) {
+        for (int j = 1; j <= m; j++) {
+
+            /* fil matrix entry */
+            OPT[i][j] = maxAlign(
+                    (score(x[i - 1], y[j - 1], gap) + OPT[i - 1][j - 1]),
+                    (gap + OPT[i - 1][j]),
+                    (gap + OPT[i][j - 1])
+                );
+        }
+    }
+
+    return OPT[n][m];
+}
+
+/* return score between two characters */
+int score(char a, char b, int gap) {
+    if (a == b) {
+        return 0;
+    } else if (a != b) {
+        return -1;
+    } else if (a == '-' || b == '-') {
+        return gap;
+    } else {
+        return 0;
     }
 }
 
@@ -326,6 +375,11 @@ int min(int a, int b) {
 /* max */
 int max(int a, int b) {
     return (a > b) ? a : b;
+}
+
+/* max function needed to fill OPT-matrix */
+int maxAlign(int a, int b, int c) {
+    return max(a, max(b, c));
 }
 
 /*****************************/
@@ -630,4 +684,18 @@ CloseFASTA(FASTAFILE *ffp)
 {
   fclose(ffp->fp);
   free(ffp);
+}
+
+/********/
+/* MISC */
+/********/
+
+/* lowercase of a string */
+char* lower(char* s) {
+    
+    for (int i = 0; i < strlen(s); i++) {
+        s[i] = tolower(s[i]);
+    }
+
+    return s;
 }

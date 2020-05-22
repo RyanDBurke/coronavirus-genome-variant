@@ -8,6 +8,8 @@
 #include <math.h>
 
 #define FASTA_MAXLINE 512	/* Requires FASTA file lines to be <512 characters */
+#define MAXROW 200
+#define MAXCOL 200
 
 /* struct for FM-Index */
 typedef struct fm {
@@ -96,14 +98,30 @@ void getInterval(Interval *interval, int *matchLength, FM *fm, char* seed);
 int referencePos(int *refPos, Interval *interval, int matchLength, FM *fm, int seedEnd);
 
 /* return a single alignment struct to output parameter A
-    * @param A: a single alignment struct, containing updated values
+    * @param A: an array of Alignment structs
     * @param read: our current read-sequence
     * @param ref: our reference genome sequence
     * @param refPos: int-array of all reference positions in our reference genome
     * @param refPosLength: length of refPos int-array
     * @param gap: our gap penalty
  */ 
-void alignment(Alignment *A, char *read, char *ref, int *refPos, int refPosLength, int gap);
+void alignment(Alignment *alignments, char *read, char *ref, int *refPos, int refPosLength, int gap);
+
+/* builds OPT-matrix, and returns OPT[n][m] -- which is the edit distance between x and y
+    * @param OPT: our OPT-matrix
+    * @param x: our slice from the reference genome
+    * @param y: our read
+    * @param n, m: lengths of strings x and y. Intuitively, also our x/y-axis
+    * @param gap: our gap penalty
+ */
+int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int gap);
+
+/* return score between two characters
+    * @param a: a character in x-axis string (reference genome)
+    * @param b: a character in y-axis string (read)
+    * @param gap: our gap penalty
+ */
+int score(char a, char b, int gap);
 
 /* return substring from [start, end)
     * @param res: output for substring
@@ -119,6 +137,7 @@ int seedSkip(int L);
 /* min and max */
 int min(int a, int b);
 int max(int a, int b);
+int maxAlign(int a, int b, int c);
 
 /*****************************/
 /* AUX FUNTIONS FOR FM-INDEX */
@@ -180,3 +199,10 @@ void destroy(FM *fm);
 extern FASTAFILE *OpenFASTA(char *seqfile);
 extern int        ReadFASTA(FASTAFILE *fp, char **ret_seq, char **ret_name, int *ret_L);
 extern void       CloseFASTA(FASTAFILE *ffp);
+
+
+/********/
+/* MISC */
+/********/
+
+char* lower(char* s);
