@@ -52,6 +52,7 @@ $ ./fmmap <reference-sequence>.fa <index output file> <reads>.fa <align output f
 
 ### <ins> Future Goals </ins>
 * [Compressed suffix array](https://www.cs.cmu.edu/~dga/csa.pdf), for more efficient look-ups
+* Fast-rank calculations on burrows-wheeler transform
 
 ## 
 Written for my Bioinformatic Algorithms, Databases, and Tools course
