@@ -273,7 +273,7 @@ void alignment(Alignment *A, char *read, char *ref, int *refPos, int refPosLengt
     /* Y-axis is our read we wish to align to our reference */
 
     /* for each reference positions in our reference genome */
-    for (int pos = 0; i < refPosLength; i++) {
+    for (int pos = 0; pos < refPosLength; pos++) {
 
         /* x and y-axis strings we will align */
         char *x = malloc(strlen(read) + 10 + 1); // len(read) + (2 * gap) + null terminator = 111
