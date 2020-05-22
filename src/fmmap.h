@@ -116,6 +116,17 @@ void alignment(Alignment *alignments, char *read, char *ref, int *refPos, int re
  */
 int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int gap);
 
+/* returns int-array of backtrace directions
+    * 0: diagonal
+    * 1: left
+    * 2: down
+    * EXAMPLE --> [0, 1, 0, 2] = diagonal, left, diagonal, then down
+    
+    * @param OPT: our OPT-matrix
+    * @param n, m: lengths of strings x and y. Intuitively, also our x/y-axis
+ */
+int *backtrace(int OPT[MAXROW][MAXCOL], int n, int m);
+
 /* return score between two characters
     * @param a: a character in x-axis string (reference genome)
     * @param b: a character in y-axis string (read)

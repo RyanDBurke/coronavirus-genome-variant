@@ -185,6 +185,8 @@ int align(FM *fm, char *reads, char *output) {
 
         /* for each alignment in alignments, write to .sam file */
 
+        /* free each alignment, then free alignments-array */
+
         free(seq);
         free(name);
     }
@@ -273,6 +275,8 @@ void alignment(Alignment *alignments, char *read, char *ref, int *refPos, int re
     /* X-axis is our corona reference genome slice */
     /* Y-axis is our read we wish to align to our reference */
 
+    int alignmentIndex = 0;
+
     /* for each reference positions in our reference genome */
     for (int pos = 0; pos < refPosLength; pos++) {
 
@@ -281,7 +285,7 @@ void alignment(Alignment *alignments, char *read, char *ref, int *refPos, int re
 
         /* x and y-axis strings we will align */
         char *x = malloc(strlen(read) + 10 + 1); // len(read) + (2 * gap) + null terminator = 111
-                                                 // (100)     + (10)      + 1               = 111
+                                                 // (100)     + (10)      + (1)             = 111
 
         /* slice out reference genome with 5-gap on each side (110 total length) */
         /* we use max and min here to avoid going below 0 or above length in index */
@@ -306,10 +310,22 @@ void alignment(Alignment *alignments, char *read, char *ref, int *refPos, int re
         /* our OPT matrix containing edit-distance between x and y */
         int OPT[MAXROW][MAXCOL];
 
-        /* our edit-distance */
+        /* our edit-distance between strings x and y */
         int edit = editDistance(OPT, x, y, n, m, gap);
 
-        /* calculate edit distance between x and y */
+        /* backtrace OPT-matrix to find alignment */
+        /* trace is an int-array denoting the path taken */
+        int *trace = backtrace(OPT, n, m);
+
+        /* build alignment from backtrace */
+
+        /* set current alignment fields */
+        currentAlignment->score = edit;
+        currentAlignment->pos = pos;
+        // currentAlignment->alignmentX;
+        // currentAlignment->alignmentY;
+
+        /* check to see if this is best score. If so, add to alignments */
 
         /* free variables */
         free(x);
@@ -340,9 +356,26 @@ int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int ga
     return OPT[n][m];
 }
 
+/* returns int-array of backtrace directions
+    * 0: diagonal
+    * 1: left
+    * 2: down
+ */
+int *backtrace(int OPT[MAXROW][MAXCOL], int n, int m) {
+
+    /* backtrace starts at max(OPT[j][m]), where 0 < j <= n */
+    /* so the optimal alignment in the last column -> we'll denote this as P */
+    /* THEN, start our backtrace from OPT[P][m]. If P = n, then just start from OPT[n][m] */
+
+    /* perform backtrace */
+    return NULL;
+}
+
 /* return score between two characters */
 int score(char a, char b, int gap) {
-    if (a == b) {
+    if (a == 'N' || b == 'N') { /* if you see 'N', assume it matches */
+        return 0;
+    } else if (a == b) {
         return 0;
     } else if (a != b) {
         return -1;

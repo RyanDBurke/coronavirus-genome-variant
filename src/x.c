@@ -5,8 +5,10 @@
 #include <stdbool.h>
 #include <math.h>
 
-const int row = 200;
-const int col = 200;
+#include "fmmap.h"
+
+//const int row = 200;
+//const int col = 200;
 
 // #include "fmmap.h"
 void test(int x);
@@ -15,8 +17,9 @@ void susbtring(char *res, char* string, int start, int end);
 int intArray(int *a, int x, int y);
 int maxAlign(int a, int b, int c);
 int score(char a, char b, int gap);
-int editDistance(int OPT[row][col], char *x, char *y, int n, int m, int gap);
+int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int gap);
 int minAlign(int a, int b, int c);
+void printMatrix(int matrix[MAXROW][MAXCOL], int n, int m);
 
 int main(int argc, char **argv) {
 
@@ -24,7 +27,7 @@ int main(int argc, char **argv) {
     char *y = "AACGTTGAC";
     int n = strlen(x) + 1;
     int m = strlen(y) + 1;
-    int matrix[row][col];
+    int matrix[MAXROW][MAXCOL];
     int gap = 2;
 
     /* our edit-distance */
@@ -32,12 +35,7 @@ int main(int argc, char **argv) {
 
     printf("edit distance: %d\n", edit);
 
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < m; j++) {
-            printf("%d\t", matrix[i][j]);
-        }
-        printf("\n");
-    }
+    printMatrix(matrix, n, m);
 
 
     return 0;
@@ -74,8 +72,17 @@ int score(char a, char b, int gap) {
     }
 }
 
+void printMatrix(int matrix[MAXROW][MAXCOL], int n, int m) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            printf("%d\t", matrix[i][j]);
+        }
+        printf("\n");
+    }
+}
+
 /* builds OPT-matrix, and returns OPT[n][m] -- which is the edit distance between x and y */
-int editDistance(int OPT[row][col], char *x, char *y, int n, int m, int gap) {
+int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int gap) {
 
     /* add our initial gap penalties to the first column of each row */
     for (int i = 0; i < n; i++) {
