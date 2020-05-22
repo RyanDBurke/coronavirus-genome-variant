@@ -1,4 +1,4 @@
-###### Unfinished 5/21/20.
+###### Unfinished 5/22/20 -- working on alignment and OPT-matrix using dynamic programming
 
 ## <ins>COVID-19 Genome Variant, Burrows-Wheeler Transform, and FM-Index </ins>
 
