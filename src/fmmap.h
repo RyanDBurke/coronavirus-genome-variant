@@ -19,6 +19,8 @@ typedef struct fm {
     char    *bwt;          // burrows-wheeler transform
     char    *F;            // (F)irst column of bwm
     char    *L;            // (L)ast column of bwm
+    int     *F_rank        // fast-rank calculation for (F)irst column
+    int     *L_rank        // fast-rank calculation for (L)ast column
     // occTable
 } FM;
 
