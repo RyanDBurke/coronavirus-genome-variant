@@ -278,6 +278,7 @@ void alignment(Alignment *A, char *read, char *ref, int *refPos, int refPosLengt
         /* x and y-axis strings we will align */
         char *x = malloc(strlen(read) + 10 + 1); // len(read) + (2 * gap) + null terminator = 111
                                                  // (100)     + (10)      + 1               = 111
+
         /* slice out reference genome with 5-gap on each side (110 total length) */
         /* we use max and min here to avoid going below 0 or above length in index */
         /* given that, our slice from reference genome is: 105 <= length <= 110 */
@@ -295,6 +296,7 @@ void alignment(Alignment *A, char *read, char *ref, int *refPos, int refPosLengt
             * store edit-distance between x and y at OPT(n, m)
             * backtrace to find alignment
             * store alignment in A (we may need another alignment array here?)
+            * We should make a recursive method here to fill in our OPT-matrix
          */
 
         /* free variables */
