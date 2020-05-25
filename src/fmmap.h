@@ -148,6 +148,7 @@ int seedSkip(int L);
 int min(int a, int b);
 int max(int a, int b);
 int maxAlign(int a, int b, int c);
+int minAlign(int a, int b, int c);
 
 /* destroy our alignment array */
 void destroyAlignment(Alignment *A);

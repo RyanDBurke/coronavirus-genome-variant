@@ -297,15 +297,7 @@ int alignment(Alignment alignments[], char *read, char *ref, int *refPos, int re
         int n = strlen(x) + 1; /* 105 <= length <= 110 */
         int m = strlen(read) + 1; /* length = 100 */
 
-        /* from here we need to build our OPT-matrix using dynamic programming
-            * build OPT-matrix
-            * store edit-distance between x and y at OPT(n, m)
-            * backtrace to find alignment
-            * store alignment in A (we may need another alignment array here?)
-            * We should make a recursive method here to fill in our OPT-matrix
-         */
-
-        /* our OPT matrix containing edit-distance between x and y */
+        /* our OPT-matrix containing edit-distance between x and y */
         int OPT[MAXROW][MAXCOL];
 
         /* our edit-distance between strings x and y */
@@ -318,16 +310,16 @@ int alignment(Alignment alignments[], char *read, char *ref, int *refPos, int re
             bestScore = score;
 
             /* we set this to zero to simulate "clearing" the array */
+            /* may cause problems when freeing */
             alignmentIndex = 0;
 
             /* backtrace OPT-matrix to find alignment and return CIGAR string */
             char *cigar = buildCigar(OPT, n, m, gap, x, y); // THIS NEEDS TO BE FREE'D
 
-            /* add to alignments-array */
+            /* add to alignments array */
             alignments[alignmentIndex].score = score;
-            alignments[alignmentIndex].pos = pos;
-            // currentAlignment->alignmentX;
-            // currentAlignment->alignmentY;
+            alignments[alignmentIndex].pos = pos; // not necessarily! https://piazza.com/class/k4x0z5awkga1s6?cid=228
+            alignments[alignmentIndex].cigar = cigar;
             alignmentIndex++;
 
         } else if (score == bestScore) {
@@ -336,11 +328,11 @@ int alignment(Alignment alignments[], char *read, char *ref, int *refPos, int re
             /* trace is an int-array denoting the path taken */
 
             /* backtrace OPT-matrix to find alignment and return CIGAR string */
-            char *cigar = buildCigar(OPT, n, m, gap, x, y);
+            char *cigar = buildCigar(OPT, n, m, gap, x, y); // THIS NEEDS TO BE FREE'D
             
             /* add to alignments array */
             alignments[alignmentIndex].score = score;
-            alignments[alignmentIndex].pos = pos;
+            alignments[alignmentIndex].pos = pos; // not necessarily! https://piazza.com/class/k4x0z5awkga1s6?cid=228
             alignments[alignmentIndex].cigar = cigar;
             alignmentIndex++;
         }
@@ -356,10 +348,15 @@ int alignment(Alignment alignments[], char *read, char *ref, int *refPos, int re
 int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int gap) {
 
     /* add our initial gap penalties to the first column of each row */
-    for (int i = 0; i < n; i++) {OPT[i][0] = 0;}
+    /* allow cost-free gap penalties */
+    for (int i = 0; i < n; i++) {
+            OPT[i][0] = 0;
+    }
 
     /* add our initial gap penalties to the first row of each column */
-    for (int j = 0; j < m; j++) {OPT[0][j] = 0;}
+    for (int j = 0; j < m; j++) {
+        OPT[0][j] = j * gap;
+    }
 
     for (int i = 1; i <= n; i++) {
         for (int j = 1; j <= m; j++) {
@@ -384,7 +381,7 @@ char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *
     /* THEN, start our backtrace from OPT[P][m]. If P = n, then just start from OPT[n][m] */
 
     /* perform backtrace */
-    return 0;
+    return "";
 }
 
 /* return score between two characters */

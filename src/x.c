@@ -24,13 +24,8 @@ void printMatrix(int matrix[MAXROW][MAXCOL], int n, int m);
 
 int main(int argc, char **argv) {
 
-
-    int a[3] = {1, 2, 3};
-    int L = sizeof(a) / sizeof(a[0]);
-    printf("L: %d\n", L);
-
-    char *x = "AAGGTATGAATC";
-    char *y = "AACGTTGAC";
+    char *x = "AAGGTATGAATCAA";
+    char *y = "AAGGTATGAATC";
     int n = strlen(x) + 1;
     int m = strlen(y) + 1;
     int matrix[MAXROW][MAXCOL];
@@ -42,8 +37,6 @@ int main(int argc, char **argv) {
 
     printMatrix(matrix, n, m);
 
-    // printf("(%d, %d): %d\n", 11, 9, matrix[11][9]);
-
     char *cigar = buildCigar(matrix, n, m, gap, x, y);
 
     printf("CIGAR: %s\n", cigar);
@@ -54,11 +47,7 @@ int main(int argc, char **argv) {
 
 }
 
-/* returns int-array of backtrace directions
-    * 0: diagonal
-    * 1: left
-    * 2: down
- */
+/* returns CIGAR string  */
 char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *y) {
 
     /* n and m are lengths, so we want < n and < m */
@@ -69,11 +58,12 @@ char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *
     int traceIndex = 0;
 
 
-    char *cigar = malloc(traceIndex + 1);
+    char *cigar = malloc(n * m);
     while (true) {
 
         /* we've reached matrix[0][0] */
-        if (n == 0 && m == 0) {
+        /* for fitting alignment it ends when we reach row = 0 */
+        if (n == 0 || m == 0) {
             break;
         }
 
@@ -81,13 +71,13 @@ char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *
         int diagonal = score(x[n - 1], y[m - 1], gap) + OPT[n - 1][m - 1];
         int down = gap + OPT[n][m - 1];
 
-        int min = minAlign(left, diagonal, down);
-        if (min == diagonal) {
+        int max = maxAlign(left, diagonal, down);
+        if (max == diagonal) {
             n = n - 1;
             m = m - 1;
             cigar[traceIndex] = 'M';
             traceIndex++;
-        } else if (min == left) {
+        } else if (max == left) {
             n = n - 1;
             cigar[traceIndex] = 'D';
             traceIndex++;
@@ -135,7 +125,7 @@ int score(char a, char b, int gap) {
     if (a == b) {
         return 0;
     } else if (a != b) {
-        return 1;
+        return -1;
     } else if (a == '-'  || b == '-') {
         return gap;
     } else {
@@ -157,7 +147,7 @@ int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int ga
 
     /* add our initial gap penalties to the first column of each row */
     for (int i = 0; i < n; i++) {
-        OPT[i][0] = i * gap;
+        OPT[i][0] = 0;
     }
 
     /* add our initial gap penalties to the first row of each column */
@@ -167,7 +157,7 @@ int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int ga
 
     for (int i = 1; i <= n; i++) {
         for (int j = 1; j <= m; j++) {
-            OPT[i][j] = minAlign(
+            OPT[i][j] = maxAlign(
                     (score(x[i - 1], y[j - 1], gap) + OPT[i - 1][j - 1]),
                     (gap + OPT[i - 1][j]),
                     (gap + OPT[i][j - 1])
