@@ -28,8 +28,7 @@ typedef struct fm {
 
 /* struct for an alignment and its score */
 typedef struct singleAlignment {
-    char    *alignmentX; // because we would need two, correct?
-    char    *alignmentY;
+    char    *cigar; // because we would need two, correct?
     int     score;
     int     pos;
 } Alignment;
@@ -97,15 +96,16 @@ void getInterval(Interval *interval, int *matchLength, FM *fm, char* seed);
  */
 int referencePos(int *refPos, Interval *interval, int matchLength, FM *fm, int seedEnd);
 
-/* return a single alignment struct to output parameter A
-    * @param A: an array of Alignment structs
+/* return a single alignment struct to output parameter A, and length of alignments-array
+    * @param alignments: an array of Alignment structs
     * @param read: our current read-sequence
     * @param ref: our reference genome sequence
     * @param refPos: int-array of all reference positions in our reference genome
     * @param refPosLength: length of refPos int-array
     * @param gap: our gap penalty
+    * @param bestScore: our current best score
  */ 
-void alignment(Alignment *alignments, char *read, char *ref, int *refPos, int refPosLength, int gap);
+int alignment(Alignment alignments[], char *read, char *ref, int *refPos, int refPosLength, int gap, double bestScore);
 
 /* builds OPT-matrix, and returns OPT[n][m] -- which is the edit distance between x and y
     * @param OPT: our OPT-matrix
@@ -116,16 +116,15 @@ void alignment(Alignment *alignments, char *read, char *ref, int *refPos, int re
  */
 int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int gap);
 
-/* returns int-array of backtrace directions
-    * 0: diagonal
-    * 1: left
-    * 2: down
-    * EXAMPLE --> [0, 1, 0, 2] = diagonal, left, diagonal, then down
+/* returns a CIGAR-string of our alignment
     
     * @param OPT: our OPT-matrix
     * @param n, m: lengths of strings x and y. Intuitively, also our x/y-axis
+    * @param gap: our gap penalty
+    * @param x: our slice from the reference genome
+    * @param y: our read
  */
-int *backtrace(int OPT[MAXROW][MAXCOL], int n, int m);
+char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *y);
 
 /* return score between two characters
     * @param a: a character in x-axis string (reference genome)
@@ -149,6 +148,9 @@ int seedSkip(int L);
 int min(int a, int b);
 int max(int a, int b);
 int maxAlign(int a, int b, int c);
+
+/* destroy our alignment array */
+void destroyAlignment(Alignment *A);
 
 /*****************************/
 /* AUX FUNTIONS FOR FM-INDEX */
@@ -216,4 +218,5 @@ extern void       CloseFASTA(FASTAFILE *ffp);
 /* MISC */
 /********/
 
+/* string to lowercase */
 char* lower(char* s);

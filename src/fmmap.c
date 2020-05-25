@@ -132,10 +132,10 @@ int align(FM *fm, char *reads, char *output) {
     ffp = OpenFASTA(reads);
     while (ReadFASTA(ffp, &seq, &name, &length)) {
 
-        double best_score = ninf;
+        double bestScore = ninf;
         int seedPos = 0;
         int skip = seedSkip(length);
-        Alignment *alignments = malloc(sizeof(Alignment) * length); // is length the correct array size here?
+        Alignment alignments[length]; // is length the correct array size here?
 
         /* for each (read-length / 5.0) seed (20bp seed in our case, since we have 100bp reads) */
         for (int seedStart = 0; seedStart < length; seedStart += skip) {
@@ -173,19 +173,19 @@ int align(FM *fm, char *reads, char *output) {
             */
             
 
-            /* fitting alignment, add it to alignments array  */
-            alignment(alignments, seq, fm->seq, refPos, refPosLength, gap);
+            /* fitting alignment: add it to alignments array and return that array length */
+            int alignmentLength = alignment(alignments, seq, fm->seq, refPos, refPosLength, gap, bestScore);
 
             /* free memory */
             free(refPos);
             free(seed);
             free(interval);
-            free(alignments);
         }
 
         /* for each alignment in alignments, write to .sam file */
 
         /* free each alignment, then free alignments-array */
+
 
         free(seq);
         free(name);
@@ -270,18 +270,16 @@ int referencePos(int *refPos, Interval *interval, int matchLength, FM *fm, int s
 }
 
 /* return a single alignment struct to output parameter A */
-void alignment(Alignment *alignments, char *read, char *ref, int *refPos, int refPosLength, int gap) {
+int alignment(Alignment alignments[], char *read, char *ref, int *refPos, int refPosLength, int gap, double bestScore) {
 
     /* X-axis is our corona reference genome slice */
     /* Y-axis is our read we wish to align to our reference */
 
+    /* index for our alignments-array */
     int alignmentIndex = 0;
 
     /* for each reference positions in our reference genome */
     for (int pos = 0; pos < refPosLength; pos++) {
-
-        /* our current alignment we may or may not add to *alignments */
-        Alignment *currentAlignment = malloc(sizeof(Alignment)); // need to free this somewhere
 
         /* x and y-axis strings we will align */
         char *x = malloc(strlen(read) + 10 + 1); // len(read) + (2 * gap) + null terminator = 111
@@ -311,25 +309,47 @@ void alignment(Alignment *alignments, char *read, char *ref, int *refPos, int re
         int OPT[MAXROW][MAXCOL];
 
         /* our edit-distance between strings x and y */
-        int edit = editDistance(OPT, x, y, n, m, gap);
+        int score = editDistance(OPT, x, y, n, m, gap);
 
-        /* backtrace OPT-matrix to find alignment */
-        /* trace is an int-array denoting the path taken */
-        int *trace = backtrace(OPT, n, m);
+        /* only create an alignment for those with >= best score */
+        if (score > bestScore) {
 
-        /* build alignment from backtrace */
+            /* update the best score */
+            bestScore = score;
 
-        /* set current alignment fields */
-        currentAlignment->score = edit;
-        currentAlignment->pos = pos;
-        // currentAlignment->alignmentX;
-        // currentAlignment->alignmentY;
+            /* we set this to zero to simulate "clearing" the array */
+            alignmentIndex = 0;
 
-        /* check to see if this is best score. If so, add to alignments */
+            /* backtrace OPT-matrix to find alignment and return CIGAR string */
+            char *cigar = buildCigar(OPT, n, m, gap, x, y); // THIS NEEDS TO BE FREE'D
+
+            /* add to alignments-array */
+            alignments[alignmentIndex].score = score;
+            alignments[alignmentIndex].pos = pos;
+            // currentAlignment->alignmentX;
+            // currentAlignment->alignmentY;
+            alignmentIndex++;
+
+        } else if (score == bestScore) {
+
+            /* backtrace OPT-matrix to find alignment */
+            /* trace is an int-array denoting the path taken */
+
+            /* backtrace OPT-matrix to find alignment and return CIGAR string */
+            char *cigar = buildCigar(OPT, n, m, gap, x, y);
+            
+            /* add to alignments array */
+            alignments[alignmentIndex].score = score;
+            alignments[alignmentIndex].pos = pos;
+            alignments[alignmentIndex].cigar = cigar;
+            alignmentIndex++;
+        }
 
         /* free variables */
         free(x);
     }
+
+    return alignmentIndex;
 }
 
 /* builds OPT-matrix, and returns OPT[n][m] -- which is the edit distance between x and y */
@@ -356,19 +376,15 @@ int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int ga
     return OPT[n][m];
 }
 
-/* returns int-array of backtrace directions
-    * 0: diagonal
-    * 1: left
-    * 2: down
- */
-int *backtrace(int OPT[MAXROW][MAXCOL], int n, int m) {
+/* returns CIGAR-string */
+char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *y) {
 
     /* backtrace starts at max(OPT[j][m]), where 0 < j <= n */
     /* so the optimal alignment in the last column -> we'll denote this as P */
     /* THEN, start our backtrace from OPT[P][m]. If P = n, then just start from OPT[n][m] */
 
     /* perform backtrace */
-    return NULL;
+    return 0;
 }
 
 /* return score between two characters */
@@ -413,6 +429,11 @@ int max(int a, int b) {
 /* max function needed to fill OPT-matrix */
 int maxAlign(int a, int b, int c) {
     return max(a, max(b, c));
+}
+
+/* destroy our alignment array */
+void destroyAlignment(Alignment *A) {
+    
 }
 
 /*****************************/

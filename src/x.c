@@ -7,11 +7,12 @@
 
 #include "fmmap.h"
 
-//const int row = 200;
-//const int col = 200;
+typedef struct E {
+    int score;
+    int direction;
+} Entry;
 
-// #include "fmmap.h"
-void test(int x);
+int test(int x);
 void change(int *a);
 void susbtring(char *res, char* string, int start, int end);
 int intArray(int *a, int x, int y);
@@ -23,23 +24,93 @@ void printMatrix(int matrix[MAXROW][MAXCOL], int n, int m);
 
 int main(int argc, char **argv) {
 
+
+    int a[3] = {1, 2, 3};
+    int L = sizeof(a) / sizeof(a[0]);
+    printf("L: %d\n", L);
+
     char *x = "AAGGTATGAATC";
     char *y = "AACGTTGAC";
     int n = strlen(x) + 1;
     int m = strlen(y) + 1;
     int matrix[MAXROW][MAXCOL];
-    int gap = 2;
-
-    /* our edit-distance */
+    int gap = 3;
+    
     int edit = editDistance(matrix, x, y, n, m, gap);
 
     printf("edit distance: %d\n", edit);
 
     printMatrix(matrix, n, m);
 
+    // printf("(%d, %d): %d\n", 11, 9, matrix[11][9]);
+
+    char *cigar = buildCigar(matrix, n, m, gap, x, y);
+
+    printf("CIGAR: %s\n", cigar);
+    
+    free(cigar);
 
     return 0;
 
+}
+
+/* returns int-array of backtrace directions
+    * 0: diagonal
+    * 1: left
+    * 2: down
+ */
+char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *y) {
+
+    /* n and m are lengths, so we want < n and < m */
+    n = n - 1;
+    m = m - 1;
+
+    /* result array we'll return */
+    int traceIndex = 0;
+
+
+    char *cigar = malloc(traceIndex + 1);
+    while (true) {
+
+        /* we've reached matrix[0][0] */
+        if (n == 0 && m == 0) {
+            break;
+        }
+
+        int left = gap + OPT[n - 1][m];
+        int diagonal = score(x[n - 1], y[m - 1], gap) + OPT[n - 1][m - 1];
+        int down = gap + OPT[n][m - 1];
+
+        int min = minAlign(left, diagonal, down);
+        if (min == diagonal) {
+            n = n - 1;
+            m = m - 1;
+            cigar[traceIndex] = 'M';
+            traceIndex++;
+        } else if (min == left) {
+            n = n - 1;
+            cigar[traceIndex] = 'D';
+            traceIndex++;
+        } else {
+            m = m - 1;
+            cigar[traceIndex] = 'I';
+            traceIndex++;
+        }
+
+    }
+
+
+    return cigar;
+}
+
+int test(int x) {
+    
+    int a = 11;
+    if (a > x) {
+        x = a;
+    }
+
+    return x;
 }
 
 int min(int a, int b) {
@@ -64,7 +135,7 @@ int score(char a, char b, int gap) {
     if (a == b) {
         return 0;
     } else if (a != b) {
-        return -1;
+        return 1;
     } else if (a == '-'  || b == '-') {
         return gap;
     } else {
@@ -86,17 +157,17 @@ int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int ga
 
     /* add our initial gap penalties to the first column of each row */
     for (int i = 0; i < n; i++) {
-        OPT[i][0] = 0;
+        OPT[i][0] = i * gap;
     }
 
     /* add our initial gap penalties to the first row of each column */
     for (int j = 0; j < m; j++) {
-        OPT[0][j] = 0;
+        OPT[0][j] = j * gap;
     }
 
     for (int i = 1; i <= n; i++) {
         for (int j = 1; j <= m; j++) {
-            OPT[i][j] = maxAlign(
+            OPT[i][j] = minAlign(
                     (score(x[i - 1], y[j - 1], gap) + OPT[i - 1][j - 1]),
                     (gap + OPT[i - 1][j]),
                     (gap + OPT[i][j - 1])
@@ -138,9 +209,4 @@ void susbtring(char *res, char* string, int start, int end) {
 
 void change(int *a) {
     *a = 10;
-}
-
-void test(int x) {
-    int h = x / 5.0;
-    printf("%d\n", h);
 }
