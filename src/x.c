@@ -20,7 +20,7 @@ int maxAlign(int a, int b, int c);
 int score(char a, char b, int gap);
 int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int gap);
 int minAlign(int a, int b, int c);
-void printMatrix(int matrix[MAXROW][MAXCOL], int n, int m);
+void printMatrix(int matrix[MAXROW][MAXCOL], int n, int m, char *x, char *y);
 
 int main(int argc, char **argv) {
 
@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
 
     printf("edit distance: %d\n", edit);
 
-    printMatrix(matrix, n, m);
+    printMatrix(matrix, n, m, x, y);
 
     char *cigar = buildCigar(matrix, n, m, gap, x, y);
 
@@ -133,9 +133,24 @@ int score(char a, char b, int gap) {
     }
 }
 
-void printMatrix(int matrix[MAXROW][MAXCOL], int n, int m) {
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < m; j++) {
+void printMatrix(int matrix[MAXROW][MAXCOL], int n, int m, char *x, char *y) {
+
+    for (int i = 1; i < m; i++) {
+        if (i == 0) {
+            printf("!!!\t\t\t");
+        } else {
+            printf("\t%c", y[i - 1]);
+        }
+    }
+
+    printf("\n\t");
+
+    for (int i = 0; i <= n; i++) {
+        if (i >= 1) {
+            printf("%c\t", x[i]);
+        }
+        
+        for (int j = 0; j <= m; j++) {
             printf("%d\t", matrix[i][j]);
         }
         printf("\n");
