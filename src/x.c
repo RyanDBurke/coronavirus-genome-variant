@@ -136,10 +136,10 @@ int score(char a, char b, int gap) {
 void printMatrix(int matrix[MAXROW][MAXCOL], int n, int m, char *x, char *y) {
 
     for (int i = 1; i < m; i++) {
-        if (i == 0) {
-            printf("!!!\t\t\t");
+        if (i < 2) {
+            printf("\t");
         } else {
-            printf("\t%c", y[i - 1]);
+            printf("\t%c", y[i - 2]);
         }
     }
 
