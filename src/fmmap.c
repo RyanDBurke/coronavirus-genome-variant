@@ -126,7 +126,7 @@ int align(FM *fm, char *reads, char *output) {
     int length;
 
     double ninf = -INFINITY;
-    int gap = 5;
+    int gap = -5;
 
     /* parse .fa file containing our n-amount of 100bp reads */
     ffp = OpenFASTA(reads);
@@ -157,10 +157,9 @@ int align(FM *fm, char *reads, char *output) {
             int *refPos = malloc((interval->end - interval->start));
             int refPosLength = referencePos(refPos, interval, matchLength, fm, seedEnd);
 
-            /*
-            printf("skip: %d\n", skip);
             printf("> %s\n", name);
             printf("seed: %s\n", seed);
+            printf("skip: %d\n", skip);
             printf("Interval (%d, %d]\n", interval->start, interval->end);
             printf("reference positions\n");
             for (int i = 0; i < refPosLength; i++) {
@@ -170,7 +169,7 @@ int align(FM *fm, char *reads, char *output) {
                     printf("refPos: %d\n", refPos[i]);
                 }
             }
-            */
+            
             
 
             /* fitting alignment: add it to alignments array and return that array length */
@@ -294,8 +293,8 @@ int alignment(Alignment alignments[], char *read, char *ref, int *refPos, int re
         char *y = read;
 
         /* n and m are lengths of our current sliced-genome and read */
-        int n = strlen(x) + 1; /* 105 <= length <= 110 */
-        int m = strlen(read) + 1; /* length = 100 */
+        int n = strlen(x); /* 105 <= length <= 110 */
+        int m = strlen(read); /* length = 100 */
 
         /* our OPT-matrix containing edit-distance between x and y */
         int OPT[MAXROW][MAXCOL];
@@ -322,10 +321,7 @@ int alignment(Alignment alignments[], char *read, char *ref, int *refPos, int re
             alignments[alignmentIndex].cigar = cigar;
             alignmentIndex++;
 
-        } else if (score == bestScore) {
-
-            /* backtrace OPT-matrix to find alignment */
-            /* trace is an int-array denoting the path taken */
+        } else if (score == bestScore) { /* if its equal we add it to alignments-array */
 
             /* backtrace OPT-matrix to find alignment and return CIGAR string */
             char *cigar = buildCigar(OPT, n, m, gap, x, y); // THIS NEEDS TO BE FREE'D
@@ -347,17 +343,21 @@ int alignment(Alignment alignments[], char *read, char *ref, int *refPos, int re
 /* builds OPT-matrix, and returns OPT[n][m] -- which is the edit distance between x and y */
 int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int gap) {
 
+    /* (0, 0) is always 0 */
+    OPT[0][0] = 0;
+
     /* add our initial gap penalties to the first column of each row */
     /* allow cost-free gap penalties */
-    for (int i = 0; i < n; i++) {
+    for (int i = 1; i <= n; i++) {
             OPT[i][0] = 0;
     }
 
     /* add our initial gap penalties to the first row of each column */
-    for (int j = 0; j < m; j++) {
+    for (int j = 1; j <= m; j++) {
         OPT[0][j] = j * gap;
     }
 
+    /* fill matrix */
     for (int i = 1; i <= n; i++) {
         for (int j = 1; j <= m; j++) {
 
@@ -376,12 +376,60 @@ int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int ga
 /* returns CIGAR-string */
 char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *y) {
 
-    /* backtrace starts at max(OPT[j][m]), where 0 < j <= n */
-    /* so the optimal alignment in the last column -> we'll denote this as P */
-    /* THEN, start our backtrace from OPT[P][m]. If P = n, then just start from OPT[n][m] */
+    /* find out where we start our backtrace, and set n */
+    int temp = n;
+    int maxScore = -1;
+    for (int i = 0; i <= temp; i++) {
+        if (OPT[i][m] >= maxScore) {
+            maxScore = OPT[i][m];
+            n = i;
+        }
+    }
 
-    /* perform backtrace */
-    return "";
+    /* result array we'll return */
+    int cigarIndex = 0;
+
+    char *cigar = malloc(n * m);
+    while (true) {
+
+
+        /* for fitting alignment it ends when we reach row = 0 */
+        /* in our case, when m = 0 */
+        if (m == 0) {
+            break;
+        }
+
+        /* find scores for neighboring entries */
+        int up = gap + OPT[n - 1][m];
+        int diagonal = score(x[n - 1], y[m - 1], gap) + OPT[n - 1][m - 1];
+        int left = gap + OPT[n][m - 1];
+
+        /* find max of those neighboring entries to find path*/
+        int maxA = maxAlign(up, diagonal, left);
+
+        /* build cigar string based on path () */
+        if (maxA == diagonal) {
+            n = n - 1;
+            m = m - 1;
+            cigar[cigarIndex] = 'M';
+            cigarIndex++;
+        } else if (maxA == left) {
+            m = m - 1;
+            cigar[cigarIndex] = 'I';
+            cigarIndex++;
+        } else if (maxA == up) {
+            n = max(n - 1, 0);
+            cigar[cigarIndex] = 'D';
+            cigarIndex++;
+        } else {
+            printf("Error in buildCigar()\n");
+            exit(1);
+        }
+
+    }
+
+    /* our complete cigar string */
+    return cigar;
 }
 
 /* return score between two characters */
@@ -429,27 +477,31 @@ int maxAlign(int a, int b, int c) {
 }
 
 /* print our OPT-matrix */
+/* not useful for large genomes */
 void printMatrix(int OPT[MAXROW][MAXCOL], int n, int m, char *x, char *y) {
 
-        /* print our y-axis string */
-        for (int i = 0; i < m + 1; i++) {
-        if (i < 2) {
+    /* Y-axis */
+    for (int i = 0; i <= m + 1; i++) {
+        if (i == 0) {
             printf("\t");
+        } else if (i == 1) {
+            printf("Y-axis\t");
         } else {
             printf("%c\t", y[i - 2]);
         }
     }
 
+    /* formatting */
     printf("\n");
 
-    /* print our x-axis string and the OPT-matrix entries */
-    for (int i = 0; i < n; i++) {     
+    /* print our X-axis string and the OPT-matrix entries */
+    for (int i = 0; i <= n; i++) {     
         if (i > 0) {
             printf("%c\t", x[i - 1]);
         } else {
-            printf("\t");
+            printf("X-axis\t");
         }
-        for (int j = 0; j < m; j++) {
+        for (int j = 0; j <= m; j++) {
             printf("%d\t", OPT[i][j]);
         }
         printf("\n");
