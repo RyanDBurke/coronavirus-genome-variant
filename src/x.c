@@ -24,10 +24,10 @@ void printMatrix(int matrix[MAXROW][MAXCOL], int n, int m, char *x, char *y);
 
 int main(int argc, char **argv) {
 
-    char *x = "AAGGTATGAATCAA";
-    char *y = "AAGGTATGAATC";
-    int n = strlen(x) + 1;
-    int m = strlen(y) + 1;
+    char *x = "AAGGTATGAATC"; // 12
+    char *y = "AACGTTGAC";   // 9
+    int n = strlen(x) + 1;      // 13
+    int m = strlen(y) + 1;      // 10
     int matrix[MAXROW][MAXCOL];
     int gap = 3;
     
@@ -77,13 +77,13 @@ char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *
             m = m - 1;
             cigar[traceIndex] = 'M';
             traceIndex++;
-        } else if (max == left) {
+        } else if (max == down) {
             n = n - 1;
-            cigar[traceIndex] = 'D';
+            cigar[traceIndex] = 'I';
             traceIndex++;
         } else {
             m = m - 1;
-            cigar[traceIndex] = 'I';
+            cigar[traceIndex] = 'D';
             traceIndex++;
         }
 
@@ -135,22 +135,23 @@ int score(char a, char b, int gap) {
 
 void printMatrix(int matrix[MAXROW][MAXCOL], int n, int m, char *x, char *y) {
 
-    for (int i = 1; i < m; i++) {
+    for (int i = 0; i < m + 1; i++) {
         if (i < 2) {
             printf("\t");
         } else {
-            printf("\t%c", y[i - 2]);
+            printf("%c\t", y[i - 2]);
         }
     }
 
-    printf("\n\t");
+    printf("\n");
 
-    for (int i = 0; i <= n; i++) {
-        if (i >= 1) {
-            printf("%c\t", x[i]);
+    for (int i = 0; i < n; i++) {     
+        if (i > 0) {
+            printf("%c\t", x[i - 1]);
+        } else {
+            printf("\t");
         }
-        
-        for (int j = 0; j <= m; j++) {
+        for (int j = 0; j < m; j++) {
             printf("%d\t", matrix[i][j]);
         }
         printf("\n");
@@ -160,27 +161,37 @@ void printMatrix(int matrix[MAXROW][MAXCOL], int n, int m, char *x, char *y) {
 /* builds OPT-matrix, and returns OPT[n][m] -- which is the edit distance between x and y */
 int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int gap) {
 
+    /* initial [0][0] is always 0 */
+    OPT[0][0] = 0;
+
     /* add our initial gap penalties to the first column of each row */
-    for (int i = 0; i < n; i++) {
+    /* cost-free ends */
+    for (int i = 1; i < n; i++) {
         OPT[i][0] = 0;
     }
 
     /* add our initial gap penalties to the first row of each column */
-    for (int j = 0; j < m; j++) {
+    for (int j = 1; j < m; j++) {
         OPT[0][j] = j * gap;
     }
 
-    for (int i = 1; i <= n; i++) {
-        for (int j = 1; j <= m; j++) {
+    /* fill matrix */
+    /* whether i make this <= or < it seems to work? Why? */
+    for (int i = 1; i < n; i++) {
+        for (int j = 1; j < m; j++) {
+
+            /* calculate score */
             OPT[i][j] = maxAlign(
                     (score(x[i - 1], y[j - 1], gap) + OPT[i - 1][j - 1]),
                     (gap + OPT[i - 1][j]),
                     (gap + OPT[i][j - 1])
-                ); /* calculate score */
+                );
         }
     }
 
-    return OPT[n][m];
+    printf("n: %d \n m: %d \n", n, m);
+    /* OPT is 0-indexed*/
+    return OPT[n - 1][m - 1];
 }
 
 /* lowercase of a string */
