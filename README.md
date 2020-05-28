@@ -15,22 +15,19 @@ git clone https://github.com/RyanDBurke/coronavirus-genome-variant.git
 
 ### <ins>Execution</ins>
 
-#### Default Execution
-    ###### *execution of program with small inputs*
+#### Default Execution (*execution of program with small inputs*)
 ```
 $ cd src/
 $ make
 $ ./fmmap default
 ```
-#### Example Execution
-###### execution of program with coronvirus genome and the covid-variant read-fragments
+#### Example Execution (*execution of program with coronvirus genome and the covid-variant read-fragments*)
 ```
 $ cd src/
 $ make
 $ ./fmmap covid
 ```
-#### General Execution
-###### execution of program with user input
+#### General Execution (*execution of program with user input*)
 ```
 $ cd src/
 $ make
