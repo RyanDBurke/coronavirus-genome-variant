@@ -19,6 +19,7 @@ git clone https://github.com/RyanDBurke/coronavirus-genome-variant.git
 
 ##### first, compile
 ```
+$ cd coronavirus-genome-variant
 $ cd src/
 $ make
 ```
