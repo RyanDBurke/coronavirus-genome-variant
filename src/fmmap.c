@@ -122,8 +122,6 @@ int fmIndex(FM *fm, char *reference, char *output) {
         printf("\033[1;31m");
         printf("fmmap.c\n");
         printf("\033[0m");
-
-
     }
 
     /* successful */
@@ -141,9 +139,16 @@ int align(FM *fm, char *reads, char *output) {
     double ninf = -INFINITY;
     int gap = -5;
 
+    /* open our output file (.sam) */
+    FILE *f;
+    f = fopen(output, "w");
+    f = fopen(output, "a");
+    fprintf(f, "@HD V:1.0\n");
+
     /* parse .fa file containing our n-amount of 100bp reads */
     ffp = OpenFASTA(reads);
     while (ReadFASTA(ffp, &seq, &name, &length)) {
+
 
         double bestScore = ninf;
         // int seedPos = 0;
@@ -185,9 +190,12 @@ int align(FM *fm, char *reads, char *output) {
                 }
             }
             */
+            
+            
 
             /* fitting alignment: add it to alignments array and return that array length */
             alignmentLength = alignment(alignments, seq, fm->seq, refPos, refPosLength, gap, bestScore);
+            
 
             /* free memory */
             free(refPos);
@@ -198,9 +206,13 @@ int align(FM *fm, char *reads, char *output) {
         /* for each alignment in alignments, write to .sam file */
         for (int a = 0; a < alignmentLength; a++) {
 
-            FILE *f;
-            f = fopen(output, "w");
+            // FILE *f;
+            // f = fopen(output, "w");
             if (f == NULL) {
+                printf("error opening file: ");
+                printf("\033[1;31m");
+                printf("%s\n", output);
+                printf("\033[0m");
                 exit(1);
             } else {
 
@@ -248,10 +260,7 @@ int align(FM *fm, char *reads, char *output) {
                 s->QUAL = malloc(2);
                 strcpy(s->QUAL, "*");
                 
-
-                fprintf(f, "SOME HEADER\n");
-                // fprintf(f, "@HD	VN:1.0	SO:unsorted\n");
-                // fprintf(f, "@SQ	SN:MN988713.1	LN:29882\n");
+                /* write SAM */
                 writeSAM(s, f);
                 destroySAM(s);
             }
@@ -259,10 +268,11 @@ int align(FM *fm, char *reads, char *output) {
 
         }      
         
-
         free(seq);
         free(name);
     }
+
+    fclose(f);
 
     printf("\n> You can find the SAM-formatted alignments in: ");
     printf("\033[1;31m");
@@ -403,7 +413,7 @@ int alignment(Alignment alignments[], char *read, char *ref, int *refPos, int re
 
             /* add to alignments array */
             alignments[alignmentIndex].score = score;
-            alignments[alignmentIndex].pos = pos + offset; // not necessarily! https://piazza.com/class/k4x0z5awkga1s6?cid=228
+            alignments[alignmentIndex].pos = refPos[pos] + offset; // not necessarily! https://piazza.com/class/k4x0z5awkga1s6?cid=228
             alignments[alignmentIndex].cigar = malloc(strlen(cigar) + 1);
             strcpy(alignments[alignmentIndex].cigar, cigar);
             alignmentIndex++;
@@ -416,7 +426,7 @@ int alignment(Alignment alignments[], char *read, char *ref, int *refPos, int re
 
             /* add to alignments array */
             alignments[alignmentIndex].score = score;
-            alignments[alignmentIndex].pos = pos + offset; // not necessarily! https://piazza.com/class/k4x0z5awkga1s6?cid=228
+            alignments[alignmentIndex].pos = refPos[pos] + offset; // not necessarily! https://piazza.com/class/k4x0z5awkga1s6?cid=228
             alignments[alignmentIndex].cigar = malloc(strlen(cigar) + 1);
             strcpy(alignments[alignmentIndex].cigar, cigar);
             alignmentIndex++;
