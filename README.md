@@ -29,7 +29,7 @@ $ cd src/
 $ make
 ```
 
-##### then, execute one of the valid commands below
+##### then, execute ONE of the valid commands below
 ```
 $ ./fmmap covid 1K
 $ ./fmmap covid 10K
