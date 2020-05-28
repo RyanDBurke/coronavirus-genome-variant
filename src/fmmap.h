@@ -66,7 +66,7 @@ typedef struct sam {
     int     MAPQ;
     char    *CIGAR;
     char    *RNEXT;
-    char    *PNEXT;
+    int     PNEXT;
     int     TLEN;
     char    *SEQ;
     char    *QUAL;

@@ -143,7 +143,8 @@ int align(FM *fm, char *reads, char *output) {
     FILE *f;
     f = fopen(output, "w");
     f = fopen(output, "a");
-    fprintf(f, "@HD V:1.0\n");
+    fprintf(f, "@HD	VN:1.0	SO:unsorted\n");
+    fprintf(f, "@SQ	SN:MN988713.1	LN:29882\n");
 
     /* parse .fa file containing our n-amount of 100bp reads */
     ffp = OpenFASTA(reads);
@@ -246,8 +247,7 @@ int align(FM *fm, char *reads, char *output) {
                 strcpy(s->RNEXT, "*");
 
                 /* PNEXT */
-                s->PNEXT = malloc(2);
-                strcpy(s->PNEXT, "*");
+                s->PNEXT = 0;
 
                 /* TLEN */
                 s->TLEN = length;
@@ -723,7 +723,7 @@ void writeSAM(SAM *sam, FILE *f) {
     fprintf(f, "%d\t", sam->MAPQ);
     fprintf(f, "%s\t", sam->CIGAR);
     fprintf(f, "%s\t", sam->RNEXT);
-    fprintf(f, "%s\t", sam->PNEXT);
+    fprintf(f, "%d\t", sam->PNEXT);
     fprintf(f, "%d\t", sam->TLEN);
     fprintf(f, "%s\t", sam->SEQ);
     fprintf(f, "%s\n", sam->QUAL);
@@ -736,7 +736,7 @@ void destroySAM(SAM *sam) {
     // free(sam->RNAME);
     free(sam->CIGAR);
     free(sam->RNEXT);
-    free(sam->PNEXT);
+    // free(sam->PNEXT);
     // free(sam->SEQ); maybe don't free this because it points to something else
     free(sam->QUAL);
     free(sam);
