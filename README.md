@@ -78,8 +78,8 @@ $ samtools index mapping_sorted.bam
         |   ├── reads_1K.fa.gz
         |   └── reads_1M.fa.gz
         |
-        ├── fmmap.c                     # builds our FM-Index and Aligner
-        ├── fmmap.h                     # header
+        ├── fmmap.c                     # .c -> builds our FM-Index and Aligner
+        ├── fmmap.h                     # .h -> struct/function-delcarations
         └── kseq.h                      # FASTA parser
 ##
 
@@ -94,5 +94,5 @@ $ samtools index mapping_sorted.bam
 * Fast-rank calculations on burrows-wheeler transform
 
 ## 
-Written for my Bioinformatic Algorithms, Databases, and Tools course<br />
-Shoutout Dr. Rob Patro for the cool project!
+<em>Written for my Bioinformatic Algorithms, Databases, and Tools course</em><br />
+<em>Shoutout Dr. Rob Patro for the cool project!</em>
