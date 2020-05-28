@@ -109,7 +109,7 @@ struggling to wrap my head around alot of the intense algorithms.
 
 After the end of the semester I decided to revisit the project using a compiled language (C) for faster 
 runtimes and also for some well-need practice with C. I'm proud to say I finished the project and learned 
-a TON about dynamic-programming, text-compression for efficient look-ups, file-structure manangement, 
+a TON about dynamic-programming, data-compression for efficient look-ups, file-structure manangement, 
 memory/pointers, and plenty more.
 
 All thanks goes out to my my professor, Dr. Rob Patro, he was extremely helpful and I genuinely feel 
