@@ -98,14 +98,14 @@ $ samtools index mapping_sorted.bam
 ```
 This project was originally given to us mid-semester, right when the chaos following the covid pandemic occured.
 I originally wrote it in python, and never finished it -- the scope of the assignment was beyond me and I was 
-strugglingto wrap my head around alot of the intense algorithms.
+struggling to wrap my head around alot of the intense algorithms.
 
 After the end of the semester I decided to revisit the project using a compiled language (C) for faster 
 runtimes and also for some well-need practice with C. I'm proud to say I finished the project and learned 
 a TON about dynamic-programming, text-compression for efficient look-ups, file-structure manangement, 
 memory/pointers, and plenty more.
 
-All thanks goes out to my my professor, Dr. Rob Patro, he was extremely helpful and I genuiely feel 
+All thanks goes out to my my professor, Dr. Rob Patro, he was extremely helpful and I genuinely feel 
 confident in my abilities as a programmer.
 ```
 ## 
