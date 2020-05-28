@@ -2,6 +2,8 @@
 
 ## 
 
+![10k Reads](C:\Users\Owner\Desktop\corona variants)
+
 A read-alignment tool that utilizes the seed-and-extend paradigm, FM-Index, suffix arrays, burrows-wheeler transform, and core dynamic programming principles to provide for efficient seed-searching to discover variants in the COVID-19 genome.
 
 ## 
