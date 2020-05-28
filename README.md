@@ -1,5 +1,3 @@
-###### Unfinished 5/28/20 -- almost done! working on showing variant visualizations on IGV.
-
 ## <ins>COVID-19 Genome Variant, Burrows-Wheeler Transform, and FM-Index </ins>
 
 ## 
@@ -8,30 +6,34 @@ A read-alignment tool that utilizes the seed-and-extend paradigm, FM-Index, suff
 
 ## 
 
-### <ins>Clone</ins>
+### <ins>(1) Clone</ins>
 ```
 git clone https://github.com/RyanDBurke/coronavirus-genome-variant.git
 ```
 
-### <ins>Execution</ins>
+### <ins>(2) Execution</ins>
 
-#### Default Execution (*execution of program with small inputs*)
+#####(2a) compile
 ```
 $ cd src/
 $ make
-$ ./fmmap default
 ```
-#### Example Execution (*execution of program with coronvirus genome and the covid-variant read-fragments*)
+
+#####(2b) execute one of the valid commands below
 ```
-$ cd src/
-$ make
-$ ./fmmap covid
+./fmmap covid 1K
 ```
-#### General Execution (*execution of program with user input*)
 ```
-$ cd src/
-$ make
-$ ./fmmap <reference-sequence>.fa <index output file> <reads>.fa <align output file>.sam
+./fmmap covid 10K
+```
+```
+./fmmap covid 1M
+```
+```
+./fmmap covid default
+```
+```
+./fmmap <reference-sequence>.fa <output file>.txt <reads>.fa.gz <output file>.sam
 ```
 
 ##
@@ -49,7 +51,7 @@ $ ./fmmap <reference-sequence>.fa <index output file> <reads>.fa <align output f
 ##
 
 ### <ins>Auxiliary Links</ins>
-* [FASTA parser](https://github.com/eturro/mmseq/blob/master/src/fasta.c)
+* [FASTA parser](https://github.com/lh3/readfq)
 * [nCov-19 Genome](https://www.ncbi.nlm.nih.gov/nuccore/NC_045512.2?report=fasta)
 
 ##
