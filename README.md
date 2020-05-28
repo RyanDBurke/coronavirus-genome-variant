@@ -17,7 +17,12 @@ git clone https://github.com/RyanDBurke/coronavirus-genome-variant.git
 
 ### (2) <ins>Execution</ins>
 
-##### first, compile
+##### first, install zlib
+```
+sudo apt-get install libz-dev
+```
+
+##### then, compile
 ```
 $ cd coronavirus-genome-variant
 $ cd src/
