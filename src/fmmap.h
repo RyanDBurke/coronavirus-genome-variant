@@ -67,7 +67,7 @@ typedef struct sam {
     char    *CIGAR;
     char    *RNEXT;
     char    *PNEXT;
-    char    *TLEN;
+    int     TLEN;
     char    *SEQ;
     char    *QUAL;
 } SAM;
@@ -177,6 +177,14 @@ int minAlign(int a, int b, int c);
     * @param x, y: our reference genome and read genome, respectively
  */
 void printMatrix(int OPT[MAXROW][MAXCOL], int n, int m, char *x, char *y);
+
+/* write to our .SAM file
+    * @param sam: our SAM struct
+ */
+void writeSAM(SAM *sam, FILE *f);
+
+/* free our SAM struct */
+void destroySAM(SAM *sam);
 
 /* destroy our alignment array */
 void destroyAlignment(Alignment *A);

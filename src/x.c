@@ -37,22 +37,29 @@ int main(int argc, char **argv) {
 
     // printMatrix(matrix, n, m, x, y);
 
+    char *z = "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM";
+
     int offset = -1;
     char *cigar = buildCigar(matrix, n, m, gap, x, y, &offset);
-    char *trueCigar = formatCigar(cigar, strlen(cigar));
-    printf("CIGAR: \t%s\n", "MDMMD");
+    char *trueCigar = formatCigar(z, strlen(z));
+    printf("CIGAR: \t%s\n", z);
     printf("TRUE CIGAR: \t%s\n", trueCigar);
-
-    printf("test -> %c\n\n\n", toupper('c'));
     
     free(trueCigar);
     free(cigar);
+
+    char array[64];
+    int myInteger = 10;
+    sprintf( array, "%d", myInteger );
 
     return 0;
 
 }
 
 char *formatCigar(char *cigar, int length) {
+
+    /* just make sure cigar input is uppercase */
+    // cigar = upper(cigar);
 
     char *result = malloc(length + 1);
     int resultIndex = 0;
@@ -64,21 +71,51 @@ char *formatCigar(char *cigar, int length) {
 
         for (int j = i; j < length; j++) {
             if (cigar[j] != currentChar) {
-                result[resultIndex] = count + '0';
-                resultIndex++;
+                if (count > 9) {
+                    char array[64];
+                    int myInteger = count;
+                    sprintf(array, "%d", myInteger );
+
+                    for (int k = 0; k < strlen(array); k++) {
+                        result[resultIndex] = array[k];
+                        resultIndex++;
+                    }
+
+                    // strcat(result, array);
+                    // resultIndex += strlen(array);
+                } else {
+                    result[resultIndex] = count + '0';
+                    resultIndex++;
+                }
+                
                 result[resultIndex] = currentChar;
                 resultIndex++;
 
                 if (cigar[j + 1] == '\0') {
-                    j++;
+                    j = length;
                 }
                 break;
             } else {
                 count++;
 
                 if (cigar[j + 1] == '\0') {
-                    result[resultIndex] = count + '0';
-                    resultIndex++;
+                    if (count > 9) {
+                        char array[64];
+                        int myInteger = count;
+                        sprintf( array, "%d", myInteger );
+
+                        for (int k = 0; k < strlen(array); k++) {
+                            result[resultIndex] = array[k];
+                            resultIndex++;
+                        }
+
+                        // strcat(result, array);
+                        // resultIndex += strlen(array);
+                    } else {
+                        result[resultIndex] = count + '0';
+                        resultIndex++;
+                    }
+
                     result[resultIndex] = currentChar;
                     resultIndex++;
                     j = length;
@@ -93,6 +130,7 @@ char *formatCigar(char *cigar, int length) {
     }
 
     result[resultIndex] = '\0';
+    printf("cigar: %s\n", result);
 
     return result;
 }
