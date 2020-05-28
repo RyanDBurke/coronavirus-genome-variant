@@ -28,7 +28,7 @@ typedef struct fm {
 
 /* struct for an alignment and its score */
 typedef struct singleAlignment {
-    char    *cigar; // because we would need two, correct?
+    char    *cigar; // needs to be free'd in each alignment
     int     score;
     int     pos;
 } Alignment;
@@ -56,6 +56,21 @@ typedef struct fastafile_s {
   FILE  *fp;
   char  buffer[FASTA_MAXLINE];
 } FASTAFILE;
+
+/* SAM format */
+typedef struct sam {
+    char    *QNAME;
+    int     FLAG;
+    char    *RNAME;
+    int     POS;
+    int     MAPQ;
+    char    *CIGAR;
+    char    *RNEXT;
+    char    *PNEXT;
+    char    *TLEN;
+    char    *SEQ;
+    char    *QUAL;
+} SAM;
 
 /******************/
 /* MAIN FUNCTIONS */
@@ -141,6 +156,12 @@ int score(char a, char b, int gap);
  */
 void substring(char *result, char* string, int start, int end);
 
+/* return correctly formatted CIGAR-string (i.e 3M2D2M)
+    * @param cigar: incorrectly formatted cigar-string (i.e MMMDDMM)
+    * @param length: length of cigar-string passed in
+ */
+char *formatCigar(char *cigar, int length);
+
 /* returns our seed skip interval, and intuitively, our seed length */
 int seedSkip(int L);
 
@@ -202,7 +223,7 @@ int cmpSA(const void *a, const void *b);
 int cmpBMW(const void *a, const void *b);
 
 /* write our fm-index to output */
-void write(FM *fm, FILE *f, int length);
+void writeFM(FM *fm, FILE *f, int length);
 
 /* print methods */
 void printSA(int *sa, int length);
@@ -228,3 +249,6 @@ extern void       CloseFASTA(FASTAFILE *ffp);
 
 /* string to lowercase */
 char* lower(char* s);
+
+/* string to uppercase*/
+char* upper(char* s);

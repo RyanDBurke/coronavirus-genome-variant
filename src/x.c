@@ -22,6 +22,7 @@ int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int ga
 int minAlign(int a, int b, int c);
 void printMatrix(int matrix[MAXROW][MAXCOL], int n, int m, char *x, char *y);
 int max(int a, int b);
+char *formatCigar(char *cigar, int length);
 
 int main(int argc, char **argv) {
 
@@ -34,18 +35,66 @@ int main(int argc, char **argv) {
     
     int edit = editDistance(matrix, x, y, n, m, gap);
 
-    printMatrix(matrix, n, m, x, y);
+    // printMatrix(matrix, n, m, x, y);
 
     int offset = -1;
     char *cigar = buildCigar(matrix, n, m, gap, x, y, &offset);
-    printf("offset: %d\n", offset);
+    char *trueCigar = formatCigar(cigar, strlen(cigar));
+    printf("CIGAR: \t%s\n", "MDMMD");
+    printf("TRUE CIGAR: \t%s\n", trueCigar);
 
-    printf("CIGAR: %s\n", cigar);
+    printf("test -> %c\n\n\n", toupper('c'));
     
+    free(trueCigar);
     free(cigar);
 
     return 0;
 
+}
+
+char *formatCigar(char *cigar, int length) {
+
+    char *result = malloc(length + 1);
+    int resultIndex = 0;
+
+    int count = 0;
+    char currentChar = '%';
+    for (int i = 0; i < length; i++) {
+        currentChar = cigar[i];
+
+        for (int j = i; j < length; j++) {
+            if (cigar[j] != currentChar) {
+                result[resultIndex] = count + '0';
+                resultIndex++;
+                result[resultIndex] = currentChar;
+                resultIndex++;
+
+                if (cigar[j + 1] == '\0') {
+                    j++;
+                }
+                break;
+            } else {
+                count++;
+
+                if (cigar[j + 1] == '\0') {
+                    result[resultIndex] = count + '0';
+                    resultIndex++;
+                    result[resultIndex] = currentChar;
+                    resultIndex++;
+                    j = length;
+                }
+            }
+            i = j;
+        }
+
+
+
+        count = 0;
+    }
+
+    result[resultIndex] = '\0';
+
+    return result;
 }
 
 int max(int a, int b) {
@@ -65,10 +114,6 @@ char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *
         }
     }
 
-    printf("n: %d\n", n);
-    printf("m: %d\n", m);
-    printf("-> %d\n", OPT[n][m]);
-
     /* result array we'll return */
     int traceIndex = 0;
 
@@ -79,10 +124,6 @@ char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *
         /* we've reached matrix[0][0] */
         /* for fitting alignment it ends when we reach row = 0 */
         if (m == 0) {
-            printf("ENDED CIGAR\n");
-            printf("n: %d\n", n);
-            printf("m: %d\n", m);
-            printf("-> %d\n", OPT[n][m]);
             *offset = n;
             break;
         }

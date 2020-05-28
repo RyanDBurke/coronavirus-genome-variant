@@ -105,7 +105,7 @@ int fmIndex(FM *fm, char *reference, char *output) {
             printf("\033[0m");
             exit(1);
         }
-        write(fm, f, length);
+        writeFM(fm, f, length);
         printf("> You can find the serialized FM-Index for \"%s\" in: ", reference);
         printf("\033[1;31m");
         printf("%s\n", output);
@@ -189,15 +189,30 @@ int align(FM *fm, char *reads, char *output) {
             /* fitting alignment: add it to alignments array and return that array length */
             int alignmentLength = alignment(alignments, seq, fm->seq, refPos, refPosLength, gap, bestScore);
 
+            /* for each alignment in alignments, write to .sam file 
+            for (int a = 0; a < alignmentLength; a++) {
+
+                    FILE *sam;
+                    sam = fopen(output, "w");
+                    if (sam == NULL) {
+                        exit(1);
+                    } else {
+                        
+                    }
+            */
+
+
             /* free memory */
             free(refPos);
             free(seed);
             free(interval);
         }
 
-        /* for each alignment in alignments, write to .sam file */
-
-        /* free each alignment, then free alignments-array */
+        /* free each alignment, then free alignments-array 
+        for (int i = 0; i < length; i++) {
+            free(alignments[i].cigar); // but what if there's no alignment object there?
+        }
+        */
 
 
         free(seq);
@@ -330,7 +345,6 @@ int alignment(Alignment alignments[], char *read, char *ref, int *refPos, int re
             int offset = -1;
             char *cigar = buildCigar(OPT, n, m, gap, x, y, &offset); // THIS NEEDS TO BE FREE'D
 
-
             /* add to alignments array */
             alignments[alignmentIndex].score = score;
             alignments[alignmentIndex].pos = pos + offset; // not necessarily! https://piazza.com/class/k4x0z5awkga1s6?cid=228
@@ -406,7 +420,7 @@ char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *
     /* result array we'll return */
     int cigarIndex = 0;
 
-    char *cigar = malloc(n * m);
+    char *cigarTemp = malloc(n * m);
     while (true) {
 
 
@@ -443,15 +457,15 @@ char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *
         if (maxA == diagonal) {
             n = n - 1;
             m = m - 1;
-            cigar[cigarIndex] = 'M';
+            cigarTemp[cigarIndex] = 'M';
             cigarIndex++;
         } else if (maxA == left) {
             m = m - 1;
-            cigar[cigarIndex] = 'I';
+            cigarTemp[cigarIndex] = 'I';
             cigarIndex++;
         } else if (maxA == up) {
             n = n - 1;
-            cigar[cigarIndex] = 'D';
+            cigarTemp[cigarIndex] = 'D';
             cigarIndex++;
         } else {
             printf("Error in buildCigar()\n");
@@ -459,6 +473,12 @@ char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *
         }
 
     }
+
+    /* now that we (almost) have our CIGAR-string, we need to format it properly */
+    char *cigar = formatCigar(cigarTemp, strlen(cigarTemp));
+
+    /* free used memory */
+    free(cigarTemp);
 
     /* our complete cigar string */
     return cigar;
@@ -485,6 +505,56 @@ void substring(char* result, char* string, int start, int end) {
     int n = end - start;
     result = strncpy(result, temp, n);
     result[n] = '\0';
+}
+
+/* return correctly formatted CIGAR-string (i.e 3M2D2M) */
+char *formatCigar(char *cigar, int length) {
+
+    /* just make sure cigar input is uppercase */
+    cigar = upper(cigar);
+
+    /* our properly formatted CIGAR-string we will return */
+    char *result = malloc(length + 1);
+    int resultIndex = 0;
+
+    /* build cigar string */
+    int count = 0;
+    char currentChar = '%'; /* random char, shouldn't matter */
+    for (int i = 0; i < length; i++) {
+        currentChar = cigar[i];
+
+        for (int j = i; j < length; j++) {
+            if (cigar[j] != currentChar) {
+                result[resultIndex] = count + '0';
+                resultIndex++;
+                result[resultIndex] = currentChar;
+                resultIndex++;
+
+                if (cigar[j + 1] == '\0') {
+                    j++;
+                }
+                break;
+            } else {
+                count++;
+
+                if (cigar[j + 1] == '\0') {
+                    result[resultIndex] = count + '0';
+                    resultIndex++;
+                    result[resultIndex] = currentChar;
+                    resultIndex++;
+                    j = length;
+                }
+            }
+            i = j;
+        }
+
+        count = 0;
+    }
+
+    /* null-terminator */
+    result[resultIndex] = '\0';
+
+    return result;
 }
 
 /* seed skip */
@@ -653,7 +723,7 @@ int cmpBMW(const void *a, const void *b) {
 }
 
 /* write our fm-index to output */
-void write(FM *fm, FILE *f, int length) {
+void writeFM(FM *fm, FILE *f, int length) {
 
     fprintf(f, "************\n");
     fprintf(f, "* FM-INDEX *\n");
@@ -858,6 +928,16 @@ char* lower(char* s) {
     
     for (int i = 0; i < strlen(s); i++) {
         s[i] = tolower(s[i]);
+    }
+
+    return s;
+}
+
+/* uppercase of a string */
+char* upper(char* s) {
+    
+    for (int i = 0; i < strlen(s); i++) {
+        s[i] = toupper(s[i]);
     }
 
     return s;
