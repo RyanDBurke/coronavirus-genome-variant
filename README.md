@@ -67,7 +67,7 @@ $ samtools index mapping_sorted.bam
         |   └── ref-small.fa
         |
         ├── FM-output                   # standard output file for FM-Index          
-        |    └── FMindex.txt
+        |   └── FMindex.txt
         |
         ├── Makefile                    # build executables
         ├── Mappings                    # standard output .sam file(s) for alignments
