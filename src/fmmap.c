@@ -8,10 +8,11 @@ int main(int argc, char **argv) {
     /* Valid commands */
     printf("> Valid Commands:\n");
     printf("\033[1;31m");
-    printf("\t> ./fmmap covid 1000\n");
+    printf("\t> ./fmmap covid 1K\n");
+    printf("\t> ./fmmap covid 10K\n");
     printf("\t> ./fmmap covid 1M\n");
     printf("\t> ./fmmap default\n");
-    printf("\t> ./fmmap <reference-sequence>.fa <index output file> <reads>.fa.gz <align output file>.sam\n");
+    printf("\t> ./fmmap <reference-sequence>.fa <output file>.txt <reads>.fa.gz <output file>.sam\n");
     printf("\033[0m");
     printf("---------------------------------------------------------------------------------------------------\n\n");
 
@@ -29,23 +30,38 @@ int main(int argc, char **argv) {
         alignOut = "./Mappings/mapping.sam";
     }
 
-    /* [./fmmap covid] executes for coronavirus genome with 1000 reads*/
-    else if (strcmp(lower(argv[1]), "covid") == 0 && strcmp(argv[2], "1000") == 0) {
+    /* [./fmmap covid] executes for coronavirus genome with 1,000 reads*/
+    else if (strcmp(lower(argv[1]), "covid") == 0 && (strcmp(argv[2], "1K") == 0 || strcmp(argv[2], "1k") == 0)) {
         ref_seq = "2019-nCoV.fa";
         indexOut = "./FM-output/FMindex.txt";
-        reads = "./Reads/reads_s1000.fa.gz";
+        reads = "./Reads/reads_1K.fa.gz";
         alignOut = "./Mappings/mapping.sam";
+
+        printf("[Aligning over 1,000 reads]\n");
+        printf("This takes roughly 30 seconds to execute\n");
     }
 
-    /* [./fmmap covid 1M] executes for coronavirus genome with 1 million reads */
-    else if (strcmp(lower(argv[1]), "covid") == 0 && strcmp(argv[2], "1M") == 0) {
+    /* [./fmmap covid] executes for coronavirus genome with 10,000 reads*/
+    else if (strcmp(lower(argv[1]), "covid") == 0 && (strcmp(argv[2], "10K") == 0 || strcmp(argv[2], "10k") == 0)) {
         ref_seq = "2019-nCoV.fa";
         indexOut = "./FM-output/FMindex.txt";
-        reads = "./Reads/reads.fa.gz";
+        reads = "./Reads/reads_10K.fa.gz";
         alignOut = "./Mappings/mapping.sam";
+
+        printf("[Aligning over 10,000 reads]\n");
+        printf("This takes roughly 2 minutes to execute\n");
     }
 
-    printf("Hang tight, this may take a while...\n\n");
+    /* [./fmmap covid 1M] executes for coronavirus genome with 1 Million reads */
+    else if (strcmp(lower(argv[1]), "covid") == 0 && (strcmp(argv[2], "1M") == 0 || strcmp(argv[2], "1m") == 0)) {
+        ref_seq = "2019-nCoV.fa";
+        indexOut = "./FM-output/FMindex.txt";
+        reads = "./Reads/reads_1M.fa.gz";
+        alignOut = "./Mappings/mapping.sam";
+
+        printf("[Aligning over 1M reads]\n");
+        printf("This takes roughly ~2.5 Hours to execute\n");
+    }
 
     /* our FM-Index struct */
     FM *fm = malloc(sizeof(FM));
@@ -133,7 +149,7 @@ int fmIndex(FM *fm, char *reference, char *output) {
         printf("./fmmap default ");
         printf("\033[0m");
         printf("to see what a serialized FM-Index looks like.\n\n");
-        printf("> If you really want to see FM-Index for sequences over 50 in length you can adjust it on line 114 in the file ");
+        printf("> If you really want to see FM-Index for sequences over 50 in length you can adjust it on line 130 in the file ");
         printf("\033[1;31m");
         printf("fmmap.c\n");
         printf("\033[0m");
@@ -402,7 +418,8 @@ int alignment(Alignment alignments[], char *read, char *ref, int *refPos, int re
 
             /* add to alignments array */
             alignments[alignmentIndex].score = score;
-            alignments[alignmentIndex].pos = refPos[pos] + offset;
+            alignments[alignmentIndex].pos = (refPos[pos] + offset == 0) ? 1 : refPos[pos] + offset;
+            // alignments[alignmentIndex].pos = refPos[pos] + offset;
             alignments[alignmentIndex].cigar = malloc(strlen(cigar) + 1);
             strcpy(alignments[alignmentIndex].cigar, cigar);
             alignmentIndex++;
@@ -415,7 +432,8 @@ int alignment(Alignment alignments[], char *read, char *ref, int *refPos, int re
 
             /* add to alignments array */
             alignments[alignmentIndex].score = score;
-            alignments[alignmentIndex].pos = refPos[pos] + offset;
+            alignments[alignmentIndex].pos = (refPos[pos] + offset == 0) ? 1 : refPos[pos] + offset;
+            // alignments[alignmentIndex].pos = refPos[pos] + offset;
             alignments[alignmentIndex].cigar = malloc(strlen(cigar) + 1);
             strcpy(alignments[alignmentIndex].cigar, cigar);
             alignmentIndex++;
