@@ -16,7 +16,7 @@ git clone https://github.com/RyanDBurke/coronavirus-genome-variant.git
 ### <ins>Execution</ins>
 
 #### Default Execution
-###### *execution of program with small inputs*
+    ###### *execution of program with small inputs*
 ```
 $ cd src/
 $ make
