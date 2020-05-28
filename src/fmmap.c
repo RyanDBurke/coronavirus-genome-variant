@@ -1,8 +1,19 @@
 #include "fmmap.h"
+#include "kseq.h"
+KSEQ_INIT(gzFile, gzread)
 
 /* runs align and fmIndex */
-/* ./fmmap ref_seq indexOutput reads alignOutput */
 int main(int argc, char **argv) {
+
+    /* Valid commands */
+    printf("> Valid Commands:\n");
+    printf("\033[1;31m");
+    printf("\t> ./fmmap covid 1000\n");
+    printf("\t> ./fmmap covid 1M\n");
+    printf("\t> ./fmmap default\n");
+    printf("\t> ./fmmap <reference-sequence>.fa <index output file> <reads>.fa.gz <align output file>.sam\n");
+    printf("\033[0m");
+    printf("---------------------------------------------------------------------------------------------------\n\n");
 
     /* string path to each relevant file */
     char *ref_seq = argv[1];
@@ -18,13 +29,23 @@ int main(int argc, char **argv) {
         alignOut = "./Mappings/mapping.sam";
     }
 
-    /* [./fmmap covid] executes for coronavirus genome */
-    if (strcmp(lower(argv[1]), "covid") == 0) {
+    /* [./fmmap covid] executes for coronavirus genome with 1000 reads*/
+    else if (strcmp(lower(argv[1]), "covid") == 0 && strcmp(argv[2], "1000") == 0) {
         ref_seq = "2019-nCoV.fa";
         indexOut = "./FM-output/FMindex.txt";
-        reads = "./Reads/reads_s1000.fa";
+        reads = "./Reads/reads_s1000.fa.gz";
         alignOut = "./Mappings/mapping.sam";
     }
+
+    /* [./fmmap covid 1M] executes for coronavirus genome with 1 million reads */
+    else if (strcmp(lower(argv[1]), "covid") == 0 && strcmp(argv[2], "1M") == 0) {
+        ref_seq = "2019-nCoV.fa";
+        indexOut = "./FM-output/FMindex.txt";
+        reads = "./Reads/reads.fa.gz";
+        alignOut = "./Mappings/mapping.sam";
+    }
+
+    printf("Hang tight, this may take a while...\n\n");
 
     /* our FM-Index struct */
     FM *fm = malloc(sizeof(FM));
@@ -43,52 +64,54 @@ int main(int argc, char **argv) {
 
 int fmIndex(FM *fm, char *reference, char *output) {
 
-    FASTAFILE *ffp;
-    char *seq;
-    char *name;
-    int length;
+    /* fasta stuff */
+    gzFile fp;
+	kseq_t *seq;
+	int l;
+	if (reference == NULL) {
+		fprintf(stderr, "%s is NULL\n", reference);
+		return 1;
+	}
+	fp = gzopen(reference, "r");
+	seq = kseq_init(fp);
 
     /* parse .fa file contains our reference sequence and build fm-index */
-    ffp = OpenFASTA(reference);
-    while (ReadFASTA(ffp, &seq, &name, &length)) {
+    while ((l = kseq_read(seq)) >= 0) {
 
         /* name */
-        fm->name = malloc(strlen(name) + 1);
+        fm->name = malloc(strlen(seq->name.s) + 1);
         strcpy(fm->name, "MN988713.1");
 
         /* seq */
-        fm->seq = malloc(strlen(seq) + 1);
-        strcpy(fm->seq, seq);
+        fm->seq = malloc(strlen(seq->seq.s) + 1);
+        strcpy(fm->seq, seq->seq.s);
         
         /* length of seq */
-        fm->length = length;
+        fm->length = strlen(seq->seq.s);
 
         /* suffix array */
-        fm->suffixArray = (buildSuffixArray(seq, length));
+        fm->suffixArray = (buildSuffixArray(seq->seq.s, strlen(seq->seq.s)));
 
         /* burrows-wheeler matrix (bwm) */
-        fm->bwm = (buildBWM(seq, length));
+        fm->bwm = (buildBWM(seq->name.s, strlen(seq->seq.s)));
 
         /* burrows-wheeler transform (bwt) */
-        fm->bwt = malloc(length + 1);
-        buildBWT(fm->bwt, fm->bwm, length);
+        fm->bwt = malloc(strlen(seq->seq.s) + 1);
+        buildBWT(fm->bwt, fm->bwm, strlen(seq->seq.s));
 
         /* (F)irst and (L)ast columns of bwm */
-        fm->F = malloc(length + 1);
-        fm->L = malloc(length + 1);
-        getFL(fm->F, fm->L, fm->bwm, length);
+        fm->F = malloc(strlen(seq->seq.s) + 1);
+        fm->L = malloc(strlen(seq->seq.s) + 1);
+        getFL(fm->F, fm->L, fm->bwm, strlen(seq->seq.s));
 
         /* Fast-rank arrays */
-        
-        free(seq);
-        free(name);
-    }
+        /* to be implemented */
 
-    CloseFASTA(ffp);
+    }
 
     /* write FM-Index to output */
     FILE *f;
-    if (length <= 50) { /* adjust seq-length for writing to output to your liking */
+    if (fm->length <= 50) { /* adjust seq-length for writing to output to your liking */
         f = fopen(output, "w");
         if (f == NULL) {
             printf("error opening file: ");
@@ -97,39 +120,46 @@ int fmIndex(FM *fm, char *reference, char *output) {
             printf("\033[0m");
             exit(1);
         }
-        writeFM(fm, f, length);
+        writeFM(fm, f, fm->length);
         printf("> You can find the serialized FM-Index for \"%s\" in: ", reference);
         printf("\033[1;31m");
         printf("%s\n", output);
         printf("\033[0m");
     } else {
         printf("> Sequences over 50 in length are not written to file\n\n");
-        printf("> Your sequence length: %d\n\n", length);
+        printf("> Your sequence length: %d\n\n", fm->length);
         printf("> Use ");
         printf("\033[1;31m");
         printf("./fmmap default ");
         printf("\033[0m");
         printf("to see what a serialized FM-Index looks like.\n\n");
-        printf("> If you really want to see FM-Index for sequences over 50 in length you can adjust it on line 99 in the file ");
+        printf("> If you really want to see FM-Index for sequences over 50 in length you can adjust it on line 114 in the file ");
         printf("\033[1;31m");
         printf("fmmap.c\n");
         printf("\033[0m");
     }
 
-    /* successful */
-    return 0;
+    kseq_destroy(seq);
+	gzclose(fp);
+	return 0;
 }
 
 
 int align(FM *fm, char *reads, char *output) {
 
-    FASTAFILE *ffp;
-    char *seq;
-    char *name;
-    int length;
+    /* fasta stuff */
+    gzFile fp;
+	kseq_t *seq;
+	int l;
+	if (reads == NULL) {
+		fprintf(stderr, "%s is NULL\n", reads);
+		return 1;
+	}
+	fp = gzopen(reads, "r");
+	seq = kseq_init(fp);
 
     double ninf = -INFINITY;
-    int gap = -5;
+    int gap = -5; /* gap penalty */
 
     /* open our output file (.sam) */
     FILE *f;
@@ -141,25 +171,24 @@ int align(FM *fm, char *reads, char *output) {
     fprintf(f, "@SQ	SN:%s	LN:%d\n", fm->name, fm->length);
 
     /* parse .fa file containing our n-amount of 100bp reads */
-    ffp = OpenFASTA(reads);
-    while (ReadFASTA(ffp, &seq, &name, &length)) {
+    while ((l = kseq_read(seq)) >= 0) {
 
         /* an array where we'll store our alignments */
-        Alignment alignments[length];
+        Alignment alignments[strlen(seq->seq.s)];
 
         double bestScore = ninf;
-        int skip = seedSkip(length);
+        int skip = seedSkip(strlen(seq->seq.s));
         int alignmentLength = -1;
 
         /* for each (read-length / 5.0) seed (20bp seed in our case, since we have 100bp reads) */
-        for (int seedStart = 0; seedStart < length; seedStart += skip) {
-            int seedEnd = min(length, seedStart + skip);
+        for (int seedStart = 0; seedStart < strlen(seq->seq.s); seedStart += skip) {
+            int seedEnd = min(strlen(seq->seq.s), seedStart + skip);
 
             /* finding match interval */
             Interval *interval = malloc(sizeof(Interval));
             int matchLength = 0;
-            char *seed = malloc(strlen(seq) + 1);
-            substring(seed, seq, seedStart, seedEnd);
+            char *seed = malloc(strlen(seq->seq.s) + 1);
+            substring(seed, seq->seq.s, seedStart, seedEnd);
             getInterval(interval, &matchLength, fm, seed);
 
             /* if there wasn't a match, break out of this seed */
@@ -172,7 +201,7 @@ int align(FM *fm, char *reads, char *output) {
             int refPosLength = referencePos(refPos, interval, matchLength, fm, seedEnd);            
 
             /* fitting alignment: add it to alignments array and return that array length */
-            alignmentLength = alignment(alignments, seq, fm->seq, refPos, refPosLength, gap, bestScore);
+            alignmentLength = alignment(alignments, seq->seq.s, fm->seq, refPos, refPosLength, gap, bestScore);
 
             /* free memory */
             free(refPos);
@@ -194,8 +223,8 @@ int align(FM *fm, char *reads, char *output) {
                 SAM *s = malloc(sizeof(SAM));
 
                 /* QNAME */
-                s->QNAME = malloc(strlen(name) + 1);
-                strcpy(s->QNAME, name);
+                s->QNAME = malloc(strlen(seq->name.s) + 1);
+                strcpy(s->QNAME, seq->name.s);
 
                 /* FLAG */
                 s->FLAG = 0;
@@ -222,11 +251,11 @@ int align(FM *fm, char *reads, char *output) {
                 s->PNEXT = 0;
 
                 /* TLEN */
-                s->TLEN = length;
+                s->TLEN = strlen(seq->seq.s);
 
                 /* SEQ */
-                s->SEQ = malloc(length + 1);
-                strcpy(s->SEQ, seq);
+                s->SEQ = malloc(strlen(seq->seq.s) + 1);
+                strcpy(s->SEQ, seq->seq.s);
 
                 /* QUAL */
                 s->QUAL = malloc(2);
@@ -237,13 +266,9 @@ int align(FM *fm, char *reads, char *output) {
                 destroySAM(s);
             }
         }      
-        
-        free(seq);
-        free(name);
     }
 
     fclose(f);
-    CloseFASTA(ffp);
 
     printf("\n> You can find the SAM-formatted alignments in: ");
     printf("\033[1;31m");
@@ -251,7 +276,9 @@ int align(FM *fm, char *reads, char *output) {
     printf("\033[0m");
 
     /* successful */
-    return 0;
+    kseq_destroy(seq);
+	gzclose(fp);
+	return 0;
 }
 
 /**************************/
@@ -921,82 +948,6 @@ void destroy(FM *fm) {
     free(fm->seq);
     free(fm->name);
     free(fm);
-}
-
-/****************/
-/* FASTA PARSER */
-/****************/
-
-FASTAFILE *
-OpenFASTA(char *seqfile)
-{
-  FASTAFILE *ffp;
-
-  ffp = malloc(sizeof(FASTAFILE));
-  ffp->fp = fopen(seqfile, "r");              /* Assume seqfile exists & readable!   */
-  if (ffp->fp == NULL) { free(ffp); return NULL; } 
-  if ((fgets(ffp->buffer, FASTA_MAXLINE, ffp->fp)) == NULL)
-    { free(ffp); return NULL; }
-  return ffp;
-}
-
-int
-ReadFASTA(FASTAFILE *ffp, char **ret_seq, char **ret_name, int *ret_L)
-{
-  char *s;
-  char *name;
-  char *seq;
-  int   n;
-  int   nalloc;
-  
-  /* Peek at the lookahead buffer; see if it appears to be a valid FASTA descline.
-   */
-  if (ffp->buffer[0] != '>') return 0;    
-
-  /* Parse out the name: the first non-newline token after the >
-   */
-  s  = strtok(ffp->buffer+1, "\n");
-  name = malloc(sizeof(char) * (strlen(s)+1));
-  strcpy(name, s);
-
-  /* Everything else 'til the next descline is the sequence.
-   * Note the idiom for dynamic reallocation of seq as we
-   * read more characters, so we don't have to assume a maximum
-   * sequence length.
-   */
-  seq = malloc(sizeof(char) * 128);     /* allocate seq in blocks of 128 residues */
-  nalloc = 128;
-  n = 0;
-  while (fgets(ffp->buffer, FASTA_MAXLINE, ffp->fp))
-    {
-      if (ffp->buffer[0] == '>') break;	/* a-ha, we've reached the next descline */
-
-      for (s = ffp->buffer; *s != '\0'; s++)
-	{
-	  if (! isalpha(*s)) continue;  /* accept any alphabetic character */
-
-	  seq[n] = *s;                  /* store the character, bump length n */
-	  n++;
-	  if (nalloc == n)	        /* are we out of room in seq? if so, expand */
-	    {			        /* (remember, need space for the final '\0')*/
-	      nalloc += 128;
-	      seq = realloc(seq, sizeof(char) * nalloc);
-	    }
-	}
-    }
-  seq[n] = '\0';
-
-  *ret_name = name;
-  *ret_seq  = seq;
-  *ret_L    = n;
-  return 1;
-}      
-
-void
-CloseFASTA(FASTAFILE *ffp)
-{
-  fclose(ffp->fp);
-  free(ffp);
 }
 
 /********/

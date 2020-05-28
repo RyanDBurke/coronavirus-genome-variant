@@ -245,15 +245,6 @@ void printFL(char *F, char *L, int length);
 /* destroys our FM-Index */
 void destroy(FM *fm);
 
-/****************/
-/* FASTA PARSER */
-/****************/
-
-extern FASTAFILE *OpenFASTA(char *seqfile);
-extern int        ReadFASTA(FASTAFILE *fp, char **ret_seq, char **ret_name, int *ret_L);
-extern void       CloseFASTA(FASTAFILE *ffp);
-
-
 /********/
 /* MISC */
 /********/
