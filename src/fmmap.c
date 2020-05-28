@@ -103,7 +103,7 @@ int fmIndex(FM *fm, char *reference, char *output) {
         printf("%s\n", output);
         printf("\033[0m");
     } else {
-        printf("> Sequences over 50 in length are not written to file.\n\n");
+        printf("> Sequences over 50 in length are not written to file\n\n");
         printf("> Your sequence length: %d\n\n", length);
         printf("> Use ");
         printf("\033[1;31m");
