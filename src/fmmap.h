@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <math.h>
+#include <zlib.h>
 
 #define FASTA_MAXLINE 512	/* Requires FASTA file lines to be <512 characters */
 #define MAXROW 200
@@ -21,9 +22,10 @@ typedef struct fm {
     char    *bwt;          // burrows-wheeler transform
     char    *F;            // (F)irst column of bwm
     char    *L;            // (L)ast column of bwm
+
+    /* not implemented yet */
     int     *F_rank;       // fast-rank calculation for (F)irst column
     int     *L_rank;       // fast-rank calculation for (L)ast column
-    // occTable
 } FM;
 
 /* struct for an alignment and its score */
@@ -53,8 +55,9 @@ typedef struct Rotation {
 
 /* FASTA files */
 typedef struct fastafile_s {
-  FILE  *fp;
-  char  buffer[FASTA_MAXLINE];
+  FILE      *fp;
+  gzFile    *gz;
+  char      buffer[FASTA_MAXLINE];
 } FASTAFILE;
 
 /* SAM format */

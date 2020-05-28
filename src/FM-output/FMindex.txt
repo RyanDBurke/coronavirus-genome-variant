@@ -2,7 +2,7 @@
 * FM-INDEX *
 ************
 
->  small reference genome
+> MN988713.1
 length: 50
 
 Sequence

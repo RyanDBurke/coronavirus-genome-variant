@@ -4,13 +4,6 @@
 /* ./fmmap ref_seq indexOutput reads alignOutput */
 int main(int argc, char **argv) {
 
-    /* invalid number of arguments
-    if (argc != 5) {
-        printf("invalid number of arguments.");
-        return 0;
-    }
-    */
-
     /* string path to each relevant file */
     char *ref_seq = argv[1];
     char *indexOut = argv[2];
@@ -19,18 +12,18 @@ int main(int argc, char **argv) {
 
     /* [./fmmap default] executes with small default inputs */
     if (strcmp(lower(argv[1]), "default") == 0) {
-        ref_seq = "ref-small.fa";
-        indexOut = "index_out.txt";
-        reads = "reads-small.fa";
-        alignOut = "alignments.sam";
+        ref_seq = "./Default/ref-small.fa";
+        indexOut = "./FM-output/FMindex.txt";
+        reads = "./Default/reads-small.fa";
+        alignOut = "./Mappings/mapping.sam";
     }
 
     /* [./fmmap covid] executes for coronavirus genome */
     if (strcmp(lower(argv[1]), "covid") == 0) {
-        ref_seq = "ref-CoV19.fa";
-        indexOut = "index_out.txt";
-        reads = "reads_s1000.fa";
-        alignOut = "alignments.sam";
+        ref_seq = "2019-nCoV.fa";
+        indexOut = "./FM-output/FMindex.txt";
+        reads = "./Reads/reads_s1000.fa";
+        alignOut = "./Mappings/mapping.sam";
     }
 
     /* our FM-Index struct */
@@ -61,7 +54,7 @@ int fmIndex(FM *fm, char *reference, char *output) {
 
         /* name */
         fm->name = malloc(strlen(name) + 1);
-        strcpy(fm->name, name);
+        strcpy(fm->name, "MN988713.1");
 
         /* seq */
         fm->seq = malloc(strlen(seq) + 1);
@@ -85,8 +78,7 @@ int fmIndex(FM *fm, char *reference, char *output) {
         fm->L = malloc(length + 1);
         getFL(fm->F, fm->L, fm->bwm, length);
 
-        /* occTable */
-        /* man do I even need this? */
+        /* Fast-rank arrays */
         
         free(seq);
         free(name);
@@ -128,7 +120,7 @@ int fmIndex(FM *fm, char *reference, char *output) {
     return 0;
 }
 
-/* remember, reads have the letter "N" */
+
 int align(FM *fm, char *reads, char *output) {
 
     FASTAFILE *ffp;
@@ -143,18 +135,20 @@ int align(FM *fm, char *reads, char *output) {
     FILE *f;
     f = fopen(output, "w");
     f = fopen(output, "a");
+
+    /* .sam header */
     fprintf(f, "@HD	VN:1.0	SO:unsorted\n");
-    fprintf(f, "@SQ	SN:MN988713.1	LN:29882\n");
+    fprintf(f, "@SQ	SN:%s	LN:%d\n", fm->name, fm->length);
 
     /* parse .fa file containing our n-amount of 100bp reads */
     ffp = OpenFASTA(reads);
     while (ReadFASTA(ffp, &seq, &name, &length)) {
 
+        /* an array where we'll store our alignments */
+        Alignment alignments[length];
 
         double bestScore = ninf;
-        // int seedPos = 0;
         int skip = seedSkip(length);
-        Alignment alignments[length]; // is length the correct array size here?
         int alignmentLength = -1;
 
         /* for each (read-length / 5.0) seed (20bp seed in our case, since we have 100bp reads) */
@@ -162,9 +156,9 @@ int align(FM *fm, char *reads, char *output) {
             int seedEnd = min(length, seedStart + skip);
 
             /* finding match interval */
-            Interval *interval = malloc(sizeof(Interval)); // I should have to free this, right?
+            Interval *interval = malloc(sizeof(Interval));
             int matchLength = 0;
-            char *seed = malloc(strlen(seq) + 1); // I should have to free this, right?
+            char *seed = malloc(strlen(seq) + 1);
             substring(seed, seq, seedStart, seedEnd);
             getInterval(interval, &matchLength, fm, seed);
 
@@ -175,28 +169,10 @@ int align(FM *fm, char *reads, char *output) {
 
             /* reference position */
             int *refPos = malloc((interval->end - interval->start));
-            int refPosLength = referencePos(refPos, interval, matchLength, fm, seedEnd);
-
-            /*
-            printf("> %s\n", name);
-            printf("seed: %s\n", seed);
-            printf("skip: %d\n", skip);
-            printf("Interval (%d, %d]\n", interval->start, interval->end);
-            printf("reference positions\n");
-            for (int i = 0; i < refPosLength; i++) {
-                if (i == refPosLength - 1) {
-                    printf("refPos: %d\n\n", refPos[i]);
-                } else {
-                    printf("refPos: %d\n", refPos[i]);
-                }
-            }
-            */
-            
-            
+            int refPosLength = referencePos(refPos, interval, matchLength, fm, seedEnd);            
 
             /* fitting alignment: add it to alignments array and return that array length */
             alignmentLength = alignment(alignments, seq, fm->seq, refPos, refPosLength, gap, bestScore);
-            
 
             /* free memory */
             free(refPos);
@@ -206,9 +182,6 @@ int align(FM *fm, char *reads, char *output) {
 
         /* for each alignment in alignments, write to .sam file */
         for (int a = 0; a < alignmentLength; a++) {
-
-            // FILE *f;
-            // f = fopen(output, "w");
             if (f == NULL) {
                 printf("error opening file: ");
                 printf("\033[1;31m");
@@ -228,8 +201,8 @@ int align(FM *fm, char *reads, char *output) {
                 s->FLAG = 0;
 
                 /* RNAME */
-                s->RNAME = malloc(strlen("MN988713.1") + 1);
-                strcpy(s->RNAME, "MN988713.1");
+                s->RNAME = malloc(strlen(fm->name) + 1);
+                strcpy(s->RNAME, fm->name);
 
                 /* POS */
                 s->POS = alignments[a].pos;
@@ -238,7 +211,6 @@ int align(FM *fm, char *reads, char *output) {
                 s->MAPQ = 255;
 
                 /* CIGAR */
-                // printf("CIGAR: %s\n", alignments[a].cigar);
                 s->CIGAR = malloc(strlen(alignments[a].cigar) + 1);
                 strcpy(s->CIGAR, alignments[a].cigar);
 
@@ -264,8 +236,6 @@ int align(FM *fm, char *reads, char *output) {
                 writeSAM(s, f);
                 destroySAM(s);
             }
-        
-
         }      
         
         free(seq);
@@ -273,13 +243,12 @@ int align(FM *fm, char *reads, char *output) {
     }
 
     fclose(f);
+    CloseFASTA(ffp);
 
     printf("\n> You can find the SAM-formatted alignments in: ");
     printf("\033[1;31m");
     printf("%s\n", output);
     printf("\033[0m");
-
-    CloseFASTA(ffp);
 
     /* successful */
     return 0;
@@ -309,7 +278,7 @@ void getInterval(Interval *interval, int *matchLength, FM *fm, char* seed) {
         char *suffix = (fm->seq + offset);
 
         /* substring of suffix */
-        char *subSuffix = malloc(strlen(suffix) + 1); // I should have to free this, right?
+        char *subSuffix = malloc(strlen(suffix) + 1);
         substring(subSuffix, suffix, 0, strlen(seed));
 
         /* match seed to suffix */
@@ -323,7 +292,7 @@ void getInterval(Interval *interval, int *matchLength, FM *fm, char* seed) {
         /* if they don't match, but we've seen a match before -- then this is the end of interval */
         if (match != 0 && (interval->start != -1)) {
             interval->end = i;
-            break; // break loop, we have our interval!
+            break; /* break loop, we have our interval! */
         }
 
         /* free subSuffix substring memory */
@@ -360,7 +329,7 @@ int referencePos(int *refPos, Interval *interval, int matchLength, FM *fm, int s
 /* return a single alignment struct to output parameter A */
 int alignment(Alignment alignments[], char *read, char *ref, int *refPos, int refPosLength, int gap, double bestScore) {
 
-    /* X-axis is our corona reference genome slice */
+    /* X-axis is our coronavirus reference genome slice */
     /* Y-axis is our read we wish to align to our reference */
 
     /* index for our alignments-array */
@@ -397,23 +366,16 @@ int alignment(Alignment alignments[], char *read, char *ref, int *refPos, int re
             /* update the best score */
             bestScore = score;
 
-            /* free previously used alignment cigars 
-            for (int i = 0; i < alignmentIndex; i++) {
-                free(alignments[alignmentIndex].cigar);
-            }
-            */
-
             /* we set this to zero to simulate "clearing" the array */
-            /* may cause problems when freeing */
             alignmentIndex = 0;
 
             /* backtrace OPT-matrix to find alignment and return CIGAR string */
             int offset = -1;
-            char *cigar = buildCigar(OPT, n, m, gap, x, y, &offset); // THIS NEEDS TO BE FREE'D
+            char *cigar = buildCigar(OPT, n, m, gap, x, y, &offset);
 
             /* add to alignments array */
             alignments[alignmentIndex].score = score;
-            alignments[alignmentIndex].pos = refPos[pos] + offset; // not necessarily! https://piazza.com/class/k4x0z5awkga1s6?cid=228
+            alignments[alignmentIndex].pos = refPos[pos] + offset;
             alignments[alignmentIndex].cigar = malloc(strlen(cigar) + 1);
             strcpy(alignments[alignmentIndex].cigar, cigar);
             alignmentIndex++;
@@ -422,11 +384,11 @@ int alignment(Alignment alignments[], char *read, char *ref, int *refPos, int re
 
             /* backtrace OPT-matrix to find alignment and return CIGAR string */
             int offset = -1;
-            char *cigar = buildCigar(OPT, n, m, gap, x, y, &offset); // THIS NEEDS TO BE FREE'D
+            char *cigar = buildCigar(OPT, n, m, gap, x, y, &offset);
 
             /* add to alignments array */
             alignments[alignmentIndex].score = score;
-            alignments[alignmentIndex].pos = refPos[pos] + offset; // not necessarily! https://piazza.com/class/k4x0z5awkga1s6?cid=228
+            alignments[alignmentIndex].pos = refPos[pos] + offset;
             alignments[alignmentIndex].cigar = malloc(strlen(cigar) + 1);
             strcpy(alignments[alignmentIndex].cigar, cigar);
             alignmentIndex++;
@@ -507,12 +469,6 @@ char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *
             break;
         }
 
-        /*
-            what if we hit n = 0 before m = 0?
-            is that possible? Do I need to set a case for this?
-        
-         */
-
         /* find scores for neighboring entries */
         int up = gap + OPT[n - 1][m];
         int diagonal = score(x[n - 1], y[m - 1], gap) + OPT[n - 1][m - 1];
@@ -582,7 +538,7 @@ void substring(char* result, char* string, int start, int end) {
 char *formatCigar(char *cigar, int length) {
 
     /* just make sure cigar input is uppercase */
-    // cigar = upper(cigar);
+    cigar = upper(cigar);
 
     /* our properly formatted CIGAR-string we will return */
     char *result = malloc(length + 1);
@@ -605,8 +561,7 @@ char *formatCigar(char *cigar, int length) {
                         result[resultIndex] = array[k];
                         resultIndex++;
                     }
-                    // strcat(result, array);
-                    // resultIndex += strlen(array);
+
                 } else {
                     result[resultIndex] = count + '0';
                     resultIndex++;
@@ -633,8 +588,6 @@ char *formatCigar(char *cigar, int length) {
                             resultIndex++;
                         }
 
-                        // strcat(result, array);
-                        // resultIndex += strlen(array);
                     } else {
                         result[resultIndex] = count + '0';
                         resultIndex++;
@@ -647,8 +600,6 @@ char *formatCigar(char *cigar, int length) {
             }
             i = j;
         }
-
-
 
         count = 0;
     }
@@ -714,8 +665,6 @@ void printMatrix(int OPT[MAXROW][MAXCOL], int n, int m, char *x, char *y) {
 
 /* write to our .SAM file */
 void writeSAM(SAM *sam, FILE *f) {
-
-    /* write SAM */
     fprintf(f, "%s\t", sam->QNAME);
     fprintf(f, "%d\t", sam->FLAG);
     fprintf(f, "%s\t", sam->RNAME);
@@ -730,22 +679,21 @@ void writeSAM(SAM *sam, FILE *f) {
 }
 
 /* free our SAM struct */
-/* what should I free?*/
 void destroySAM(SAM *sam) {
+
+    /* some SAM fields are free'd elsewhere */
     // free(sam->QNAME);
     // free(sam->RNAME);
     free(sam->CIGAR);
     free(sam->RNEXT);
     // free(sam->PNEXT);
-    // free(sam->SEQ); maybe don't free this because it points to something else
+    // free(sam->SEQ);
     free(sam->QUAL);
     free(sam);
 }
 
 /* destroy our alignment array */
-void destroyAlignment(Alignment *A) {
-    
-}
+void destroyAlignment(Alignment *A) {}
 
 /*****************************/
 /* AUX FUNTIONS FOR FM-INDEX */
@@ -1057,20 +1005,16 @@ CloseFASTA(FASTAFILE *ffp)
 
 /* lowercase of a string */
 char* lower(char* s) {
-    
     for (int i = 0; i < strlen(s); i++) {
         s[i] = tolower(s[i]);
     }
-
     return s;
 }
 
 /* uppercase of a string */
 char* upper(char* s) {
-    
     for (int i = 0; i < strlen(s); i++) {
         s[i] = toupper(s[i]);
     }
-
     return s;
 }
