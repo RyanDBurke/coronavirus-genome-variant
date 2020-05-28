@@ -95,3 +95,4 @@ $ samtools index mapping_sorted.bam
 
 ## 
 Written for my Bioinformatic Algorithms, Databases, and Tools course
+Shoutout Dr. Rob Patro for the cool project!
