@@ -23,7 +23,15 @@ int main(int argc, char **argv) {
         indexOut = "index_out.txt";
         reads = "reads-small.fa";
         alignOut = "";
-    } 
+    }
+
+    /* [./fmmap covid] executes for coronavirus genome */
+    if (strcmp(lower(argv[1]), "covid") == 0) {
+        ref_seq = "ref-CoV19.fa";
+        indexOut = "index_out.txt";
+        reads = "reads-small.fa";
+        alignOut = "";
+    }
 
     /* our FM-Index struct */
     FM *fm = malloc(sizeof(FM));
@@ -88,7 +96,7 @@ int fmIndex(FM *fm, char *reference, char *output) {
 
     /* write FM-Index to output */
     FILE *f;
-    if (length <= 50) {
+    if (length <= 50) { /* adjust seq-length for writing to output to your liking */
         f = fopen(output, "w");
         if (f == NULL) {
             printf("error opening file: ");
@@ -98,7 +106,7 @@ int fmIndex(FM *fm, char *reference, char *output) {
             exit(1);
         }
         write(fm, f, length);
-        printf("You can find the serialized FM-Index for \"%s\" in: ", reference);
+        printf("> You can find the serialized FM-Index for \"%s\" in: ", reference);
         printf("\033[1;31m");
         printf("%s\n", output);
         printf("\033[0m");
@@ -107,9 +115,14 @@ int fmIndex(FM *fm, char *reference, char *output) {
         printf("> Your sequence length: %d\n\n", length);
         printf("> Use ");
         printf("\033[1;31m");
-        printf("./smallFasta.fa ");
+        printf("./fmmap default ");
         printf("\033[0m");
-        printf("to see what a serialized FM-Index looks like.\n");
+        printf("to see what a serialized FM-Index looks like.\n\n");
+        printf("> If you really want to see FM-Index for sequences over 50 in length you can adjust it on line 99 in the file ");
+        printf("\033[1;31m");
+        printf("fmmap.c\n");
+        printf("\033[0m");
+
 
     }
 
@@ -157,6 +170,7 @@ int align(FM *fm, char *reads, char *output) {
             int *refPos = malloc((interval->end - interval->start));
             int refPosLength = referencePos(refPos, interval, matchLength, fm, seedEnd);
 
+            /*
             printf("> %s\n", name);
             printf("seed: %s\n", seed);
             printf("skip: %d\n", skip);
@@ -169,7 +183,7 @@ int align(FM *fm, char *reads, char *output) {
                     printf("refPos: %d\n", refPos[i]);
                 }
             }
-            
+            */
             
 
             /* fitting alignment: add it to alignments array and return that array length */
@@ -313,22 +327,25 @@ int alignment(Alignment alignments[], char *read, char *ref, int *refPos, int re
             alignmentIndex = 0;
 
             /* backtrace OPT-matrix to find alignment and return CIGAR string */
-            char *cigar = buildCigar(OPT, n, m, gap, x, y); // THIS NEEDS TO BE FREE'D
+            int offset = -1;
+            char *cigar = buildCigar(OPT, n, m, gap, x, y, &offset); // THIS NEEDS TO BE FREE'D
+
 
             /* add to alignments array */
             alignments[alignmentIndex].score = score;
-            alignments[alignmentIndex].pos = pos; // not necessarily! https://piazza.com/class/k4x0z5awkga1s6?cid=228
+            alignments[alignmentIndex].pos = pos + offset; // not necessarily! https://piazza.com/class/k4x0z5awkga1s6?cid=228
             alignments[alignmentIndex].cigar = cigar;
             alignmentIndex++;
 
         } else if (score == bestScore) { /* if its equal we add it to alignments-array */
 
             /* backtrace OPT-matrix to find alignment and return CIGAR string */
-            char *cigar = buildCigar(OPT, n, m, gap, x, y); // THIS NEEDS TO BE FREE'D
-            
+            int offset = -1;
+            char *cigar = buildCigar(OPT, n, m, gap, x, y, &offset); // THIS NEEDS TO BE FREE'D
+
             /* add to alignments array */
             alignments[alignmentIndex].score = score;
-            alignments[alignmentIndex].pos = pos; // not necessarily! https://piazza.com/class/k4x0z5awkga1s6?cid=228
+            alignments[alignmentIndex].pos = pos + offset; // not necessarily! https://piazza.com/class/k4x0z5awkga1s6?cid=228
             alignments[alignmentIndex].cigar = cigar;
             alignmentIndex++;
         }
@@ -374,7 +391,7 @@ int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int ga
 }
 
 /* returns CIGAR-string */
-char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *y) {
+char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *y, int *offset) {
 
     /* find out where we start our backtrace, and set n */
     int temp = n;
@@ -396,8 +413,23 @@ char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *
         /* for fitting alignment it ends when we reach row = 0 */
         /* in our case, when m = 0 */
         if (m == 0) {
+
+            /* Crucial
+                * this decides where exactly our read aligns best to our reference genome
+                * Allowing cost-free gaps at the beginning of our x-axis means our read
+                    can align (technically) anywhere on on the slice of our reference genome
+                    although it would typically be around of reference position
+             */
+
+            *offset = n;
             break;
         }
+
+        /*
+            what if we hit n = 0 before m = 0?
+            is that possible? Do I need to set a case for this?
+        
+         */
 
         /* find scores for neighboring entries */
         int up = gap + OPT[n - 1][m];
@@ -418,7 +450,7 @@ char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *
             cigar[cigarIndex] = 'I';
             cigarIndex++;
         } else if (maxA == up) {
-            n = max(n - 1, 0);
+            n = n - 1;
             cigar[cigarIndex] = 'D';
             cigarIndex++;
         } else {
@@ -437,7 +469,7 @@ int score(char a, char b, int gap) {
     if (a == 'N' || b == 'N') { /* if you see 'N', assume it matches */
         return 0;
     } else if (a == b) {
-        return 0;
+        return 1;
     } else if (a != b) {
         return -1;
     } else if (a == '-' || b == '-') {

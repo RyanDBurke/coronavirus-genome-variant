@@ -36,7 +36,9 @@ int main(int argc, char **argv) {
 
     printMatrix(matrix, n, m, x, y);
 
-    char *cigar = buildCigar(matrix, n, m, gap, x, y);
+    int offset = -1;
+    char *cigar = buildCigar(matrix, n, m, gap, x, y, &offset);
+    printf("offset: %d\n", offset);
 
     printf("CIGAR: %s\n", cigar);
     
@@ -51,7 +53,7 @@ int max(int a, int b) {
 }
 
 /* returns CIGAR string  */
-char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *y) {
+char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *y, int *offset) {
 
     /* find out where we start our backtrace, and set n */
     int temp = n;
@@ -81,6 +83,7 @@ char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *
             printf("n: %d\n", n);
             printf("m: %d\n", m);
             printf("-> %d\n", OPT[n][m]);
+            *offset = n;
             break;
         }
 

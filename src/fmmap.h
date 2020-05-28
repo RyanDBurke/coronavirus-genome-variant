@@ -124,7 +124,7 @@ int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int ga
     * @param x: our slice from the reference genome
     * @param y: our read
  */
-char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *y);
+char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *y, int *offset);
 
 /* return score between two characters
     * @param a: a character in x-axis string (reference genome)
