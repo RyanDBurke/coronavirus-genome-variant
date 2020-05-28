@@ -94,5 +94,5 @@ $ samtools index mapping_sorted.bam
 * Fast-rank calculations on burrows-wheeler transform
 
 ## 
-Written for my Bioinformatic Algorithms, Databases, and Tools course
+Written for my Bioinformatic Algorithms, Databases, and Tools course<br />
 Shoutout Dr. Rob Patro for the cool project!
