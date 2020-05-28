@@ -57,13 +57,8 @@ $ samtools sort -o mapping_sorted.bam mapping.bam
 $ samtools index mapping_sorted.bam
 ```
 ##### open IGV
-```
 (3a) Load genome: <em>Genomes -> Load Genome From File</em> and select ```2019-nCoV.fa```
 (3b) Load alignment: <em>File -> Load From File</em> and select ```mapping_sorted.bam```
-```
-
-### (4) <ins>Explore Visualization</ins>
-
 
 
 ### <ins>Structure</ins>
