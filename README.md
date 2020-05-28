@@ -1,4 +1,4 @@
-###### Unfinished 5/22/20 -- working on alignment and OPT-matrix using dynamic programming
+###### Unfinished 5/28/20 -- almost done! working on showing variant visualizations on IGV.
 
 ## <ins>COVID-19 Genome Variant, Burrows-Wheeler Transform, and FM-Index </ins>
 
@@ -16,18 +16,21 @@ git clone https://github.com/RyanDBurke/coronavirus-genome-variant.git
 ### <ins>Execution</ins>
 
 #### Default Execution
+###### execution of program with small inputs
 ```
 $ cd src/
 $ make
 $ ./fmmap default
 ```
 #### Example Execution
+###### execution of program with coronvirus genome and the covid-variant read-fragments
 ```
 $ cd src/
 $ make
-$ ./fmmap ref-CoV19.fa index_out.txt reads.fa.gz alignments.sam
+$ ./fmmap covid
 ```
 #### General Execution
+###### execution of program with user input
 ```
 $ cd src/
 $ make
