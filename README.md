@@ -6,37 +6,60 @@ A read-alignment tool that utilizes the seed-and-extend paradigm, FM-Index, suff
 
 ## 
 
-### <ins>(1) Clone</ins>
+### (1) <ins>Clone</ins>
 ```
 git clone https://github.com/RyanDBurke/coronavirus-genome-variant.git
 ```
 
-### <ins>(2) Execution</ins>
+##
 
-#####(2a) compile
+### (2) <ins>Execution</ins>
+
+##### first, compile
 ```
 $ cd src/
 $ make
 ```
 
-#####(2b) execute one of the valid commands below
+##### then, execute one of the valid commands below
 ```
-./fmmap covid 1K
-```
-```
-./fmmap covid 10K
+$ ./fmmap covid 1K
 ```
 ```
-./fmmap covid 1M
+$ ./fmmap covid 10K
 ```
 ```
-./fmmap covid default
+$ ./fmmap covid 1M
 ```
 ```
-./fmmap <reference-sequence>.fa <output file>.txt <reads>.fa.gz <output file>.sam
+$ ./fmmap covid default
+```
+```
+$ ./fmmap <reference-sequence>.fa <output file>.txt <reads>.fa.gz <output file>.sam
 ```
 
 ##
+
+### (3) <ins>IGV Visualization</ins>
+##### install samtools
+```
+$ sudo apt-get update -y
+$ sudo apt-get install -y samtools
+```
+##### install [IGV](https://software.broadinstitute.org/software/igv/download)
+##### go-to mapping
+```
+$ cd Mappings/
+```
+##### format for IGV
+```
+$ samtools view -b -o mapping.bam mapping.sam
+$ samtools sort -o mapping_sorted.bam mapping.bam
+$ samtools index mapping_sorted.bam
+```
+
+##### open IGV
+
 
 ### <ins>Structure</ins>
     BWT
