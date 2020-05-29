@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
         alignOut = "./Mappings/mapping.sam";
 
         printf("[Aligning over 1,000 reads]\n");
-        printf("This takes roughly 30 seconds to execute\n");
+        printf("This takes roughly 30 seconds to execute\n\n");
 
         READ = 1000;
     }
@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
         alignOut = "./Mappings/mapping.sam";
 
         printf("[Aligning over 10,000 reads]\n");
-        printf("This takes roughly 2 minutes to execute\n");
+        printf("This takes roughly 2 minutes to execute\n\n");
 
         READ = 10000;
     }
@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
         alignOut = "./Mappings/mapping.sam";
 
         printf("[Aligning over 1M reads]\n");
-        printf("This takes roughly ~2.5 Hours to execute\n");
+        printf("This takes roughly ~2.5 Hours to execute\n\n");
 
         READ = 1000000;
     }
@@ -148,7 +148,7 @@ int fmIndex(FM *fm, char *reference, char *output) {
         writeFM(fm, f, fm->length);
         printf("> You can find the serialized FM-Index for \"%s\" in: ", reference);
         printf("\033[1;31m");
-        printf("%s\n", output);
+        printf("%s\n\n", output);
         printf("\033[0m");
     } else {
         printf("> Sequences over 50 in length are not written to file\n\n");
@@ -172,6 +172,7 @@ int fmIndex(FM *fm, char *reference, char *output) {
 
 int align(FM *fm, char *reads, char *output) {
 
+    /* keep track of our progress */
     double progress = 0.0;
 
     /* fasta stuff */
@@ -200,7 +201,7 @@ int align(FM *fm, char *reads, char *output) {
     /* parse .fa file containing our n-amount of 100bp reads */
     while ((l = kseq_read(seq)) >= 0) {
 
-         /* progress bar */
+        /* progress bar */
         progress++;
         double percentageDone = progress / READ;
         if(percentageDone >= 0 && percentageDone < .10) {
@@ -335,7 +336,7 @@ int align(FM *fm, char *reads, char *output) {
 
     fclose(f);
 
-    printf("\n> You can find the SAM-formatted alignments in: ");
+    printf("\n\n> You can find the SAM-formatted alignments in: ");
     printf("\033[1;31m");
     printf("%s\n", output);
     printf("\033[0m");
