@@ -2,6 +2,8 @@
 #include "kseq.h"
 KSEQ_INIT(gzFile, gzread)
 
+double READ = 0;
+
 /* runs align and fmIndex */
 int main(int argc, char **argv) {
 
@@ -28,6 +30,7 @@ int main(int argc, char **argv) {
         indexOut = "./FM-output/FMindex.txt";
         reads = "./Default/reads-small.fa";
         alignOut = "./Mappings/mapping.sam";
+        READ = 1;
     }
 
     /* [./fmmap covid] executes for coronavirus genome with 1,000 reads*/
@@ -39,6 +42,8 @@ int main(int argc, char **argv) {
 
         printf("[Aligning over 1,000 reads]\n");
         printf("This takes roughly 30 seconds to execute\n");
+
+        READ = 1000;
     }
 
     /* [./fmmap covid] executes for coronavirus genome with 10,000 reads*/
@@ -50,6 +55,8 @@ int main(int argc, char **argv) {
 
         printf("[Aligning over 10,000 reads]\n");
         printf("This takes roughly 2 minutes to execute\n");
+
+        READ = 10000;
     }
 
     /* [./fmmap covid 1M] executes for coronavirus genome with 1 Million reads */
@@ -61,6 +68,8 @@ int main(int argc, char **argv) {
 
         printf("[Aligning over 1M reads]\n");
         printf("This takes roughly ~2.5 Hours to execute\n");
+
+        READ = 1000000;
     }
 
     /* our FM-Index struct */
@@ -151,7 +160,7 @@ int fmIndex(FM *fm, char *reference, char *output) {
         printf("to see what a serialized FM-Index looks like.\n\n");
         printf("> If you really want to see FM-Index for sequences over 50 in length you can adjust it on line 130 in the file ");
         printf("\033[1;31m");
-        printf("fmmap.c\n");
+        printf("fmmap.c\n\n");
         printf("\033[0m");
     }
 
@@ -162,6 +171,8 @@ int fmIndex(FM *fm, char *reference, char *output) {
 
 
 int align(FM *fm, char *reads, char *output) {
+
+    double progress = 0.0;
 
     /* fasta stuff */
     gzFile fp;
@@ -188,6 +199,44 @@ int align(FM *fm, char *reads, char *output) {
 
     /* parse .fa file containing our n-amount of 100bp reads */
     while ((l = kseq_read(seq)) >= 0) {
+
+         /* progress bar */
+        progress++;
+        double percentageDone = progress / READ;
+        if(percentageDone >= 0 && percentageDone < .10) {
+            printf("\rProgress: [#           ] %.0lf%%", percentageDone*100);
+            fflush(stdout);
+        } else if (percentageDone > .10 && percentageDone < .20) {
+            printf("\rProgress: [##          ] %.0lf%%", percentageDone*100);
+            fflush(stdout);
+        } else if (percentageDone > .20 && percentageDone < .30) {
+            printf("\rProgress: [###         ] %.0lf%%", percentageDone*100);
+            fflush(stdout);
+        } else if (percentageDone > .30 && percentageDone < .40) {
+            printf("\rProgress: [####        ] %.0lf%%", percentageDone*100);
+            fflush(stdout);
+        } else if (percentageDone > .40 && percentageDone < .50) {
+            printf("\rProgress: [#####       ] %.0lf%%", percentageDone*100);
+            fflush(stdout);
+        } else if (percentageDone > .50 && percentageDone < .60) {
+            printf("\rProgress: [######      ] %.0lf%%", percentageDone*100);
+            fflush(stdout);
+        } else if (percentageDone > .60 && percentageDone < .70) {
+            printf("\rProgress: [########    ] %.0lf%%", percentageDone*100);
+            fflush(stdout);
+        } else if (percentageDone > .70 && percentageDone < .80) {
+            printf("\rProgress: [#########   ] %.0lf%%", percentageDone*100);
+            fflush(stdout);
+        } else if (percentageDone > .80 && percentageDone < .90) {
+            printf("\rProgress: [##########  ] %.0lf%%", percentageDone*100);
+            fflush(stdout);
+        } else if (percentageDone > .90 && percentageDone < .98) {
+            printf("\rProgress: [########### ] %.0lf%%", percentageDone*100);
+            fflush(stdout);
+        } else {
+            printf("\rProgress: [############] %.0lf%%", percentageDone*100);
+            fflush(stdout);
+        }
 
         /* an array where we'll store our alignments */
         Alignment alignments[strlen(seq->seq.s)];
