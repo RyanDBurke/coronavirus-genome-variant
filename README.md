@@ -4,7 +4,7 @@
 
 ![10k Reads](./IGV-10K.png)
 
-A read-alignment tool that utilizes the seed-and-extend paradigm, FM-Index, suffix arrays, burrows-wheeler transform, and core dynamic programming principles to provide for efficient seed-searching to discover variants in the COVID-19 genome.
+An efficient seed-search alignment tool to compare read-variants to the COVID-19 virus genome using Burrows-Wheeler transform, suffix arrays, the FM-Index, and core dynamic programming principles
 
 ## 
 
