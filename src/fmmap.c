@@ -11,15 +11,7 @@ bool makeProgressBar = false;
 int main(int argc, char **argv) {
 
     /* Valid commands */
-    printf("> Valid Commands:\n");
-    printf("\033[1;31m");
-    printf("\t> ./fmmap covid 1K\n");
-    printf("\t> ./fmmap covid 10K\n");
-    printf("\t> ./fmmap covid 1M\n");
-    printf("\t> ./fmmap default\n");
-    printf("\t> ./fmmap <reference-sequence>.fa <output file>.txt <reads>.fa.gz <output file>.sam\n");
-    printf("\033[0m");
-    printf("---------------------------------------------------------------------------------------------------\n\n");
+    commands();
 
     /* string path to each relevant file */
     char *ref_seq = argv[1];
@@ -1054,4 +1046,19 @@ void pb(bool makeProgressBar, double percentageDone) {
             printf("\rProgress: [############] %.0lf%%", percentageDone*100);
             fflush(stdout);
         }
+}
+
+/* print commands */
+void commands() {
+
+    /* Valid commands */
+    printf("> Valid Commands:\n");
+    printf("\033[1;31m");
+    printf("\t> ./fmmap covid 1K\n");
+    printf("\t> ./fmmap covid 10K\n");
+    printf("\t> ./fmmap covid 1M\n");
+    printf("\t> ./fmmap default\n");
+    printf("\t> ./fmmap <reference-sequence>.fa <output file>.txt <reads>.fa.gz <output file>.sam\n");
+    printf("\033[0m");
+    printf("---------------------------------------------------------------------------------------------------\n\n");
 }

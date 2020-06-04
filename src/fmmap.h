@@ -250,3 +250,6 @@ char* upper(char* s);
 
 /* progress bar */
 void pb(bool makeProgressBar, double percentageDone);
+
+/* print commands */
+void commands();
