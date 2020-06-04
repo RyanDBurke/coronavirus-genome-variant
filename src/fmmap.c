@@ -2,7 +2,10 @@
 #include "kseq.h"
 KSEQ_INIT(gzFile, gzread)
 
+/* keep a global note on # of reads */
+/* only works if a preset command is called */
 double READ = 0;
+bool makeProgressBar = false;
 
 /* runs align and fmIndex */
 int main(int argc, char **argv) {
@@ -30,7 +33,10 @@ int main(int argc, char **argv) {
         indexOut = "./FM-output/FMindex.txt";
         reads = "./Default/reads-small.fa";
         alignOut = "./Mappings/mapping.sam";
+
+        /* pass # of reads and make progress bar */
         READ = 1;
+        makeProgressBar = true;
     }
 
     /* [./fmmap covid] executes for coronavirus genome with 1,000 reads*/
@@ -43,7 +49,9 @@ int main(int argc, char **argv) {
         printf("[Aligning over 1,000 reads]\n");
         printf("This takes roughly 30 seconds to execute\n\n");
 
+        /* pass # of reads and make progress bar */
         READ = 1000;
+        makeProgressBar = true;
     }
 
     /* [./fmmap covid] executes for coronavirus genome with 10,000 reads*/
@@ -56,7 +64,9 @@ int main(int argc, char **argv) {
         printf("[Aligning over 10,000 reads]\n");
         printf("This takes roughly 2 minutes to execute\n\n");
 
+        /* pass # of reads and make progress bar */
         READ = 10000;
+        makeProgressBar = true;
     }
 
     /* [./fmmap covid 1M] executes for coronavirus genome with 1 Million reads */
@@ -69,7 +79,9 @@ int main(int argc, char **argv) {
         printf("[Aligning over 1M reads]\n");
         printf("This takes roughly ~2.5 Hours to execute\n\n");
 
+        /* pass # of reads and make progress bar */
         READ = 1000000;
+        makeProgressBar = true;
     }
 
     /* our FM-Index struct */
@@ -136,7 +148,8 @@ int fmIndex(FM *fm, char *reference, char *output) {
 
     /* write FM-Index to output */
     FILE *f;
-    if (fm->length <= 50) { /* adjust seq-length for writing to output to your liking */
+    int seqLimit = 50; /* adjust seq-length for writing to output to your liking */
+    if (fm->length <= seqLimit) { 
         f = fopen(output, "w");
         if (f == NULL) {
             printf("error opening file: ");
@@ -151,14 +164,14 @@ int fmIndex(FM *fm, char *reference, char *output) {
         printf("%s\n\n", output);
         printf("\033[0m");
     } else {
-        printf("> Sequences over 50 in length are not written to file\n\n");
-        printf("> Your sequence length: %d\n\n", fm->length);
-        printf("> Use ");
+        printf("\t> Sequences over %d in length are not written to file\n", seqLimit);
+        printf("\t> Your sequence length: %d\n", fm->length);
+        printf("\t> Use ");
         printf("\033[1;31m");
         printf("./fmmap default ");
         printf("\033[0m");
-        printf("to see what a serialized FM-Index looks like.\n\n");
-        printf("> If you really want to see FM-Index for sequences over 50 in length you can adjust it on line 130 in the file ");
+        printf("to see what a serialized FM-Index looks like.\n");
+        printf("\t> If you really want to see FM-Index for sequences over %d in length you can adjust it on line 151 in the file ", seqLimit);
         printf("\033[1;31m");
         printf("fmmap.c\n\n");
         printf("\033[0m");
@@ -204,40 +217,7 @@ int align(FM *fm, char *reads, char *output) {
         /* progress bar */
         progress++;
         double percentageDone = progress / READ;
-        if(percentageDone >= 0 && percentageDone < .10) {
-            printf("\rProgress: [#           ] %.0lf%%", percentageDone*100);
-            fflush(stdout);
-        } else if (percentageDone > .10 && percentageDone < .20) {
-            printf("\rProgress: [##          ] %.0lf%%", percentageDone*100);
-            fflush(stdout);
-        } else if (percentageDone > .20 && percentageDone < .30) {
-            printf("\rProgress: [###         ] %.0lf%%", percentageDone*100);
-            fflush(stdout);
-        } else if (percentageDone > .30 && percentageDone < .40) {
-            printf("\rProgress: [####        ] %.0lf%%", percentageDone*100);
-            fflush(stdout);
-        } else if (percentageDone > .40 && percentageDone < .50) {
-            printf("\rProgress: [#####       ] %.0lf%%", percentageDone*100);
-            fflush(stdout);
-        } else if (percentageDone > .50 && percentageDone < .60) {
-            printf("\rProgress: [######      ] %.0lf%%", percentageDone*100);
-            fflush(stdout);
-        } else if (percentageDone > .60 && percentageDone < .70) {
-            printf("\rProgress: [########    ] %.0lf%%", percentageDone*100);
-            fflush(stdout);
-        } else if (percentageDone > .70 && percentageDone < .80) {
-            printf("\rProgress: [#########   ] %.0lf%%", percentageDone*100);
-            fflush(stdout);
-        } else if (percentageDone > .80 && percentageDone < .90) {
-            printf("\rProgress: [##########  ] %.0lf%%", percentageDone*100);
-            fflush(stdout);
-        } else if (percentageDone > .90 && percentageDone < .98) {
-            printf("\rProgress: [########### ] %.0lf%%", percentageDone*100);
-            fflush(stdout);
-        } else {
-            printf("\rProgress: [############] %.0lf%%", percentageDone*100);
-            fflush(stdout);
-        }
+        pb(true, percentageDone);
 
         /* an array where we'll store our alignments */
         Alignment alignments[strlen(seq->seq.s)];
@@ -1036,4 +1016,42 @@ char* upper(char* s) {
         s[i] = toupper(s[i]);
     }
     return s;
+}
+
+/* progress bar */
+void pb(bool makeProgressBar, double percentageDone) {
+    if(percentageDone >= 0 && percentageDone < .10) {
+            printf("\rProgress: [#           ] %.0lf%%", percentageDone*100);
+            fflush(stdout);
+        } else if (percentageDone > .10 && percentageDone < .20) {
+            printf("\rProgress: [##          ] %.0lf%%", percentageDone*100);
+            fflush(stdout);
+        } else if (percentageDone > .20 && percentageDone < .30) {
+            printf("\rProgress: [###         ] %.0lf%%", percentageDone*100);
+            fflush(stdout);
+        } else if (percentageDone > .30 && percentageDone < .40) {
+            printf("\rProgress: [####        ] %.0lf%%", percentageDone*100);
+            fflush(stdout);
+        } else if (percentageDone > .40 && percentageDone < .50) {
+            printf("\rProgress: [#####       ] %.0lf%%", percentageDone*100);
+            fflush(stdout);
+        } else if (percentageDone > .50 && percentageDone < .60) {
+            printf("\rProgress: [######      ] %.0lf%%", percentageDone*100);
+            fflush(stdout);
+        } else if (percentageDone > .60 && percentageDone < .70) {
+            printf("\rProgress: [########    ] %.0lf%%", percentageDone*100);
+            fflush(stdout);
+        } else if (percentageDone > .70 && percentageDone < .80) {
+            printf("\rProgress: [#########   ] %.0lf%%", percentageDone*100);
+            fflush(stdout);
+        } else if (percentageDone > .80 && percentageDone < .90) {
+            printf("\rProgress: [##########  ] %.0lf%%", percentageDone*100);
+            fflush(stdout);
+        } else if (percentageDone > .90 && percentageDone < .98) {
+            printf("\rProgress: [########### ] %.0lf%%", percentageDone*100);
+            fflush(stdout);
+        } else {
+            printf("\rProgress: [############] %.0lf%%", percentageDone*100);
+            fflush(stdout);
+        }
 }

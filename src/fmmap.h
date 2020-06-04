@@ -53,13 +53,6 @@ typedef struct Rotation {
     char    *rotation;
 } R;
 
-/* FASTA files */
-typedef struct fastafile_s {
-  FILE      *fp;
-  gzFile    *gz;
-  char      buffer[FASTA_MAXLINE];
-} FASTAFILE;
-
 /* SAM format */
 typedef struct sam {
     char    *QNAME;
@@ -254,3 +247,6 @@ char* lower(char* s);
 
 /* string to uppercase*/
 char* upper(char* s);
+
+/* progress bar */
+void pb(bool makeProgressBar, double percentageDone);

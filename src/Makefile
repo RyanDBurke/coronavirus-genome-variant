@@ -5,4 +5,3 @@ fmmap: fmmap.c
 
 clean:
 	$(RM) fmmap
-	rm -f *.o kseq_test
