@@ -118,4 +118,3 @@ confident in my abilities as a programmer.
 ```
 ## 
 <em>Written for my Bioinformatic Algorithms, Databases, and Tools course</em><br />
-<em>Shoutout Dr. Rob Patro</em>
