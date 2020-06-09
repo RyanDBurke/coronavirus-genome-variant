@@ -104,7 +104,7 @@ $ samtools index mapping_sorted.bam
 ##
 ##### Concluding Thoughts
 ```
-This project was originally given to us mid-semester, right when the chaos following the covid pandemic occured.
+This project was originally given to us mid-semester, right when the chaos following the covid pandemic occurred.
 I originally wrote it in python, and never finished it -- the scope of the assignment was beyond me and I was 
 struggling to wrap my head around a lot of the intense algorithms.
 
