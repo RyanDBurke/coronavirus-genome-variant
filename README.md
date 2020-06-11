@@ -117,4 +117,4 @@ All thanks goes out to my my professor, Dr. Rob Patro, he was extremely helpful 
 confident in my abilities as a programmer.
 ```
 ## 
-<em>Written for my Bioinformatic Algorithms, Databases, and Tools course</em><br />
+<em>Ryan Burke</em><br />
