@@ -113,7 +113,7 @@ runtimes and also for some well-need practice with C. I'm proud to say I finishe
 a TON about dynamic-programming, data-compression for efficient look-ups, file-structure manangement, 
 memory/pointers, and plenty more.
 
-All thanks goes out to my my professor, Dr. Rob Patro, he was extremely helpful and I genuinely feel 
+All thanks goes out to my professor, Dr. Rob Patro, he was extremely helpful and I genuinely feel 
 confident in my abilities as a programmer.
 ```
 ## 
