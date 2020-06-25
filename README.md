@@ -15,7 +15,7 @@ An efficient seed-search alignment tool to compare read-variants to the COVID-19
 ## What Does it Do? <a name="cool"></a>
 
 <figure>
-  <img src="./IGV-10K.png" alt="Integrative Genomics Viewer for 10k reads" name="figure1">
+  <img src="./PNG/IGV-10K.png" alt="Integrative Genomics Viewer for 10k reads" name="figure1">
 </figure>
 
 Steps:
