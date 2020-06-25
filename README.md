@@ -14,7 +14,9 @@ An efficient seed-search alignment tool to compare read-variants to the COVID-19
 
 ## What Does it Do? <a name="cool"></a>
 
-![10k Reads](./IGV-10K.png)
+<figure>
+  <img src="./IGV-10K.png" alt="Integrative Genomics Viewer for 10k reads">
+</figure>
 
 Steps:
 1. Take the nCov-19 genome sequence and build the auxiliary structures (Burrows-Wheeler transform and suffix arrays) for the FM-Index
