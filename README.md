@@ -1,21 +1,35 @@
-## <ins>COVID-19 Genome Variant, Burrows-Wheeler Transform, and FM-Index </ins>
+# Table of Contents
 
 ## 
 
-![10k Reads](./IGV-10K.png)
-
-An efficient seed-search alignment tool to compare read-variants to the COVID-19 virus genome using Burrows-Wheeler transform, suffix arrays, the FM-Index, and core dynamic programming principles
+* [What is this?](#what)
+* [I'm sure this is cool but can you just show me what it does?](#cool)
+* [How would I execute this locally?](#execute)
+* [File Structure](#structure)
+* [Auxiliary Links](#links)
+* [Future Goals](#goals)
+* [Concluding Thoughts](#thoughts)
 
 ## 
 
-### (1) <ins>Clone</ins>
+## What is this? <a name="what"></a>
+
+words
+
+## I'm sure this is cool but can you just show me what it does? <a name="cool"></a>
+
+words
+
+## How would I execute this locally? <a name="execute"></a>
+
+### (1) Clone
 ```
 git clone https://github.com/RyanDBurke/coronavirus-genome-variant.git
 ```
 
 ##
 
-### (2) <ins>Execution</ins>
+### (2) Execution
 
 ##### first, install zlib
 ```
@@ -40,7 +54,7 @@ $ ./fmmap <reference-sequence>.fa <output file>.txt <reads>.fa.gz <output file>.
 
 ##
 
-### (3) <ins>IGV Visualization</ins>
+### (3) IGV Visualization
 ##### install samtools
 ```
 $ sudo apt-get update -y
@@ -61,9 +75,12 @@ $ samtools index mapping_sorted.bam
 &nbsp;&nbsp;&nbsp;&nbsp;**(3b)** Load alignment: <em>File -> Load From File</em> and select ```mapping_sorted.bam``` <br />
 &nbsp;&nbsp;&nbsp;&nbsp;**optional**: details on how to navigate IGV [here](https://software.broadinstitute.org/software/igv/AlignmentData)
 
+
+## 
+
 ##
 
-### <ins>Structure</ins>
+## Structure <a name="structure"></a>
     coronavirus-genome-variant
     ├── README                   
     └── src
@@ -88,21 +105,19 @@ $ samtools index mapping_sorted.bam
         ├── fmmap.c                     # .c -> builds our FM-Index and Aligner
         ├── fmmap.h                     # .h -> struct/function-delcarations
         └── kseq.h                      # FASTA parser
-##
 
-### <ins>Auxiliary Links</ins>
+## Auxiliary Links <a name="links"></a>
 * [FASTA parser](https://github.com/lh3/readfq)
 * [nCov-19 Genome](https://www.ncbi.nlm.nih.gov/nuccore/NC_045512.2?report=fasta)
-* Installation guide for other OS distributions
+* Execution guide for other OS distributions
 
-##
 
-### <ins> Future Goals </ins>
+## Future Goals <a name="goals"></a>
 * [Compressed suffix array](https://www.cs.cmu.edu/~dga/csa.pdf), for more efficient look-ups
 * Fast-rank calculations on burrows-wheeler transform
 
 ##
-##### Concluding Thoughts
+##### Concluding Thoughts<a name="thoughts"></a>
 ```
 This project was originally given to us mid-semester, right when the chaos following the covid pandemic occurred.
 I originally wrote it in python, and never finished it -- the scope of the assignment was beyond me and I was 
@@ -117,4 +132,4 @@ All thanks goes out to my professor, Dr. Rob Patro, he was extremely helpful and
 confident in my abilities as a programmer.
 ```
 ## 
-<em>Ryan Burke</em><br />
+<em>Written for my Bioinformatics course</em><br />
