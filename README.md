@@ -112,7 +112,7 @@ $ samtools index mapping_sorted.bam
 * [Compressed suffix array](https://www.cs.cmu.edu/~dga/csa.pdf), for more efficient look-ups
 * Fast-rank calculations on burrows-wheeler transform
 
-##### Concluding Thoughts<a name="thoughts"></a>
+## Concluding Thoughts<a name="thoughts"></a>
 ```
 This project was originally given to us mid-semester, right when the chaos following the covid pandemic occurred.
 I originally wrote it in python, and never finished it -- the scope of the assignment was beyond me and I was 
