@@ -15,7 +15,8 @@ An efficient seed-search alignment tool to compare read-variants to the COVID-19
 ## What Does it Do? <a name="cool"></a>
 
 <figure>
-  <img src="./IGV-10K.png" alt="Integrative Genomics Viewer for 10k reads">
+  <img src="./IGV-10K.png" alt="Integrative Genomics Viewer for 10k reads" name="figure1">
+  <figcaption>*Figure 1</figcaption>
 </figure>
 
 Steps:
@@ -23,7 +24,7 @@ Steps:
 2. Take the 100bp-length simulated reads and align them to nCov-19 using the seed-and-extend paradigm and dynamic programming
 3. Build the .SAM file mapping
 4. Upload the mapping to Integrative Genomics Viewer (IGV)
-5. View coverage track for an alignment
+5. View coverage track for an alignment ([Figure 1](#figure1))
 
 ## How Do I Execute? <a name="execute"></a>
 
