@@ -1,4 +1,4 @@
-###### Ubuntu/WSL Only
+###### Ubuntu Only
 
 # Table of Contents
 
