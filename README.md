@@ -1,4 +1,4 @@
-###### Ubuntu Only
+###### No MacOS execution instructions as of now
 
 # Table of Contents
 
