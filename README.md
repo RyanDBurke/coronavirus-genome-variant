@@ -1,5 +1,3 @@
-###### No MacOS execution instructions as of now
-
 # Table of Contents
 
 * [What is This?](#what)
