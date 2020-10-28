@@ -126,5 +126,3 @@ memory/pointers, and plenty more.
 All thanks goes out to my professor, Dr. Rob Patro, he was extremely helpful and I genuinely feel 
 confident in my abilities as a programmer.
 ```
-## 
-<em>Written for my Bioinformatics course</em><br />
