@@ -60,11 +60,10 @@ void commands() {
     /* Valid commands */
     printf("> Valid Commands:\n");
     printf("\033[1;31m");
-    printf("\t> ./fmmap covid 1K\n");
-    printf("\t> ./fmmap covid 10K\n");
-    printf("\t> ./fmmap covid 1M\n");
-    printf("\t> ./fmmap default\n");
-    printf("\t> ./fmmap <reference-sequence>.fa <output file>.txt <reads>.fa.gz <output file>.sam\n");
+    printf("   ./run\n");
+    printf("   ./run covid 1K\n");
+    printf("   ./run covid 10K\n");
+    printf("   ./run covid 1M\n\n");
     printf("\033[0m");
-    printf("---------------------------------------------------------------------------------------------------\n\n");
+    //printf("---------------------------------------------------------------------------------------------------\n\n");
 }

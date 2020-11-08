@@ -48,11 +48,10 @@ $ make
 
 ##### then, execute ONE of the valid commands below
 ```
-$ ./run default
+$ ./run
 $ ./run covid 1K
 $ ./run covid 10K
 $ ./run covid 1M
-$ ./run <reference-sequence>.fa <output file>.txt <reads>.fa.gz <output file>.sam
 ```
 
 ### (3) IGV Visualization

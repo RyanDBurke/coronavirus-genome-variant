@@ -73,11 +73,7 @@ int fmIndex(FM *fm, char *reference, char *output) {
         printf("\033[1;31m");
         printf("./fmmap default ");
         printf("\033[0m");
-        printf("to see what a serialized FM-Index looks like.\n");
-        printf("\t> If you really want to see FM-Index for sequences over %d in length you can adjust it on line 151 in the file ", seqLimit);
-        printf("\033[1;31m");
-        printf("fmmap.c\n\n");
-        printf("\033[0m");
+        printf("to see a serialized FM-Index.\n\n");
     }
 
     kseq_destroy(seq);
