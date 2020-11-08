@@ -48,10 +48,10 @@ $ make
 
 ##### then, execute ONE of the valid commands below
 ```
+$ ./fmmap default
 $ ./fmmap covid 1K
 $ ./fmmap covid 10K
 $ ./fmmap covid 1M
-$ ./fmmap covid default
 $ ./fmmap <reference-sequence>.fa <output file>.txt <reads>.fa.gz <output file>.sam
 ```
 
