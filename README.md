@@ -49,10 +49,10 @@ $ make
 
 ##### then, execute ONE of the valid commands below
 ```
-$ ./run             /*  default, run this if you just want to see what a successful compile/run looks like  */
-$ ./run covid 1K    /*  1K reads  */
-$ ./run covid 10K   /*  10K reads */
-$ ./run covid 1M    /*  1M reads  */
+$ ./run             #  default, run this if you just want to see what a successful compile/run looks like
+$ ./run covid 1K    #  1K reads
+$ ./run covid 10K   #  10K reads
+$ ./run covid 1M    #  1M reads 
 ```
 
 ### (3) IGV Visualization
