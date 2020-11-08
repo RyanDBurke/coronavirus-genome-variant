@@ -1,9 +1,8 @@
-#
+<hr>
 <br />
 <div align="center">:seedling:</div>
 <br />
-#
-<br />
+<hr>
 
 # Table of Contents
 
