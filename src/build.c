@@ -22,8 +22,6 @@ int main(int argc, char **argv) {
     char *reads = argv[3];
     char *alignOut = argv[4];
 
-    /* stop */
-
     /* [./fmmap default] executes with small default inputs */
     if (argv[1] == NULL) {
         ref_seq = "./default/ref-small.fa";
