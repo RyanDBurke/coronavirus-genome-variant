@@ -1,7 +1,7 @@
 <br />
 <div align="center">:seedling:</div>
 <br />
-<div align="center">A basic seed-search alignment tool to compare read-variants to the COVID-19 virus genome using Burrows-Wheeler transform, suffix arrays, the FM-Index, and core dynamic programming principles.</div>
+<div align="center">A basic seed-search alignment tool to compare read-variants to the nCov-19 virus genome using Burrows-Wheeler transform, suffix arrays, the FM-Index, and core dynamic programming principles.</div>
 <br />
 
 # Table of Contents
