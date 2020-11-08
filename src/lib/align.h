@@ -1,3 +1,7 @@
+/***************************************/
+/*               ALIGN                 */
+/* associated functions to align reads */
+/***************************************/
 
 #ifndef ALIGN_H
 #define ALIGN_H
@@ -8,6 +12,8 @@
     * @param fm: fm-index
     * @param reads: FASTA file of 100bp reads
     * @param output: file output we will write to
+    * @param READ: total # of reads (for progress bar)
+    * @param makePB: to PB or not to PB, that is the question! (PB = progress bar)
  */
 int align(FM *fm, char *reads, char *output, double READ, bool makePB);
 

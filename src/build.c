@@ -1,3 +1,7 @@
+/***************/
+/*    BUILD    */
+/***************/
+
 #include "./lib/align.h"
 #include "./lib/fmIndex.h"
 #include "./lib/misc.h"

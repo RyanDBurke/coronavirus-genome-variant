@@ -1,12 +1,12 @@
+/**********************************************/
+/*                  FM-INDEX                  */
+/* associated functions to build the fm-index */
+/**********************************************/
 
 #ifndef FMINDEX_H
 #define FMINDEX_H
 
 #include "std.h"
-
-/******************/
-/* MAIN FUNCTIONS */
-/******************/
 
 /* takes a ref-sequence, builds fmIndex, and writes to output
     * @param fm: fm-index
