@@ -48,10 +48,10 @@ $ make
 
 ##### then, execute ONE of the valid commands below
 ```
-$ ./run
-$ ./run covid 1K
-$ ./run covid 10K
-$ ./run covid 1M
+$ ./run             /*  default -- run this if you just want to see what a successful compile/run looks like  */
+$ ./run covid 1K    /*  1K reads  */
+$ ./run covid 10K   /*  10K reads */
+$ ./run covid 1M    /*  1M reads  */
 ```
 
 ### (3) IGV Visualization
@@ -62,7 +62,7 @@ $ sudo apt-get install -y samtools
 ```
 ##### install IGV [here](https://software.broadinstitute.org/software/igv/download), then go-to your mapping
 ```
-$ cd Mappings/
+$ cd mappings/
 ```
 ##### format for IGV
 ```
@@ -79,27 +79,37 @@ $ samtools index mapping_sorted.bam
     coronavirus-genome-variant
     ├── README                   
     └── src
-        ├── 2019-nCov.fa                # nCov-19 Genome
-        ├── Default                     # default input/output
+        ├── 2019-nCov.fa        # nCov-19 genome sequence
+        ├── default             # default input/output
         |   ├── reads-small.fa          
         |   └── ref-small.fa
         |
-        ├── FM-output                   # standard output file for FM-Index          
+        ├── fm-output           # standard output file for FM-Index          
         |   └── FMindex.txt
         |
-        ├── Makefile                    # build executables
-        ├── Mappings                    # standard output .sam file(s) for alignments
+        ├── lib                 # library of associated functions, structures, & variables
+        |   ├── align.h         # aux functions for aligning reads
+        |   ├── fmIndex.h       # aux functions for building fm-index
+        |   ├── misc.h          # miscellanous functions
+        |   ├── kseq.h          # FASTA parser
+        |   └── std.h           # holds all relevant structures/global-variables
+        |
+        ├── Makefile            # build executables
+        ├── mappings            # standard output .sam file(s) for alignments
         |   ├── mappings.sam                      
-        |   └── mapping1M.sam           # holds the mapping for the 1M reads (so you don't have to wait 3hrs)
+        |   └── mapping1M.sam   # holds the mapping for the 1M reads (so you don't have to wait 3hrs)
         |    
-        ├── Reads                       # .gz FASTA files of reads (1K, 10K, and 1M)
+        ├── reads               # .gz FASTA files of reads (1K, 10K, and 1M)
         |   ├── reads_10K.fa.gz
         |   ├── reads_1K.fa.gz
         |   └── reads_1M.fa.gz
         |
-        ├── fmmap.c                     # .c -> builds our FM-Index and Aligner
-        ├── fmmap.h                     # .h -> struct/function-delcarations
-        └── kseq.h                      # FASTA parser
+        ├── utils               # declaration of lib .h files         
+        |   ├── align.c         # aux functions for aligning reads          
+        |   ├── fmIndex.c       # aux functions for building fm-index
+        |   └── misc.c          # miscellanous functions
+        |
+        └── fmmap.c             # our main file -> builds our FM-Index and Aligner
 
 ## Auxiliary Links <a name="links"></a>
 * [FASTA parser](https://github.com/lh3/readfq)
