@@ -41,7 +41,7 @@ sudo apt-get install libz-dev
 
 ##### then, compile
 ```
-$ cd coronavirus-genome-variant
+$ cd coronavirus-genome-variant/
 $ cd src/
 $ make
 ```
