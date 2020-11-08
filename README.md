@@ -120,7 +120,6 @@ $ samtools index mapping_sorted.bam
 ## Auxiliary links <a name="links"></a>
 * [FASTA parser](https://github.com/lh3/readfq)
 * [nCov-19 Genome](https://www.ncbi.nlm.nih.gov/nuccore/NC_045512.2?report=fasta)
-* Execution guide for other OS distributions
 
 
 ## Future goals <a name="goals"></a>
