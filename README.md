@@ -80,7 +80,7 @@ $ samtools index mapping_sorted.bam
 &nbsp;&nbsp;&nbsp;&nbsp;
 &nbsp;&nbsp;&nbsp;&nbsp;
 &nbsp;&nbsp;&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;(make sure the other .bam files are in the same directory) <br />
+&nbsp;&nbsp;&nbsp;&nbsp;*NOTE:* make sure the other .bam files are in the same directory <br />
 &nbsp;&nbsp;&nbsp;&nbsp;**optional**: details on how to navigate IGV [here](https://software.broadinstitute.org/software/igv/AlignmentData)
 
 ## File structure <a name="structure"></a>
