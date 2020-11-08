@@ -3,7 +3,6 @@
 #include "./lib/misc.h"
 
 /* keep a global note on # of reads */
-/* only works if a preset command is called */
 double READ = 0;
 bool makeProgressBar = false;
 
