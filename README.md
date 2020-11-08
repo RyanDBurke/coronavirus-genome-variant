@@ -110,7 +110,7 @@ $ samtools index mapping_sorted.bam
         |   ├── fmIndex.c       # aux functions for building fm-index
         |   └── misc.c          # miscellanous functions
         |
-        └── fmmap.c             # our main file -> builds our FM-Index and Aligner
+        └── build.c             # our main file -> builds our FM-Index and Aligner
 
 ## Auxiliary links <a name="links"></a>
 * [FASTA parser](https://github.com/lh3/readfq)
