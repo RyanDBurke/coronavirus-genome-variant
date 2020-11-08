@@ -1,12 +1,12 @@
 # Table of Contents
 
-* [What is This?](#what)
-* [What Does it Do?](#cool)
-* [How Do I Execute?](#execute)
-* [File Structure](#structure)
-* [Auxiliary Links](#links)
-* [Future Goals](#goals)
-* [Concluding Thoughts](#thoughts)
+* [what is this?](#what)
+* [what does it do?](#cool)
+* [how do I execute?](#execute)
+* [file structure](#structure)
+* [auxiliary links](#links)
+* [future goals](#goals)
+* [concluding thoughts](#thoughts)
 
 ## What is This? <a name="what"></a>
 
