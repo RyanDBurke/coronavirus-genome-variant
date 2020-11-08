@@ -77,7 +77,10 @@ $ samtools index mapping_sorted.bam
 ##### open IGV
 &nbsp;&nbsp;&nbsp;&nbsp;**(3a)** Load genome: <em>Genomes -> Load Genome From File</em> and select your ```2019-nCoV.fa``` file <br />
 &nbsp;&nbsp;&nbsp;&nbsp;**(3b)** Load alignment: <em>File -> Load From File</em> and select your ```mapping_sorted.bam``` file <br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(with the other .bam files in the same directory)
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;(make sure the other .bam files are in the same directory) <br />
 &nbsp;&nbsp;&nbsp;&nbsp;**optional**: details on how to navigate IGV [here](https://software.broadinstitute.org/software/igv/AlignmentData)
 
 ## File structure <a name="structure"></a>
