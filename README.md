@@ -6,17 +6,12 @@
 
 # Table of Contents
 
-* [What is this?](#what)
 * [How does it work?](#cool)
 * [How do I execute?](#execute)
 * [File structure](#structure)
 * [Auxiliary links](#links)
 * [Future goals](#goals)
 * [Concluding thoughts](#thoughts)
-
-## What is this? <a name="what"></a>
-
-<div align="center">A basic seed-search alignment tool to compare read-variants to the COVID-19 virus genome using Burrows-Wheeler transform, suffix arrays, the FM-Index, and core dynamic programming principles.</div>
 
 ## How does it work? <a name="cool"></a>
 
