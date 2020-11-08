@@ -1,18 +1,18 @@
 # Table of Contents
 
 * [What is this?](#what)
-* [What does it do?](#cool)
+* [How does it work??](#cool)
 * [How do I execute?](#execute)
 * [File structure](#structure)
 * [Auxiliary links](#links)
 * [Future goals](#goals)
 * [Concluding thoughts](#thoughts)
 
-## What is This? <a name="what"></a>
+## What is this? <a name="what"></a>
 
-An efficient seed-search alignment tool to compare read-variants to the COVID-19 virus genome using Burrows-Wheeler transform, suffix arrays, the FM-Index, and core dynamic programming principles.
+A basic seed-search alignment tool to compare read-variants to the COVID-19 virus genome using Burrows-Wheeler transform, suffix arrays, the FM-Index, and core dynamic programming principles.
 
-## What Does it Do? <a name="cool"></a>
+## How does it work? <a name="cool"></a>
 
 <figure>
   <img src="./PNG/IGV-10K.png" alt="Integrative Genomics Viewer for 10k reads" name="figure1">
@@ -25,7 +25,7 @@ Steps:
 4. Upload the mapping to Integrative Genomics Viewer (IGV)
 5. View coverage track for an alignment ([Figure 1](#figure1))
 
-## How Do I Execute? <a name="execute"></a>
+## How do I execute? <a name="execute"></a>
 
 ### (1) Clone
 ```
@@ -75,7 +75,7 @@ $ samtools index mapping_sorted.bam
 &nbsp;&nbsp;&nbsp;&nbsp;**(3b)** Load alignment: <em>File -> Load From File</em> and select ```mapping_sorted.bam``` <br />
 &nbsp;&nbsp;&nbsp;&nbsp;**optional**: details on how to navigate IGV [here](https://software.broadinstitute.org/software/igv/AlignmentData)
 
-## File Structure <a name="structure"></a>
+## File structure <a name="structure"></a>
     coronavirus-genome-variant
     ├── README                   
     └── src
@@ -111,17 +111,17 @@ $ samtools index mapping_sorted.bam
         |
         └── fmmap.c             # our main file -> builds our FM-Index and Aligner
 
-## Auxiliary Links <a name="links"></a>
+## Auxiliary links <a name="links"></a>
 * [FASTA parser](https://github.com/lh3/readfq)
 * [nCov-19 Genome](https://www.ncbi.nlm.nih.gov/nuccore/NC_045512.2?report=fasta)
 * Execution guide for other OS distributions
 
 
-## Future Goals <a name="goals"></a>
+## Future goals <a name="goals"></a>
 * [Compressed suffix array](https://www.cs.cmu.edu/~dga/csa.pdf), for more efficient look-ups
 * Fast-rank calculations on burrows-wheeler transform
 
-## Concluding Thoughts<a name="thoughts"></a>
+## Concluding thoughts<a name="thoughts"></a>
 ```
 This project was originally given to us mid-semester, right when the chaos following the covid pandemic occurred.
 I originally wrote it in python, and never finished it -- the scope of the assignment was beyond me and I was 
