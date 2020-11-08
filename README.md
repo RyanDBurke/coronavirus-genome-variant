@@ -10,7 +10,7 @@
 
 ## What is this? <a name="what"></a>
 
-A basic seed-search alignment tool to compare read-variants to the COVID-19 virus genome using Burrows-Wheeler transform, suffix arrays, the FM-Index, and core dynamic programming principles.
+<div align="center">A basic seed-search alignment tool to compare read-variants to the COVID-19 virus genome using Burrows-Wheeler transform, suffix arrays, the FM-Index, and core dynamic programming principles.</div>
 
 ## How does it work? <a name="cool"></a>
 
