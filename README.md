@@ -48,11 +48,11 @@ $ make
 
 ##### then, execute ONE of the valid commands below
 ```
-$ ./fmmap default
-$ ./fmmap covid 1K
-$ ./fmmap covid 10K
-$ ./fmmap covid 1M
-$ ./fmmap <reference-sequence>.fa <output file>.txt <reads>.fa.gz <output file>.sam
+$ ./run default
+$ ./run covid 1K
+$ ./run covid 10K
+$ ./run covid 1M
+$ ./run <reference-sequence>.fa <output file>.txt <reads>.fa.gz <output file>.sam
 ```
 
 ### (3) IGV Visualization

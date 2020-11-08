@@ -1,7 +1,7 @@
-all: fmmap
+all: run
 
-fmmap: fmmap.c
-	gcc -g -Wall -O2 -o fmmap fmmap.c ./utils/align.c ./utils/fmIndex.c ./utils/misc.c -lz
+run: fmmap.c
+	gcc -g -Wall -O2 -o run fmmap.c ./utils/align.c ./utils/fmIndex.c ./utils/misc.c -lz
 
 clean:
-	$(RM) fmmap
+	$(RM) run
