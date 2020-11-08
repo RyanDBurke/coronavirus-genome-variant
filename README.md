@@ -1,7 +1,7 @@
 # Table of Contents
 
 * [What is this?](#what)
-* [How does it work??](#cool)
+* [How does it work?](#cool)
 * [How do I execute?](#execute)
 * [File structure](#structure)
 * [Auxiliary links](#links)
