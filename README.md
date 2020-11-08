@@ -77,7 +77,8 @@ $ samtools index mapping_sorted.bam
 
 ## File structure <a name="structure"></a>
     coronavirus-genome-variant
-    ├── README                   
+    ├── README  
+    ├── png 
     └── src
         ├── 2019-nCov.fa        # nCov-19 genome sequence
         ├── default             # default input/output
