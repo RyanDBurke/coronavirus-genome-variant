@@ -126,6 +126,7 @@ $ samtools index mapping_sorted.bam
 * [Compressed suffix array](https://www.cs.cmu.edu/~dga/csa.pdf), for more efficient look-ups
 * Fast-rank calculations on burrows-wheeler transform
 
+<!--
 ## Concluding thoughts<a name="thoughts"></a>
 ```
 This project was originally given to us mid-semester, right when the chaos following the covid pandemic occurred.
@@ -140,3 +141,4 @@ memory/pointers, and plenty more.
 All thanks goes out to my professor, Dr. Rob Patro, he was extremely helpful and I genuinely feel 
 confident in my abilities as a programmer.
 ```
+-->
