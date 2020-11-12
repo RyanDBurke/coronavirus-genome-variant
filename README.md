@@ -11,7 +11,7 @@
 * [File structure](#structure)
 * [Auxiliary links](#links)
 * [Future goals](#goals)
-* [Concluding thoughts](#thoughts)
+<!-- * [Concluding thoughts](#thoughts) -->
 
 ## How does it work? <a name="cool"></a>
 
