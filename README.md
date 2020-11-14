@@ -124,7 +124,7 @@ $ samtools index mapping_sorted.bam
 
 ## Future goals <a name="goals"></a>
 * [Compressed suffix array](https://www.cs.cmu.edu/~dga/csa.pdf), for more efficient look-ups
-* Fast-rank calculations on burrows-wheeler transform
+* Fast-rank calculations on FM-Index
 
 <!--
 ## Concluding thoughts<a name="thoughts"></a>
