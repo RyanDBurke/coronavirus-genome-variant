@@ -35,7 +35,7 @@ git clone https://github.com/RyanDBurke/coronavirus-genome-variant.git
 
 ### (2) Execution
 
-##### first, install zdependencies
+##### first, install dependencies
 ```
 $ cd coronavirus-genome-variant/
 $ ./dep.sh
