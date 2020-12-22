@@ -35,14 +35,14 @@ git clone https://github.com/RyanDBurke/coronavirus-genome-variant.git
 
 ### (2) Execution
 
-##### first, install zlib
+##### first, install zdependencies
 ```
-sudo apt-get install libz-dev
+$ cd coronavirus-genome-variant/
+$ ./dep.sh
 ```
 
 ##### then, compile
 ```
-$ cd coronavirus-genome-variant/
 $ cd src/
 $ make
 ```
@@ -56,11 +56,7 @@ $ ./run covid 1M    #  1M reads
 ```
 
 ### (3) IGV Visualization
-##### install samtools
-```
-$ sudo apt-get update -y
-$ sudo apt-get install -y samtools
-```
+
 ##### install IGV [here](https://software.broadinstitute.org/software/igv/download), then go-to your mapping
 ```
 $ cd mappings/
