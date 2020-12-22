@@ -90,8 +90,7 @@ void handleArgs(char **argv, char **ref_seq, char **indexOut, char **reads, char
         *reads = "./reads/reads_1K.fa.gz";
         *alignOut = "./mappings/mapping.sam";
 
-        printf("[Aligning over 1,000 reads]\n");
-        printf("This takes roughly 30 seconds to execute\n\n");
+        printf("[Aligning over 1,000 reads]\n\n");
 
         /* pass # of reads and make progress bar */
         *READ = 1000;
@@ -105,8 +104,7 @@ void handleArgs(char **argv, char **ref_seq, char **indexOut, char **reads, char
         *reads = "./reads/reads_10K.fa.gz";
         *alignOut = "./mappings/mapping.sam";
 
-        printf("[Aligning over 10,000 reads]\n");
-        printf("This takes roughly 2 minutes to execute\n\n");
+        printf("[Aligning over 10,000 reads]\n\n");
 
         /* pass # of reads and make progress bar */
         *READ = 10000;
@@ -120,8 +118,7 @@ void handleArgs(char **argv, char **ref_seq, char **indexOut, char **reads, char
         *reads = "./reads/reads_1M.fa.gz";
         *alignOut = "./mappings/mapping.sam";
 
-        printf("[Aligning over 1M reads]\n");
-        printf("This takes roughly ~2.5 Hours to execute\n\n");
+        printf("[Aligning over 1M reads]\n\n");
 
         /* pass # of reads and make progress bar */
         *READ = 1000000;

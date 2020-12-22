@@ -71,7 +71,7 @@ int fmIndex(FM *fm, char *reference, char *output) {
         printf("\t> Your sequence length: %d\n", fm->length);
         printf("\t> Use ");
         printf("\033[1;31m");
-        printf("./fmmap default ");
+        printf("./run ");
         printf("\033[0m");
         printf("to see a serialized FM-Index.\n\n");
     }
