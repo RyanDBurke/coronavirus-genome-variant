@@ -20,4 +20,7 @@ void pb(bool makeProgressBar, double percentageDone);
 /* print commands */
 void commands();
 
+/* handle args */
+void handleArgs();
+
 #endif
