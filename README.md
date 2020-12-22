@@ -20,7 +20,7 @@
 </figure>
 
 Steps:
-1. Take the nCov-19 genome sequence and build the auxiliary structures (Burrows-Wheeler transform and suffix arrays) for the FM-Index
+1. Take the nCov-19 genome sequence and build the auxiliary structures Burrows-Wheeler transform, suffix arrays, and the FM-Index
 2. Take the 100bp-length simulated reads and align them to nCov-19 using the seed-and-extend paradigm and dynamic programming
 3. Build the .SAM file mapping
 4. Upload the mapping to Integrative Genomics Viewer (IGV)
