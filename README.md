@@ -16,7 +16,7 @@
 ## How does it work? <a name="cool"></a>
 
 <figure>
-  <img src="./png/IGV-10K.png" alt="Integrative Genomics Viewer for 10k reads" name="figure1">
+  <img src="./png/IGV-10K.png" alt="Integrative Genomics Viewer for 10k reads" name="figure-1">
 </figure>
 
 Steps:
@@ -24,7 +24,7 @@ Steps:
 2. Take the 100bp-length simulated reads and align them to nCov-19 using the seed-and-extend paradigm and dynamic programming
 3. Build the .SAM file mapping
 4. Upload the mapping to Integrative Genomics Viewer (IGV)
-5. View coverage track for an alignment ([Figure 1](#figure1))
+5. View coverage track for an alignment ([Figure 1](#figure-1))
 
 ## How do I execute? <a name="execute"></a>
 
