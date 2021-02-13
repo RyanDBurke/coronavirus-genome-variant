@@ -1,10 +1,10 @@
-/***************/
-/*    BUILD    */
-/***************/
+/**************/
+/*    MAIN    */
+/**************/
 
-#include "./lib/align.h"
-#include "./lib/fmIndex.h"
-#include "./lib/misc.h"
+#include "../lib/align.h"
+#include "../lib/fmIndex.h"
+#include "../lib/misc.h"
 
 /* keep a global note on # of reads */
 double READ = 0;
