@@ -43,7 +43,6 @@ $ ./dep.sh
 
 ##### then, compile
 ```
-$ cd src/
 $ make
 ```
 
@@ -80,38 +79,38 @@ $ samtools index mapping_sorted.bam
     coronavirus-genome-variant
     ├── README  
     ├── png 
+    ├── 2019-nCov.fa        # nCov-19 genome sequence
+    ├── default             # default input/output
+    |   ├── reads-small.fa          
+    |   └── ref-small.fa
+    |
+    ├── fm-output           # standard output file for FM-Index          
+    |   └── FMindex.txt
+    |
+    ├── lib                 # library of associated functions, structures, & variables
+    |   ├── align.h         # aux functions for aligning reads
+    |   ├── fmIndex.h       # aux functions for building fm-index
+    |   ├── misc.h          # miscellanous functions
+    |   ├── kseq.h          # FASTA parser
+    |   └── std.h           # holds all relevant structures/global-variables
+    |
+    ├── Makefile            # build executables
+    ├── mappings            # standard output .sam file(s) for alignments
+    |   ├── mappings.sam                      
+    |   └── mapping1M.sam   # holds the mapping for the 1M reads (so you don't have to wait 3hrs)
+    |    
+    ├── reads               # .gz FASTA files of reads (1K, 10K, and 1M)
+    |   ├── reads_10K.fa.gz
+    |   ├── reads_1K.fa.gz
+    |   └── reads_1M.fa.gz
+    |
+    ├── utils               # declaration of lib .h files         
+    |   ├── align.c         # aux functions for aligning reads          
+    |   ├── fmIndex.c       # aux functions for building fm-index
+    |   └── misc.c          # miscellanous functions
+    |
     └── src
-        ├── 2019-nCov.fa        # nCov-19 genome sequence
-        ├── default             # default input/output
-        |   ├── reads-small.fa          
-        |   └── ref-small.fa
-        |
-        ├── fm-output           # standard output file for FM-Index          
-        |   └── FMindex.txt
-        |
-        ├── lib                 # library of associated functions, structures, & variables
-        |   ├── align.h         # aux functions for aligning reads
-        |   ├── fmIndex.h       # aux functions for building fm-index
-        |   ├── misc.h          # miscellanous functions
-        |   ├── kseq.h          # FASTA parser
-        |   └── std.h           # holds all relevant structures/global-variables
-        |
-        ├── Makefile            # build executables
-        ├── mappings            # standard output .sam file(s) for alignments
-        |   ├── mappings.sam                      
-        |   └── mapping1M.sam   # holds the mapping for the 1M reads (so you don't have to wait 3hrs)
-        |    
-        ├── reads               # .gz FASTA files of reads (1K, 10K, and 1M)
-        |   ├── reads_10K.fa.gz
-        |   ├── reads_1K.fa.gz
-        |   └── reads_1M.fa.gz
-        |
-        ├── utils               # declaration of lib .h files         
-        |   ├── align.c         # aux functions for aligning reads          
-        |   ├── fmIndex.c       # aux functions for building fm-index
-        |   └── misc.c          # miscellanous functions
-        |
-        └── build.c             # our main file -> builds our FM-Index and Aligner
+        └── main.c          # our main file -> builds our FM-Index and Aligner
 
 ## Auxiliary links <a name="links"></a>
 * [FASTA parser](https://github.com/lh3/readfq)
