@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h> /* strcasecmp */
 #include <ctype.h>
 #include <stdbool.h>
 #include <math.h>

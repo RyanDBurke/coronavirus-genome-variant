@@ -8,23 +8,29 @@ int align(FM *fm, char *reads, char *output, double READ, bool makePB) {
     double progress = 0.0;
 
     /* fasta stuff */
-    gzFile fp;
-	kseq_t *seq;
-	int l;
-	if (reads == NULL) {
-		fprintf(stderr, "%s is NULL\n", reads);
-		return 1;
-	}
-	fp = gzopen(reads, "r");
-	seq = kseq_init(fp);
+    if (reads == NULL) {
+        fprintf(stderr, "no reads file given\n");
+        return 1;
+    }
+    gzFile fp = gzopen(reads, "r");
+    if (fp == NULL) {
+        fprintf(stderr, "error opening reads file: %s\n", reads);
+        return 1;
+    }
+
+    /* open our output file (.sam) */
+    FILE *f = fopen(output, "w");
+    if (f == NULL) {
+        fprintf(stderr, "error opening output file: %s\n", output);
+        gzclose(fp);
+        return 1;
+    }
+
+    kseq_t *seq = kseq_init(fp);
+    int l;
 
     double ninf = -INFINITY;
     int gap = -5; /* gap penalty */
-
-    /* open our output file (.sam) */
-    FILE *f;
-    f = fopen(output, "w");
-    f = fopen(output, "a");
 
     /* .sam header */
     fprintf(f, "@HD	VN:1.0	SO:unsorted\n");
@@ -79,13 +85,7 @@ int align(FM *fm, char *reads, char *output, double READ, bool makePB) {
 
         /* for each alignment in alignments, write to .sam file */
         for (int a = 0; a < alignmentLength; a++) {
-            if (f == NULL) {
-                printf("error opening file: ");
-                printf("\033[1;31m");
-                printf("%s\n", output);
-                printf("\033[0m");
-                exit(1);
-            } else {
+            {
 
                 /* our SAM struct we will fill */
                 SAM *s = malloc(sizeof(SAM));

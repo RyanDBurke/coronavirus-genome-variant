@@ -5,22 +5,29 @@ KSEQ_INIT(gzFile, gzread)
 int fmIndex(FM *fm, char *reference, char *output) {
 
     /* fasta stuff */
-    gzFile fp;
-	kseq_t *seq;
-	int l;
-	if (reference == NULL) {
-		fprintf(stderr, "%s is NULL\n", reference);
-		return 1;
-	}
-	fp = gzopen(reference, "r");
-	seq = kseq_init(fp);
+    if (reference == NULL) {
+        fprintf(stderr, "no reference file given\n");
+        return 1;
+    }
+    gzFile fp = gzopen(reference, "r");
+    if (fp == NULL) {
+        fprintf(stderr, "error opening reference file: %s\n", reference);
+        return 1;
+    }
+    kseq_t *seq = kseq_init(fp);
 
-    /* parse .fa file contains our reference sequence and build fm-index */
-    while ((l = kseq_read(seq)) >= 0) {
-
-        /* name */
-        fm->name = malloc(strlen("MN988713.1") + 1);
-        strcpy(fm->name, "MN988713.1");
+    /* parse .fa file and build the fm-index from its first sequence */
+    if (kseq_read(seq) < 0 || seq->seq.l == 0) {
+        fprintf(stderr, "no sequence found in reference file: %s\n", reference);
+        kseq_destroy(seq);
+        gzclose(fp);
+        return 1;
+    }
+    {
+        /* name (SAM RNAME), taken from the FASTA header; fall back if the header has none */
+        const char *name = (seq->name.l > 0) ? seq->name.s : "ref";
+        fm->name = malloc(strlen(name) + 1);
+        strcpy(fm->name, name);
 
         /* seq */
         fm->seq = malloc(strlen(seq->seq.s) + 1);
@@ -55,11 +62,10 @@ int fmIndex(FM *fm, char *reference, char *output) {
     if (fm->length <= seqLimit) { 
         f = fopen(output, "w");
         if (f == NULL) {
-            printf("error opening file: ");
-            printf("\033[1;31m");
-            printf("%s\n", output);
-            printf("\033[0m");
-            exit(1);
+            fprintf(stderr, "error opening FM-Index output file: %s\n", output);
+            kseq_destroy(seq);
+            gzclose(fp);
+            return 1;
         }
         writeFM(fm, f, fm->length);
         printf("> You can find the serialized FM-Index for \"%s\" in: ", reference);
@@ -112,6 +118,7 @@ int *buildSuffixArray(char *seq, int length) {
 
         /* store offset in our suffix array */
         sa[i] = suffixes[i].offset;
+        free(suffixes[i].suffix);
     }
 
     return sa;
@@ -148,11 +155,11 @@ char **buildBWM(char *seq, int length) {
     /* stores the actual matrix (rotations sorted) */
     char **matrix = malloc(sizeof(char *) * (length + 1));
 
-    /* fill matrix */
+    /* fill matrix (the sorted rotations become the matrix rows) */
     for (int i = 0; i < length; i++) {
-        matrix[i] = malloc(sizeof(char) * (length + 1));
-        strcpy(matrix[i], bwMatrix[i].rotation);
+        matrix[i] = bwMatrix[i].rotation;
     }
+    matrix[length] = NULL;
     
     return matrix;
 }
@@ -305,6 +312,11 @@ void destroy(FM *fm) {
     free(fm->bwt);
     free(fm->F);
     free(fm->L);
+    if (fm->bwm != NULL) {
+        for (int i = 0; i < fm->length; i++) {
+            free(fm->bwm[i]);
+        }
+    }
     free(fm->bwm);
     free(fm->suffixArray);
     free(fm->seq);
