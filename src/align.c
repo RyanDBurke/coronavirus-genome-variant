@@ -1,6 +1,6 @@
-#include "../lib/align.h"
-#include "../lib/fmIndex.h"
-#include "../lib/misc.h"
+#include "align.h"
+#include "fmIndex.h"
+#include "misc.h"
 #include <limits.h>
 KSEQ_INIT(gzFile, gzread)
 
@@ -20,7 +20,7 @@ static void writeUnmapped(FILE *f, kseq_t *seq) {
     writeSAM(&s, f);
 }
 
-int align(FM *fm, char *reads, char *output, double READ, bool makePB) {
+int align(FM *fm, const char *reads, const char *output, double READ, bool makePB) {
 
     /* keep track of our progress */
     double progress = 0.0;
@@ -36,8 +36,9 @@ int align(FM *fm, char *reads, char *output, double READ, bool makePB) {
         return 1;
     }
 
-    /* open our output file (.sam) */
-    FILE *f = fopen(output, "w");
+    /* open our output file (.sam), or write to stdout for "-" */
+    bool toStdout = strcmp(output, "-") == 0;
+    FILE *f = toStdout ? stdout : fopen(output, "w");
     if (f == NULL) {
         fprintf(stderr, "error opening output file: %s\n", output);
         gzclose(fp);
@@ -54,6 +55,7 @@ int align(FM *fm, char *reads, char *output, double READ, bool makePB) {
 
     /* best-scoring alignments of the current read, across all of its seeds */
     Alignments hits = {0};
+    info("> Aligning reads from %s\n", reads);
 
     /* parse .fa file containing our reads */
     while (kseq_read(seq) >= 0) {
@@ -77,7 +79,7 @@ int align(FM *fm, char *reads, char *output, double READ, bool makePB) {
 
             /* for each (read-length / 5) seed (20bp seeds for our 100bp reads) */
             int skip = seedSkip(readLength);
-            char *seed = malloc(skip + 1);
+            char *seed = xmalloc(skip + 1);
             for (int seedStart = 0; seedStart < readLength; seedStart += skip) {
                 int seedEnd = min(readLength, seedStart + skip);
 
@@ -93,7 +95,7 @@ int align(FM *fm, char *reads, char *output, double READ, bool makePB) {
                 }
 
                 /* candidate read start positions in the reference */
-                int *refPos = malloc(sizeof(int) * (interval.end - interval.start));
+                int *refPos = xmalloc(sizeof(int) * (interval.end - interval.start));
                 int refPosLength = referencePos(refPos, &interval, matchLength, fm, seedEnd);
 
                 /* fitting alignment at each candidate, keeping the best across all seeds */
@@ -128,16 +130,21 @@ int align(FM *fm, char *reads, char *output, double READ, bool makePB) {
 
     clearAlignments(&hits);
     free(hits.items);
-    fclose(f);
-
-    printf("\n\n> You can find the SAM-formatted alignments in: ");
-    printf("\033[1;31m");
-    printf("%s\n", output);
-    printf("\033[0m");
-
-    /* successful */
     kseq_destroy(seq);
     gzclose(fp);
+
+    /* a failed write (e.g. a full disk) only shows up here */
+    bool writeFailed = ferror(f) != 0;
+    writeFailed |= toStdout ? fflush(f) != 0 : fclose(f) != 0;
+    if (writeFailed) {
+        fprintf(stderr, "error writing output file: %s\n", output);
+        return 1;
+    }
+
+    if (makePB) {
+        info("\n");  /* end the progress bar line */
+    }
+    info("> SAM alignments written to %s%s%s\n", highlight(), output, highlightEnd());
     return 0;
 }
 
@@ -189,7 +196,7 @@ void clearAlignments(Alignments *hits) {
 static void addAlignment(Alignments *hits, int score, int pos, char *cigar) {
     if (hits->count == hits->capacity) {
         hits->capacity = hits->capacity ? hits->capacity * 2 : 4;
-        hits->items = realloc(hits->items, sizeof(Alignment) * hits->capacity);
+        hits->items = xrealloc(hits->items, sizeof(Alignment) * hits->capacity);
     }
     hits->items[hits->count].score = score;
     hits->items[hits->count].pos = pos;
@@ -203,7 +210,7 @@ void alignment(Alignments *hits, char *read, int readLength, char *ref, int refL
     /* X-axis is our coronavirus reference genome slice */
     /* Y-axis is our read we wish to align to our reference */
     int OPT[MAXROW][MAXCOL];
-    char *x = malloc(readLength + 2 * SLICE_PAD + 1);
+    char *x = xmalloc(readLength + 2 * SLICE_PAD + 1);
 
     for (int p = 0; p < refPosLength; p++) {
 
@@ -272,7 +279,7 @@ int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int ga
     for (int i = 1; i <= n; i++) {
         for (int j = 1; j <= m; j++) {
             OPT[i][j] = maxAlign(
-                    (score(x[i - 1], y[j - 1], gap) + OPT[i - 1][j - 1]),
+                    (score(x[i - 1], y[j - 1]) + OPT[i - 1][j - 1]),
                     (gap + OPT[i - 1][j]),
                     (gap + OPT[i][j - 1])
                 );
@@ -302,10 +309,10 @@ char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *
     n = row;
 
     /* backtrace from the end of the read to its start, collecting one op per step */
-    char *ops = malloc(n + m + 1);
+    char *ops = xmalloc(n + m + 1);
     int length = 0;
     while (m > 0) {
-        if (n > 0 && OPT[n][m] == score(x[n - 1], y[m - 1], gap) + OPT[n - 1][m - 1]) {
+        if (n > 0 && OPT[n][m] == score(x[n - 1], y[m - 1]) + OPT[n - 1][m - 1]) {
             ops[length++] = 'M';
             n--;
             m--;
@@ -339,7 +346,7 @@ char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *
 }
 
 /* return score between two characters */
-int score(char a, char b, int gap) {
+int score(char a, char b) {
     if (a == 'N' || b == 'N') { /* if you see 'N', assume it matches */
         return 0;
     }
@@ -358,7 +365,7 @@ char *formatCigar(const char *ops) {
 
     /* a run of length r takes at most r + 1 characters, so 2 * length is enough */
     size_t length = strlen(ops);
-    char *result = malloc(2 * length + 1);
+    char *result = xmalloc(2 * length + 1);
     size_t written = 0;
 
     for (size_t i = 0; i < length;) {
@@ -366,7 +373,10 @@ char *formatCigar(const char *ops) {
         while (j < length && ops[j] == ops[i]) {
             j++;
         }
-        written += sprintf(result + written, "%zu%c", j - i, ops[i]);
+        char run[32];
+        int runLength = snprintf(run, sizeof run, "%zu%c", j - i, ops[i]);
+        memcpy(result + written, run, runLength);
+        written += runLength;
         i = j;
     }
     result[written] = '\0';
@@ -392,38 +402,6 @@ int max(int a, int b) {
 /* max function needed to fill OPT-matrix */
 int maxAlign(int a, int b, int c) {
     return max(a, max(b, c));
-}
-
-/* print our OPT-matrix */
-/* not useful for large genomes */
-void printMatrix(int OPT[MAXROW][MAXCOL], int n, int m, char *x, char *y) {
-
-    /* Y-axis */
-    for (int i = 0; i <= m + 1; i++) {
-        if (i == 0) {
-            printf("\t");
-        } else if (i == 1) {
-            printf("Y-axis\t");
-        } else {
-            printf("%c\t", y[i - 2]);
-        }
-    }
-
-    /* formatting */
-    printf("\n");
-
-    /* print our X-axis string and the OPT-matrix entries */
-    for (int i = 0; i <= n; i++) {
-        if (i > 0) {
-            printf("%c\t", x[i - 1]);
-        } else {
-            printf("X-axis\t");
-        }
-        for (int j = 0; j <= m; j++) {
-            printf("%d\t", OPT[i][j]);
-        }
-        printf("\n");
-    }
 }
 
 /* write to our .SAM file */

@@ -1,8 +1,8 @@
 /* Unit tests for the alignment and indexing helpers.
  * Built with AddressSanitizer + UBSan by `make test`. */
 
-#include "../lib/align.h"
-#include "../lib/fmIndex.h"
+#include "align.h"
+#include "fmIndex.h"
 
 static int failures = 0;
 static int checks = 0;
@@ -178,9 +178,9 @@ static void test_seed_skip(void) {
 }
 
 static void test_score(void) {
-    CHECK(score('A', 'A', -5) == 1, "match should score 1");
-    CHECK(score('A', 'C', -5) == -1, "mismatch should score -1");
-    CHECK(score('N', 'C', -5) == 0, "N should score 0");
+    CHECK(score('A', 'A') == 1, "match should score 1");
+    CHECK(score('A', 'C') == -1, "mismatch should score -1");
+    CHECK(score('N', 'C') == 0, "N should score 0");
 }
 
 int main(void) {

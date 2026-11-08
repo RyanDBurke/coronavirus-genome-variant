@@ -1,4 +1,4 @@
 # build output
 /run
-/tests/test_units
+/build/
 /tests/out/

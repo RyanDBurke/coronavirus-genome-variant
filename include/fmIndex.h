@@ -13,7 +13,7 @@
     * @param reference: .fa file
     * @param output: file output we will write to
  */
-int fmIndex(FM *fm, char *reference, char *output);
+int fmIndex(FM *fm, const char *reference, const char *output);
 
 /*****************************/
 /* AUX FUNTIONS FOR FM-INDEX */

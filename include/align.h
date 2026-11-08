@@ -18,7 +18,7 @@
     * @param READ: total # of reads (for progress bar)
     * @param makePB: to PB or not to PB, that is the question! (PB = progress bar)
  */
-int align(FM *fm, char *reads, char *output, double READ, bool makePB);
+int align(FM *fm, const char *reads, const char *output, double READ, bool makePB);
 
 /**************************/
 /* AUX FUNTIONS FOR ALIGN */
@@ -76,12 +76,11 @@ int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int ga
  */
 char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *y, int *offset);
 
-/* return score between two characters
+/* return score between two characters: +1 match, -1 mismatch, 0 if either is 'N'
     * @param a: a character in x-axis string (reference genome)
     * @param b: a character in y-axis string (read)
-    * @param gap: our gap penalty
  */
-int score(char a, char b, int gap);
+int score(char a, char b);
 
 /* return substring from [start, end)
     * @param res: output for substring
@@ -103,13 +102,6 @@ int seedSkip(int L);
 int min(int a, int b);
 int max(int a, int b);
 int maxAlign(int a, int b, int c);
-
-/* print methods 
-    * @param OPT: our OPT-matrix
-    * @param n, m: our genome-string lengths + 1
-    * @param x, y: our reference genome and read genome, respectively
- */
-void printMatrix(int OPT[MAXROW][MAXCOL], int n, int m, char *x, char *y);
 
 /* write to our .SAM file
     * @param sam: our SAM struct
