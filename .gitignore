@@ -3,3 +3,7 @@
 /build/
 /tests/out/
 /run.exe
+/app/node_modules/
+/app/build/
+/app/dist/
+/app/test-results/

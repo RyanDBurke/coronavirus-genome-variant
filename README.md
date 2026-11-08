@@ -14,6 +14,7 @@ A basic seed-search alignment tool to compare read-variants to the nCov-19 virus
 ## Contents
 
 - [Quick start](#quick-start)
+- [Desktop app (Windows)](#desktop-app-windows)
 - [Requirements](#requirements)
 - [Setup](#setup)
 - [Running](#running)
@@ -38,7 +39,25 @@ make           # build ./run
 ./run          # small demo run
 ```
 
-On Windows, see [Setup → Option B: Windows native](#option-b-windows-native-msys2) or [Option C: Windows with WSL](#option-c-windows-with-wsl).
+On Windows, see [Setup → Option B: Windows native](#option-b-windows-native-msys2) or [Option C: Windows with WSL](#option-c-windows-with-wsl), or use the desktop app below.
+
+## Desktop app (Windows)
+
+A point-and-click app with the same aligner inside. Choose a reference and a read set (the SARS-CoV-2 genome and all three simulated read sets are built in, or open your own FASTA/FASTQ files), press **Align reads**, and get read counts plus a SAM file to save. It works fully offline.
+
+**Install:** open the latest successful run on the [Actions page](https://github.com/RyanDBurke/coronavirus-genome-variant/actions/workflows/ci.yml), download the `installer-windows-x64` artifact, unzip it and run `GenomeVariantAligner-Setup-*.exe`. It installs for your user only, with no admin prompt. The installer isn't code-signed yet, so Windows SmartScreen shows "Windows protected your PC"; choose **More info → Run anyway**.
+
+**Build from source** (needs Node.js 22 and `run.exe` from [Option B](#option-b-windows-native-msys2)):
+
+```powershell
+cd app
+npm install
+npm start          # run the app from source
+npm test           # unit tests, aligner integration tests and a click-through test of the window
+npm run dist       # build the installer into app/dist/
+```
+
+The app is Electron with the window locked down: no Node.js access in the page, no network requests, and file access only through the app's own dialogs. It runs the bundled `run.exe` with `--progress-json` and reads its events and exit codes ([below](#for-programs-calling-the-aligner)).
 
 ## Requirements
 
@@ -233,7 +252,14 @@ coronavirus-genome-variant
 ├── dep.ps1               # runs dep.sh through WSL from PowerShell
 ├── Makefile              # builds ./run (run.exe on Windows); `make test` runs the tests
 ├── .github/workflows
-│   └── ci.yml            # CI: make test on Linux and Windows; publishes run.exe
+│   └── ci.yml            # CI: make test on Linux and Windows; app tests; publishes run.exe and the installer
+├── app                   # Windows desktop app (Electron + TypeScript)
+│   ├── package.json      # scripts and installer settings
+│   ├── src/main          # main process: window, dialogs, runs the aligner (aligner.ts), error messages
+│   ├── src/preload       # the small API the window is allowed to use
+│   ├── src/renderer      # the window: HTML, CSS and TypeScript
+│   ├── src/shared        # types shared by all three
+│   └── test              # node:test unit, integration and click-through tests
 ├── include               # headers: structures and function declarations
 │   ├── align.h           # read alignment
 │   ├── fmIndex.h         # FM-Index construction and backward search

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- only our own files; no network, no inline scripts -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'">
+  <title>Genome Variant Aligner</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="renderer.js"></script>
+</head>
+<body>
+  <main class="app">
+    <header class="masthead">
+      <h1>Genome Variant Aligner</h1>
+      <p>Align sequencing reads to a reference genome and see where they map.</p>
+    </header>
+
+    <section class="step" aria-labelledby="ref-title">
+      <div class="step-head">
+        <span class="step-num" aria-hidden="true">1</span>
+        <h2 id="ref-title">Reference genome</h2>
+      </div>
+      <div class="choices" id="referenceChoices" role="radiogroup" aria-labelledby="ref-title"></div>
+    </section>
+
+    <section class="step" aria-labelledby="reads-title">
+      <div class="step-head">
+        <span class="step-num" aria-hidden="true">2</span>
+        <h2 id="reads-title">Reads</h2>
+      </div>
+      <div class="choices" id="readsChoices" role="radiogroup" aria-labelledby="reads-title"></div>
+    </section>
+
+    <section class="step run" aria-labelledby="run-title">
+      <div class="step-head">
+        <span class="step-num" aria-hidden="true">3</span>
+        <h2 id="run-title">Align</h2>
+      </div>
+
+      <div class="run-bar">
+        <button id="runButton" class="primary" type="button">Align reads</button>
+        <button id="cancelButton" class="secondary" type="button" hidden>Cancel</button>
+        <span id="runSummary" class="run-summary"></span>
+      </div>
+
+      <div id="progressPanel" class="panel" hidden>
+        <div class="progress-head">
+          <span id="stage">Starting…</span>
+          <span id="elapsed" class="mono">0.0 s</span>
+        </div>
+        <div class="progress" role="progressbar" aria-labelledby="stage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressBar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+      </div>
+
+      <div id="resultPanel" class="panel result" hidden>
+        <div class="result-head">
+          <h3>Alignment complete</h3>
+          <span id="resultTime" class="mono muted"></span>
+        </div>
+        <dl class="stats">
+          <div><dt>Reads</dt><dd id="statReads" class="mono">0</dd></div>
+          <div><dt>Mapped</dt><dd id="statMapped" class="mono">0</dd></div>
+          <div><dt>Unmapped</dt><dd id="statUnmapped" class="mono">0</dd></div>
+        </dl>
+        <div class="mapbar" aria-hidden="true"><div id="mapbarFill"></div></div>
+        <p id="resultNote" class="muted"></p>
+        <div class="actions">
+          <button id="saveButton" class="primary" type="button">Save SAM file…</button>
+          <button id="revealButton" class="secondary" type="button">Show in folder</button>
+        </div>
+        <p id="savedNote" class="saved" role="status"></p>
+      </div>
+
+      <div id="errorPanel" class="panel error" role="alert" hidden>
+        <h3 id="errorTitle"></h3>
+        <p id="errorHint"></p>
+        <details>
+          <summary>Details</summary>
+          <pre id="errorDetail"></pre>
+        </details>
+      </div>
+
+      <p id="cancelledNote" class="muted" hidden>Run cancelled. Nothing was saved.</p>
+    </section>
+  </main>
+</body>
+</html>

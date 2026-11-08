@@ -58,3 +58,36 @@ jobs:
         with:
           name: test-output-windows
           path: tests/out/
+
+      # ---- desktop app (uses the run.exe built above) ----
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Test desktop app
+        shell: pwsh
+        working-directory: app
+        run: |
+          npm ci
+          npm test
+
+      - name: Build installer
+        shell: pwsh
+        working-directory: app
+        run: npm run dist
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-windows-x64
+          path: app/dist/*.exe
+
+      - name: Upload app screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-screenshots
+          path: app/test-results/
