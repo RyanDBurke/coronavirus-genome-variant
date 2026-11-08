@@ -19,7 +19,7 @@ int fmIndex(FM *fm, char *reference, char *output) {
     while ((l = kseq_read(seq)) >= 0) {
 
         /* name */
-        fm->name = malloc(strlen(seq->name.s) + 1);
+        fm->name = malloc(strlen("MN988713.1") + 1);
         strcpy(fm->name, "MN988713.1");
 
         /* seq */
@@ -33,7 +33,7 @@ int fmIndex(FM *fm, char *reference, char *output) {
         fm->suffixArray = (buildSuffixArray(seq->seq.s, strlen(seq->seq.s)));
 
         /* burrows-wheeler matrix (bwm) */
-        fm->bwm = (buildBWM(seq->name.s, strlen(seq->seq.s)));
+        fm->bwm = (buildBWM(seq->seq.s, strlen(seq->seq.s)));
 
         /* burrows-wheeler transform (bwt) */
         fm->bwt = malloc(strlen(seq->seq.s) + 1);
@@ -150,7 +150,7 @@ char **buildBWM(char *seq, int length) {
 
     /* fill matrix */
     for (int i = 0; i < length; i++) {
-        matrix[i] = malloc(sizeof(char) * length);
+        matrix[i] = malloc(sizeof(char) * (length + 1));
         strcpy(matrix[i], bwMatrix[i].rotation);
     }
     
@@ -162,6 +162,7 @@ void buildBWT(char *bwt, char **BWM, int length) {
     for (int i = 0; i < length; i++) {
         bwt[i] = BWM[i][length - 1];
     }
+    bwt[length] = '\0';
 }
 
 /* gets (F)irst and (L)ast columns of our burrows-wheeler matrix */
@@ -170,6 +171,8 @@ void getFL(char *F, char *L, char **BWM, int length) {
         F[i] = BWM[i][0];
         L[i] = BWM[i][length - 1];
     }
+    F[length] = '\0';
+    L[length] = '\0';
 }
 
 /* comparison sort function for suffix arrays */

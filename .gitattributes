@@ -1,0 +1,3 @@
+# Keep shell scripts and the Makefile LF so they run under Linux/WSL
+*.sh     text eol=lf
+Makefile text eol=lf

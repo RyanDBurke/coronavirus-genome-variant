@@ -65,7 +65,7 @@ int align(FM *fm, char *reads, char *output, double READ, bool makePB) {
             }
 
             /* reference position */
-            int *refPos = malloc((interval->end - interval->start));
+            int *refPos = malloc(sizeof(int) * (interval->end - interval->start));
             int refPosLength = referencePos(refPos, interval, matchLength, fm, seedEnd);            
 
             /* fitting alignment: add it to alignments array and return that array length */
@@ -173,7 +173,7 @@ void getInterval(Interval *interval, int *matchLength, FM *fm, char* seed) {
         char *suffix = (fm->seq + offset);
 
         /* substring of suffix */
-        char *subSuffix = malloc(strlen(suffix) + 1);
+        char *subSuffix = malloc(strlen(seed) + 1);
         substring(subSuffix, suffix, 0, strlen(seed));
 
         /* match seed to suffix */

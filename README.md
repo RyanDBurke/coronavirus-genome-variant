@@ -1,122 +1,178 @@
-<br />
-<div align="center">:seedling:</div>
-<br />
-<div align="center">A basic seed-search alignment tool to compare read-variants to the nCov-19 virus genome using Burrows-Wheeler transform, suffix arrays, the FM-Index, and core dynamic programming principles.</div>
-<br />
+<div align="center">
 
-# Table of Contents
+# :seedling: coronavirus-genome-variant
 
-* [How does it work?](#cool)
-* [How do I execute?](#execute)
-* [File structure](#structure)
-* [Auxiliary links](#links)
-* [Future goals](#goals)
-<!-- * [Concluding thoughts](#thoughts) -->
+A basic seed-search alignment tool to compare read-variants to the nCov-19 virus genome using Burrows-Wheeler transform, suffix arrays, the FM-Index, and core dynamic programming principles.
 
-## How does it work? <a name="cool"></a>
+<img src="./png/IGV-10K.png" alt="Integrative Genomics Viewer showing coverage for 10K reads" width="800">
 
-<figure>
-  <img src="./png/IGV-10K.png" alt="Integrative Genomics Viewer for 10k reads" name="figure-1">
-</figure>
+</div>
 
-Steps:
-1. Take the nCov-19 genome sequence and build the auxiliary structures Burrows-Wheeler transform, suffix arrays, and the FM-Index
-2. Take the 100bp-length simulated reads and align them to nCov-19 using the seed-and-extend paradigm and dynamic programming
-3. Build the .SAM file mapping
-4. Upload the mapping to Integrative Genomics Viewer (IGV)
-5. View coverage track for an alignment ([Figure 1](#figure-1))
+## Contents
 
-## How do I execute? <a name="execute"></a>
+- [Quick start](#quick-start)
+- [Requirements](#requirements)
+- [Setup](#setup)
+- [Running](#running)
+- [Viewing results in IGV](#viewing-results-in-igv)
+- [How it works](#how-it-works)
+- [Troubleshooting](#troubleshooting)
+- [Project layout](#project-layout)
+- [References](#references)
+- [Future goals](#future-goals)
 
-### (1) Clone
-```
+## Quick start
+
+On Debian/Ubuntu (or inside WSL):
+
+```bash
 git clone https://github.com/RyanDBurke/coronavirus-genome-variant.git
+cd coronavirus-genome-variant
+./dep.sh       # install dependencies
+make           # build ./run
+./run          # small demo run
 ```
 
-### (2) Execution
+On Windows, see [Setup → Option B: Windows PowerShell](#option-b-windows-powershell).
 
-##### first, install dependencies
-```
-$ cd coronavirus-genome-variant/
-$ ./dep.sh
-```
+## Requirements
 
-##### then, compile
-```
-$ make
-```
+- Debian or Ubuntu. On Windows, use [WSL](https://learn.microsoft.com/windows/wsl/install).
+- `dep.sh` installs everything needed:
+  - `gcc` and `make`: to build
+  - `zlib1g-dev`: to read the gzipped read files
+  - `samtools`: only needed to prepare results for IGV
 
-##### then, execute ONE of the valid commands below
-```
-$ ./run             #  default, run this if you just want to see what a successful compile/run looks like
-$ ./run covid 1K    #  1K reads
-$ ./run covid 10K   #  10K reads
-$ ./run covid 1M    #  1M reads 
+## Setup
+
+### 1. Clone
+
+```bash
+git clone https://github.com/RyanDBurke/coronavirus-genome-variant.git
+cd coronavirus-genome-variant
 ```
 
-### (3) IGV Visualization
+### 2. Install dependencies and build
 
-##### install IGV [here](https://software.broadinstitute.org/software/igv/download), then go-to your mapping
+Pick the option for your system:
+
+- [Option A: Debian or Ubuntu](#option-a-debian-or-ubuntu)
+- [Option B: Windows PowerShell](#option-b-windows-powershell)
+
+#### Option A: Debian or Ubuntu
+
+```bash
+./dep.sh       # install dependencies (uses sudo apt-get, so it asks for your password)
+make           # build ./run
 ```
-$ cd mappings/
+
+#### Option B: Windows PowerShell
+
+Everything runs inside WSL. From the repo folder in PowerShell:
+
+```powershell
+wsl --install            # one-time; restart if prompted
+.\dep.ps1                # install dependencies inside WSL (asks for your Ubuntu sudo password)
+wsl make                 # build ./run
 ```
-##### format for IGV
+
+## Running
+
+Run **one** of these:
+
+| Debian / Ubuntu | Windows PowerShell | Input reads | Notes |
+|---|---|---|---|
+| `./run` | `wsl ./run` | `default/reads-small.fa` | Small demo against `default/ref-small.fa`. Also writes the FM-Index to `fm-output/FMindex.txt`. |
+| `./run covid 1K` | `wsl ./run covid 1K` | `reads/reads_1K.fa.gz` | 1,000 reads against `2019-nCoV.fa` |
+| `./run covid 10K` | `wsl ./run covid 10K` | `reads/reads_10K.fa.gz` | 10,000 reads |
+| `./run covid 1M` | `wsl ./run covid 1M` | `reads/reads_1M.fa.gz` | 1,000,000 reads. Takes about 3 hours, so a precomputed result is in `mappings/mapping1M.sam`. |
+
+Every run writes its alignments to `mappings/mapping.sam`, overwriting the previous result. The FM-Index file is only written for references of 50 bp or less, which is why only the demo produces it.
+
+## Viewing results in IGV
+
+1. Install [IGV](https://software.broadinstitute.org/software/igv/download).
+2. Convert the mapping to an indexed BAM file.
+
+   Debian / Ubuntu:
+
+   ```bash
+   cd mappings/
+   samtools view -b -o mapping.bam mapping.sam
+   samtools sort -o mapping_sorted.bam mapping.bam
+   samtools index mapping_sorted.bam
+   ```
+
+   Windows PowerShell:
+
+   ```powershell
+   cd mappings
+   wsl samtools view -b -o mapping.bam mapping.sam
+   wsl samtools sort -o mapping_sorted.bam mapping.bam
+   wsl samtools index mapping_sorted.bam
+   ```
+
+3. In IGV, load the genome: **Genomes → Load Genome From File**, then select `2019-nCoV.fa`.
+4. Load the alignment: **File → Load From File**, then select `mappings/mapping_sorted.bam`. Keep `mapping_sorted.bam.bai` (created by `samtools index`) in the same folder.
+5. Optional: see IGV's guide to [navigating alignment data](https://software.broadinstitute.org/software/igv/AlignmentData).
+
+## How it works
+
+1. Take the nCov-19 genome sequence and build the auxiliary structures: Burrows-Wheeler transform, suffix arrays, and the FM-Index.
+2. Take the 100bp simulated reads and align them to nCov-19 using the seed-and-extend paradigm and dynamic programming.
+3. Build the `.sam` file mapping.
+4. Load the mapping into Integrative Genomics Viewer (IGV).
+5. View the coverage track for an alignment (see the image at the top).
+
+## Troubleshooting
+
+- **`./dep.sh: No such file or directory`, or errors mentioning `bash\r`.** The script was checked out with Windows line endings. Pull the latest version (which includes `.gitattributes`), delete `dep.sh` and `Makefile`, then run `git checkout -- dep.sh Makefile`.
+- **`wsl .\run` fails with `.run: command not found`.** Bash reads `\` as an escape character. Use `wsl ./run`.
+- **PowerShell refuses to run `dep.ps1`.** Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once, or use `wsl ./dep.sh` instead.
+
+## Project layout
+
 ```
-$ samtools view -b -o mapping.bam mapping.sam
-$ samtools sort -o mapping_sorted.bam mapping.bam
-$ samtools index mapping_sorted.bam
+coronavirus-genome-variant
+├── README.md
+├── 2019-nCoV.fa          # nCov-19 genome sequence
+├── dep.sh                # installs dependencies (Debian/Ubuntu)
+├── dep.ps1               # runs dep.sh through WSL from PowerShell
+├── Makefile              # builds ./run
+├── src
+│   └── main.c            # entry point: builds the FM-Index, then runs the aligner
+├── lib                   # headers: structures, globals, and function declarations
+│   ├── align.h           # read alignment
+│   ├── fmIndex.h         # FM-Index construction
+│   ├── misc.h            # miscellaneous helpers
+│   ├── kseq.h            # FASTA parser
+│   └── std.h             # shared structures and global variables
+├── utils                 # implementations of lib/*.h
+│   ├── align.c
+│   ├── fmIndex.c
+│   └── misc.c
+├── default               # small demo input
+│   ├── reads-small.fa
+│   └── ref-small.fa
+├── reads                 # gzipped FASTA reads (1K, 10K, 1M)
+│   ├── reads_1K.fa.gz
+│   ├── reads_10K.fa.gz
+│   └── reads_1M.fa.gz
+├── fm-output
+│   └── FMindex.txt       # FM-Index output from the demo run
+├── mappings              # alignment output (.sam)
+│   ├── mapping.sam       # output of the latest run
+│   └── mapping1M.sam     # precomputed 1M-read mapping
+└── png
+    └── IGV-10K.png       # IGV screenshot used above
 ```
-##### open IGV
-&nbsp;&nbsp;&nbsp;&nbsp;**(3a)** Load genome: <em>Genomes -> Load Genome From File</em> and select your ```2019-nCoV.fa``` file <br />
-&nbsp;&nbsp;&nbsp;&nbsp;**(3b)** Load alignment: <em>File -> Load From File</em> and select your ```mapping_sorted.bam``` file <br />
-&nbsp;&nbsp;&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;*NOTE:* make sure the other .bam files are in the same directory <br />
-&nbsp;&nbsp;&nbsp;&nbsp;**optional**: details on how to navigate IGV [here](https://software.broadinstitute.org/software/igv/AlignmentData)
 
-## File structure <a name="structure"></a>
-    coronavirus-genome-variant
-    ├── README  
-    ├── png 
-    ├── 2019-nCov.fa        # nCov-19 genome sequence
-    ├── default             # default input/output
-    |   ├── reads-small.fa          
-    |   └── ref-small.fa
-    |
-    ├── fm-output           # standard output file for FM-Index          
-    |   └── FMindex.txt
-    |
-    ├── lib                 # library of associated functions, structures, & variables
-    |   ├── align.h         # aux functions for aligning reads
-    |   ├── fmIndex.h       # aux functions for building fm-index
-    |   ├── misc.h          # miscellanous functions
-    |   ├── kseq.h          # FASTA parser
-    |   └── std.h           # holds all relevant structures/global-variables
-    |
-    ├── Makefile            # build executables
-    ├── mappings            # standard output .sam file(s) for alignments
-    |   ├── mappings.sam                      
-    |   └── mapping1M.sam   # holds the mapping for the 1M reads (so you don't have to wait 3hrs)
-    |    
-    ├── reads               # .gz FASTA files of reads (1K, 10K, and 1M)
-    |   ├── reads_10K.fa.gz
-    |   ├── reads_1K.fa.gz
-    |   └── reads_1M.fa.gz
-    |
-    ├── utils               # declaration of lib .h files         
-    |   ├── align.c         # aux functions for aligning reads          
-    |   ├── fmIndex.c       # aux functions for building fm-index
-    |   └── misc.c          # miscellanous functions
-    |
-    └── src
-        └── main.c          # our main file -> builds our FM-Index and Aligner
+## References
 
-## Auxiliary links <a name="links"></a>
-* [FASTA parser](https://github.com/lh3/readfq)
-* [nCov-19 Genome](https://www.ncbi.nlm.nih.gov/nuccore/NC_045512.2?report=fasta)
+- [FASTA parser (readfq)](https://github.com/lh3/readfq)
+- [nCov-19 genome (NC_045512.2)](https://www.ncbi.nlm.nih.gov/nuccore/NC_045512.2?report=fasta)
 
+## Future goals
 
-## Future goals <a name="goals"></a>
-* [Compressed suffix array](https://www.cs.cmu.edu/~dga/csa.pdf), for more efficient look-ups
-* Fast-rank calculations on FM-Index
+- [Compressed suffix array](https://www.cs.cmu.edu/~dga/csa.pdf), for more efficient look-ups
+- Fast-rank calculations on the FM-Index
