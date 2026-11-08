@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,12 +14,47 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
 
-      - name: Build and test
+      - name: Build and test (with ASan/UBSan)
         run: make test CC=gcc
 
       - name: Upload test output on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: test-output
+          name: test-output-linux
+          path: tests/out/
+
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      # default Windows checkout (autocrlf) gives CRLF FASTA files, which the parser must handle
+      - uses: actions/checkout@v4
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            make
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-zlib
+            mingw-w64-ucrt-x86_64-python
+
+      - name: Build and test (native run.exe)
+        run: make test
+
+      - name: Upload run.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: run-windows-x64
+          path: run.exe
+
+      - name: Upload test output on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-output-windows
           path: tests/out/

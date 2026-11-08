@@ -1,5 +1,6 @@
 #include "fmIndex.h"
 #include "misc.h"
+#include <errno.h>
 KSEQ_INIT(gzFile, gzread)
 
 /* references up to this length get their full FM-Index written to a text file */
@@ -9,22 +10,19 @@ int fmIndex(FM *fm, const char *reference, const char *output) {
 
     /* fasta stuff */
     if (reference == NULL) {
-        fprintf(stderr, "no reference file given\n");
-        return 1;
+        return fail(EXIT_USAGE, "no reference file given");
     }
-    gzFile fp = gzopen(reference, "r");
+    gzFile fp = gzopen(reference, "rb");
     if (fp == NULL) {
-        fprintf(stderr, "error opening reference file: %s\n", reference);
-        return 1;
+        return fail(EXIT_INPUT, "can't open reference file '%s': %s", reference, strerror(errno));
     }
     kseq_t *seq = kseq_init(fp);
 
     /* parse .fa file and build the fm-index from its first sequence */
     if (kseq_read(seq) < 0 || seq->seq.l == 0) {
-        fprintf(stderr, "no sequence found in reference file: %s\n", reference);
         kseq_destroy(seq);
         gzclose(fp);
-        return 1;
+        return fail(EXIT_INPUT, "no sequence found in reference file '%s' (expected FASTA)", reference);
     }
 
     /* name (SAM RNAME), taken from the FASTA header; fall back if the header has none */
@@ -45,13 +43,14 @@ int fmIndex(FM *fm, const char *reference, const char *output) {
 
     /* write FM-Index to output */
     if (fm->length <= FM_WRITE_LIMIT) {
-        FILE *f = fopen(output, "w");
+        FILE *f = fopen(output, "wb");
         if (f == NULL) {
-            fprintf(stderr, "error opening FM-Index output file: %s\n", output);
-            return 1;
+            return fail(EXIT_OUTPUT, "can't write FM-Index file '%s': %s", output, strerror(errno));
         }
         writeFM(fm, f);
-        fclose(f);
+        if (ferror(f) | fclose(f)) {
+            return fail(EXIT_OUTPUT, "error writing FM-Index file '%s'", output);
+        }
         info("> FM-Index for \"%s\" written to %s%s%s\n", reference, highlight(), output, highlightEnd());
     } else {
         info("> Reference is %d bp; the FM-Index is only written to a file for references up to %d bp (try ./run)\n",

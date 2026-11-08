@@ -1,7 +1,9 @@
 #include "align.h"
 #include "fmIndex.h"
 #include "misc.h"
+#include <errno.h>
 #include <limits.h>
+#include <sys/stat.h>
 KSEQ_INIT(gzFile, gzread)
 
 /* SAM flags we emit */
@@ -20,29 +22,35 @@ static void writeUnmapped(FILE *f, kseq_t *seq) {
     writeSAM(&s, f);
 }
 
-int align(FM *fm, const char *reads, const char *output, double READ, bool makePB) {
+/* size of a file in bytes, or 0 if unknown */
+static double fileSize(const char *path) {
+    struct stat st;
+    return (stat(path, &st) == 0 && st.st_size > 0) ? (double) st.st_size : 0;
+}
 
-    /* keep track of our progress */
-    double progress = 0.0;
+int align(FM *fm, const char *reads, const char *output, AlignStats *stats) {
+
+    *stats = (AlignStats) {0};
 
     /* fasta stuff */
     if (reads == NULL) {
-        fprintf(stderr, "no reads file given\n");
-        return 1;
+        return fail(EXIT_USAGE, "no reads file given");
     }
-    gzFile fp = gzopen(reads, "r");
+    gzFile fp = gzopen(reads, "rb");
     if (fp == NULL) {
-        fprintf(stderr, "error opening reads file: %s\n", reads);
-        return 1;
+        return fail(EXIT_INPUT, "can't open reads file '%s': %s", reads, strerror(errno));
     }
 
-    /* open our output file (.sam), or write to stdout for "-" */
+    /* progress is the share of the (possibly compressed) file read so far, so it works for any input */
+    double readsBytes = fileSize(reads);
+
+    /* open our output file (.sam), or write to stdout for "-"; binary keeps "\n" line endings on Windows */
     bool toStdout = strcmp(output, "-") == 0;
-    FILE *f = toStdout ? stdout : fopen(output, "w");
+    FILE *f = toStdout ? stdout : fopen(output, "wb");
     if (f == NULL) {
-        fprintf(stderr, "error opening output file: %s\n", output);
+        int code = fail(EXIT_OUTPUT, "can't write output file '%s': %s", output, strerror(errno));
         gzclose(fp);
-        return 1;
+        return code;
     }
 
     kseq_t *seq = kseq_init(fp);
@@ -58,12 +66,12 @@ int align(FM *fm, const char *reads, const char *output, double READ, bool makeP
     info("> Aligning reads from %s\n", reads);
 
     /* parse .fa file containing our reads */
-    while (kseq_read(seq) >= 0) {
+    int readStatus;
+    while ((readStatus = kseq_read(seq)) >= 0) {
 
-        /* progress bar */
-        if (makePB) {
-            progress++;
-            pb(true, progress / READ);
+        stats->reads++;
+        if (readsBytes > 0) {
+            progress((double) gzoffset(fp) / readsBytes);
         }
 
         int readLength = (int) seq->seq.l;
@@ -72,7 +80,7 @@ int align(FM *fm, const char *reads, const char *output, double READ, bool makeP
 
         if (readLength > MAX_READ_LENGTH) {
             if (!warnedLongRead) {
-                fprintf(stderr, "warning: reads longer than %d bp are reported as unmapped\n", MAX_READ_LENGTH);
+                warn("reads longer than %d bp are reported as unmapped", MAX_READ_LENGTH);
                 warnedLongRead = true;
             }
         } else if (readLength > 0) {
@@ -109,6 +117,8 @@ int align(FM *fm, const char *reads, const char *output, double READ, bool makeP
         /* write to .sam file: first hit is primary, any equally good ones are secondary */
         if (hits.count == 0) {
             writeUnmapped(f, seq);
+        } else {
+            stats->mapped++;
         }
         for (int a = 0; a < hits.count; a++) {
             SAM s = {
@@ -137,15 +147,22 @@ int align(FM *fm, const char *reads, const char *output, double READ, bool makeP
     bool writeFailed = ferror(f) != 0;
     writeFailed |= toStdout ? fflush(f) != 0 : fclose(f) != 0;
     if (writeFailed) {
-        fprintf(stderr, "error writing output file: %s\n", output);
-        return 1;
+        return fail(EXIT_OUTPUT, "error writing output file '%s'", toStdout ? "stdout" : output);
     }
 
-    if (makePB) {
-        info("\n");  /* end the progress bar line */
+    /* -1 is a clean end of file; less means a truncated or corrupt file */
+    if (readStatus < -1) {
+        return fail(EXIT_INPUT, "reads file '%s' is truncated or corrupt", reads);
     }
-    info("> SAM alignments written to %s%s%s\n", highlight(), output, highlightEnd());
-    return 0;
+    if (stats->reads == 0) {
+        return fail(EXIT_INPUT, "no reads found in '%s' (expected FASTA or FASTQ)", reads);
+    }
+
+    progress(1.0);
+    info("\n");  /* end the progress bar line */
+    info("> %d of %d reads mapped; SAM alignments written to %s%s%s\n",
+         stats->mapped, stats->reads, highlight(), output, highlightEnd());
+    return EXIT_OK;
 }
 
 /**************************/
@@ -323,8 +340,7 @@ char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *
             ops[length++] = 'D';
             n--;
         } else {
-            fprintf(stderr, "error in buildCigar(): inconsistent OPT-matrix\n");
-            exit(1);
+            exit(fail(EXIT_GENERIC, "error in buildCigar(): inconsistent OPT-matrix"));
         }
     }
 

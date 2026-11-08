@@ -11,14 +11,20 @@
 /* reference bases added on each side of a candidate position before aligning */
 #define SLICE_PAD 5
 
-/* takes the fmIndex of a ref-sequence, a .fa of single-end reads, and aligns them 
+/* read counts from one align() run */
+typedef struct alignStats {
+    int reads;      // reads in the input
+    int mapped;     // reads with at least one alignment
+} AlignStats;
+
+/* takes the fmIndex of a ref-sequence, a .fa of single-end reads, and aligns them
     * @param fm: fm-index
-    * @param reads: FASTA file of 100bp reads
-    * @param output: file output we will write to
-    * @param READ: total # of reads (for progress bar)
-    * @param makePB: to PB or not to PB, that is the question! (PB = progress bar)
+    * @param reads: FASTA file of reads (may be gzipped)
+    * @param output: SAM file to write, "-" for stdout
+    * @param stats: filled with read counts
+    * returns EXIT_OK, or the EXIT_* code of the failure (already reported)
  */
-int align(FM *fm, const char *reads, const char *output, double READ, bool makePB);
+int align(FM *fm, const char *reads, const char *output, AlignStats *stats);
 
 /**************************/
 /* AUX FUNTIONS FOR ALIGN */

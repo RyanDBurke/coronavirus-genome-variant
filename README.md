@@ -38,15 +38,15 @@ make           # build ./run
 ./run          # small demo run
 ```
 
-On Windows, see [Setup → Option B: Windows PowerShell](#option-b-windows-powershell).
+On Windows, see [Setup → Option B: Windows native](#option-b-windows-native-msys2) or [Option C: Windows with WSL](#option-c-windows-with-wsl).
 
 ## Requirements
 
-- Debian or Ubuntu. On Windows, use [WSL](https://learn.microsoft.com/windows/wsl/install).
-- `dep.sh` installs everything needed:
+- **Debian or Ubuntu:** `dep.sh` installs everything needed:
   - `gcc` and `make`: to build
   - `zlib1g-dev`: to read the gzipped read files
   - `samtools`: only needed to prepare results for IGV
+- **Windows:** either [MSYS2](https://www.msys2.org/) to build a native `run.exe`, or [WSL](https://learn.microsoft.com/windows/wsl/install) to use the Linux build.
 
 ## Setup
 
@@ -62,7 +62,8 @@ cd coronavirus-genome-variant
 Pick the option for your system:
 
 - [Option A: Debian or Ubuntu](#option-a-debian-or-ubuntu)
-- [Option B: Windows PowerShell](#option-b-windows-powershell)
+- [Option B: Windows native (MSYS2)](#option-b-windows-native-msys2): builds `run.exe`, which then runs from PowerShell with nothing else installed
+- [Option C: Windows with WSL](#option-c-windows-with-wsl)
 
 #### Option A: Debian or Ubuntu
 
@@ -71,7 +72,24 @@ Pick the option for your system:
 make           # build ./run
 ```
 
-#### Option B: Windows PowerShell
+#### Option B: Windows native (MSYS2)
+
+Install MSYS2 from PowerShell:
+
+```powershell
+winget install MSYS2.MSYS2
+```
+
+Then open **MSYS2 UCRT64** from the Start menu, `cd` to the repo (for example `cd /c/Users/you/coronavirus-genome-variant`), and run:
+
+```bash
+pacman -S --needed make mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-zlib mingw-w64-ucrt-x86_64-python
+make           # build run.exe
+```
+
+`run.exe` is self-contained: it uses only libraries built into Windows 10 and 11, so you can copy it anywhere. Every CI run also publishes it as the `run-windows-x64` artifact on the [Actions page](https://github.com/RyanDBurke/coronavirus-genome-variant/actions/workflows/ci.yml).
+
+#### Option C: Windows with WSL
 
 Everything runs inside WSL. From the repo folder in PowerShell:
 
@@ -87,11 +105,13 @@ Run **one** of these:
 
 | Debian / Ubuntu | Windows PowerShell | Input reads | Notes |
 |---|---|---|---|
-| `./run` | `wsl ./run` | `default/reads-small.fa` | Small demo against `default/ref-small.fa`. Also writes the FM-Index to `fm-output/FMindex.txt`. |
-| `./run covid 1K` | `wsl ./run covid 1K` | `reads/reads_1K.fa.gz` | 1,000 reads against `2019-nCoV.fa` |
-| `./run covid 10K` | `wsl ./run covid 10K` | `reads/reads_10K.fa.gz` | 10,000 reads |
-| `./run covid 1M` | `wsl ./run covid 1M` | `reads/reads_1M.fa.gz` | 1,000,000 reads. Takes about 2½ minutes. |
-| `./run -r REF.fa -q READS.fa -o OUT.sam` | `wsl ./run -r REF.fa -q READS.fa -o OUT.sam` | any FASTA file (`.gz` works too) | Your own reference and reads. |
+| `./run` | `.\run.exe` | `default/reads-small.fa` | Small demo against `default/ref-small.fa`. Also writes the FM-Index to `fm-output/FMindex.txt`. |
+| `./run covid 1K` | `.\run.exe covid 1K` | `reads/reads_1K.fa.gz` | 1,000 reads against `2019-nCoV.fa` |
+| `./run covid 10K` | `.\run.exe covid 10K` | `reads/reads_10K.fa.gz` | 10,000 reads |
+| `./run covid 1M` | `.\run.exe covid 1M` | `reads/reads_1M.fa.gz` | 1,000,000 reads. Takes about 2½ minutes. |
+| `./run -r REF.fa -q READS.fa -o OUT.sam` | `.\run.exe -r REF.fa -q READS.fa -o OUT.sam` | any FASTA file (`.gz` works too) | Your own reference and reads. |
+
+The Windows column is for the native build (Option B). With WSL (Option C), use the Debian / Ubuntu commands with a `wsl` prefix, for example `wsl ./run covid 1K`.
 
 Without `-o`, alignments go to `mappings/mapping.sam`, overwriting the previous result. The FM-Index file is only written for references of 50 bp or less, which is why only the demo produces it.
 
@@ -101,9 +121,31 @@ Other options, which also work with the presets (for example `./run covid 1K -o 
 |---|---|
 | `-o -` | Write SAM to stdout, e.g. `./run -r REF.fa -q READS.fa -o - \| samtools sort -o out.bam` |
 | `--quiet` | No progress bar or status messages |
+| `--progress-json` | Machine-readable progress for other programs (see below) |
 | `-h`, `--help` | List all options |
 
 Status messages and the progress bar go to stderr, so they never mix with SAM output.
+
+### For programs calling the aligner
+
+With `--progress-json`, stderr carries one JSON object per line instead of human messages:
+
+```json
+{"event":"index","length":29882}
+{"event":"progress","percent":41}
+{"event":"done","reads":1000,"mapped":1000,"unmapped":0,"seconds":0.12}
+```
+
+Progress is the share of the reads file read so far, so it works for any input. Errors arrive as `{"event":"error","code":"input","message":"can't open reads file 'x.fa': No such file or directory"}`, and the exit code says what went wrong:
+
+| Exit code | `code` | Meaning |
+|---|---|---|
+| 0 | | Success |
+| 1 | `internal` | Internal error (a bug) |
+| 2 | `usage` | Invalid command line |
+| 3 | `input` | Reference or reads file missing, unreadable, empty or corrupt |
+| 4 | `output` | SAM or FM-Index file can't be written |
+| 5 | `memory` | Out of memory |
 
 Reads that don't align still get a SAM record, flagged unmapped (`FLAG 4`). When a read aligns equally well in several places, the first is the primary record and the others are flagged secondary (`FLAG 256`).
 
@@ -115,27 +157,28 @@ Debian / Ubuntu:
 make test
 ```
 
-Windows PowerShell:
+Windows native: run `make test` in the **MSYS2 UCRT64** terminal. Windows with WSL:
 
 ```powershell
 wsl make test
 ```
 
-This needs `python3`, which Ubuntu includes. It runs three checks and fails on the first problem:
+This needs `python3`, which Ubuntu includes (MSYS2 installs it with the packages above). It runs four checks and fails on the first problem:
 
 1. **Unit tests** (`tests/test_units.c`) for CIGAR building, FM-Index backward search (checked against a brute-force scan), and scoring.
 2. **Known-answer test**: aligns `tests/fixtures/reads.fa`, 52 reads cut from the genome at known positions with injected SNPs and indels. Each must map at exactly its true position with the expected CIGAR.
 3. **Simulated reads**: aligns `reads/reads_1K.fa.gz` and checks every record replays cleanly against the reference. At least 99% of reads must map.
+4. **Command-line behaviour** (`tests/check_cli.py`): `--progress-json` events, exit codes, `-o -` output matching file output byte for byte, and paths with non-ASCII characters.
 
-Checks 1 and 2 run under AddressSanitizer, UndefinedBehaviorSanitizer and LeakSanitizer, so memory errors and leaks fail the build. Everything compiles with `-Wall -Wextra -Werror`. CI runs `make test` on every push to `master` and every pull request.
+On Linux, checks 1 and 2 run under AddressSanitizer, UndefinedBehaviorSanitizer and LeakSanitizer, so memory errors and leaks fail the build. MinGW has no sanitizers, so Windows runs the same checks without them. Everything compiles with `-Wall -Wextra -Werror`. CI runs `make test` on Linux and native Windows for every push to `master` and every pull request; both produce identical SAM output.
 
 Test output goes to `tests/out/`. Other targets:
 
 | Target | What it does |
 |---|---|
-| `make asan` | Builds `build/run-asan`, the aligner with sanitizers, for debugging |
+| `make asan` | Builds `build/run-asan`, the aligner with sanitizers, for debugging (Linux) |
 | `make fixture` | Regenerates the known-answer fixture after changing `tests/make_fixture.py` |
-| `make clean` | Removes `./run`, `build/` and `tests/out/` |
+| `make clean` | Removes `./run` or `run.exe`, `build/` and `tests/out/` |
 
 ## Viewing results in IGV
 
@@ -177,6 +220,7 @@ Test output goes to `tests/out/`. Other targets:
 - **`./dep.sh: No such file or directory`, or errors mentioning `bash\r`.** The script was checked out with Windows line endings. Pull the latest version (which includes `.gitattributes`), delete `dep.sh` and `Makefile`, then run `git checkout -- dep.sh Makefile`.
 - **`wsl .\run` fails with `.run: command not found`.** Bash reads `\` as an escape character. Use `wsl ./run`.
 - **PowerShell refuses to run `dep.ps1`.** Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once, or use `wsl ./dep.sh` instead.
+- **`make: command not found` or `gcc: command not found` when building `run.exe`.** Build in the **MSYS2 UCRT64** terminal, not PowerShell or the plain "MSYS2 MSYS" terminal. Once built, `run.exe` runs from anywhere.
 
 ## Project layout
 
@@ -187,13 +231,13 @@ coronavirus-genome-variant
 ├── 2019-nCoV.fa          # nCov-19 genome sequence
 ├── dep.sh                # installs dependencies (Debian/Ubuntu)
 ├── dep.ps1               # runs dep.sh through WSL from PowerShell
-├── Makefile              # builds ./run; `make test` runs the tests
+├── Makefile              # builds ./run (run.exe on Windows); `make test` runs the tests
 ├── .github/workflows
-│   └── ci.yml            # CI: runs make test on pushes and pull requests
+│   └── ci.yml            # CI: make test on Linux and Windows; publishes run.exe
 ├── include               # headers: structures and function declarations
 │   ├── align.h           # read alignment
 │   ├── fmIndex.h         # FM-Index construction and backward search
-│   ├── misc.h            # command-line handling, progress bar
+│   ├── misc.h            # command-line handling, progress, errors and exit codes
 │   ├── std.h             # shared structures and constants
 │   └── vendor
 │       └── kseq.h        # FASTA parser (third-party, MIT)
@@ -206,9 +250,13 @@ coronavirus-genome-variant
 │   ├── test_units.c      # unit tests (run under ASan/UBSan)
 │   ├── make_fixture.py   # generates the known-answer fixture
 │   ├── validate_sam.py   # checks SAM output against the reference
+│   ├── check_cli.py      # checks progress events, exit codes and non-ASCII paths
 │   └── fixtures
 │       ├── reads.fa      # 52 reads with known positions and variants
 │       └── truth.tsv     # true position, SNP count and indel type per read
+├── win                   # Windows resources compiled into run.exe
+│   ├── run.manifest      # UTF-8 paths, no admin rights
+│   └── run.rc            # embeds the manifest and version info
 ├── default               # small demo input
 │   ├── reads-small.fa
 │   └── ref-small.fa
@@ -224,7 +272,7 @@ coronavirus-genome-variant
     └── IGV-10K.png       # IGV screenshot used above
 ```
 
-`make` also creates `build/` (object files and sanitizer builds) and `./run`. Both are git-ignored.
+`make` also creates `build/` (object files and test builds) and `./run` or `run.exe`. These are git-ignored.
 
 ## References
 
