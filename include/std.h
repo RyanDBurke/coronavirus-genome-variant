@@ -14,7 +14,7 @@
 #include <stdbool.h>
 #include <math.h>
 #include <zlib.h>
-#include "kseq.h" /* FASTA-parser */
+#include "vendor/kseq.h" /* FASTA-parser */
 
 #define FASTA_MAXLINE 512	/* Requires FASTA file lines to be <512 characters */
 #define MAXROW 200          /* row bounds on OPT-matrix */

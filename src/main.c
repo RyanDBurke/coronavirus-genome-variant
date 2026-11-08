@@ -2,9 +2,9 @@
 /*    MAIN    */
 /**************/
 
-#include "../lib/align.h"
-#include "../lib/fmIndex.h"
-#include "../lib/misc.h"
+#include "align.h"
+#include "fmIndex.h"
+#include "misc.h"
 
 /* runs align and fmIndex */
 int main(int argc, char **argv) {

@@ -1,4 +1,4 @@
-#include "../lib/misc.h"
+#include "misc.h"
 
 /* progress bar: redraws only when the whole-number percentage changes */
 void pb(bool makeProgressBar, double percentageDone) {

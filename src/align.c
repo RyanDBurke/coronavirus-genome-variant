@@ -1,6 +1,6 @@
-#include "../lib/align.h"
-#include "../lib/fmIndex.h"
-#include "../lib/misc.h"
+#include "align.h"
+#include "fmIndex.h"
+#include "misc.h"
 #include <limits.h>
 KSEQ_INIT(gzFile, gzread)
 

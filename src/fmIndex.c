@@ -1,4 +1,4 @@
-#include "../lib/fmIndex.h"
+#include "fmIndex.h"
 KSEQ_INIT(gzFile, gzread)
 
 /* references up to this length get their full FM-Index written to a text file */

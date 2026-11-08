@@ -11,7 +11,7 @@ import random
 import sys
 
 READ_LEN = 100
-SEED_LEN = READ_LEN // 5  # matches seedSkip() in utils/align.c
+SEED_LEN = READ_LEN // 5  # matches seedSkip() in src/align.c
 BASES = "ACGT"
 
 

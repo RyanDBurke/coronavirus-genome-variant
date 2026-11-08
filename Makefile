@@ -1,8 +1,9 @@
 CC      ?= gcc
 CFLAGS  ?= -g -Wall -Wno-format -O2
+CPPFLAGS += -Iinclude
 LDLIBS   = -lz
-SRCS     = utils/align.c utils/fmIndex.c utils/misc.c
-HEADERS  = $(wildcard lib/*.h)
+SRCS     = src/align.c src/fmIndex.c src/misc.c
+HEADERS  = $(wildcard include/*.h include/vendor/*.h)
 SANITIZE = -fsanitize=address,undefined -fno-omit-frame-pointer
 PYTHON  ?= python3
 OUT      = tests/out
@@ -10,11 +11,11 @@ OUT      = tests/out
 all: run
 
 run: src/main.c $(SRCS) $(HEADERS)
-	$(CC) $(CFLAGS) -o $@ src/main.c $(SRCS) $(LDLIBS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ src/main.c $(SRCS) $(LDLIBS)
 
 # unit tests run under AddressSanitizer + UndefinedBehaviorSanitizer
 tests/test_units: tests/test_units.c $(SRCS) $(HEADERS)
-	$(CC) -g -O1 -Wall -Wno-format $(SANITIZE) -o $@ tests/test_units.c $(SRCS) $(LDLIBS)
+	$(CC) $(CPPFLAGS) -g -O1 -Wall -Wno-format $(SANITIZE) -o $@ tests/test_units.c $(SRCS) $(LDLIBS)
 
 # regenerate the end-to-end fixture (output is committed; only needed if the generator changes)
 fixture:

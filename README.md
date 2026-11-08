@@ -165,15 +165,15 @@ coronavirus-genome-variant
 ├── dep.sh                # installs dependencies (Debian/Ubuntu)
 ├── dep.ps1               # runs dep.sh through WSL from PowerShell
 ├── Makefile              # builds ./run; `make test` runs the tests
-├── src
-│   └── main.c            # entry point: builds the FM-Index, then runs the aligner
-├── lib                   # headers: structures, globals, and function declarations
+├── include               # headers: structures and function declarations
 │   ├── align.h           # read alignment
-│   ├── fmIndex.h         # FM-Index construction
-│   ├── misc.h            # miscellaneous helpers
-│   ├── kseq.h            # FASTA parser
-│   └── std.h             # shared structures and global variables
-├── utils                 # implementations of lib/*.h
+│   ├── fmIndex.h         # FM-Index construction and backward search
+│   ├── misc.h            # command-line handling, progress bar
+│   ├── std.h             # shared structures and constants
+│   └── vendor
+│       └── kseq.h        # FASTA parser (third-party, MIT)
+├── src
+│   ├── main.c            # entry point: builds the FM-Index, then runs the aligner
 │   ├── align.c
 │   ├── fmIndex.c
 │   └── misc.c

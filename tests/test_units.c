@@ -1,8 +1,8 @@
 /* Unit tests for the alignment and indexing helpers.
  * Built with AddressSanitizer + UBSan by `make test`. */
 
-#include "../lib/align.h"
-#include "../lib/fmIndex.h"
+#include "align.h"
+#include "fmIndex.h"
 
 static int failures = 0;
 static int checks = 0;
