@@ -14,6 +14,7 @@ A basic seed-search alignment tool to compare read-variants to the nCov-19 virus
 - [Requirements](#requirements)
 - [Setup](#setup)
 - [Running](#running)
+- [Testing](#testing)
 - [Viewing results in IGV](#viewing-results-in-igv)
 - [How it works](#how-it-works)
 - [Troubleshooting](#troubleshooting)
@@ -85,9 +86,34 @@ Run **one** of these:
 | `./run` | `wsl ./run` | `default/reads-small.fa` | Small demo against `default/ref-small.fa`. Also writes the FM-Index to `fm-output/FMindex.txt`. |
 | `./run covid 1K` | `wsl ./run covid 1K` | `reads/reads_1K.fa.gz` | 1,000 reads against `2019-nCoV.fa` |
 | `./run covid 10K` | `wsl ./run covid 10K` | `reads/reads_10K.fa.gz` | 10,000 reads |
-| `./run covid 1M` | `wsl ./run covid 1M` | `reads/reads_1M.fa.gz` | 1,000,000 reads. Takes about 3 hours, so a precomputed result is in `mappings/mapping1M.sam`. |
+| `./run covid 1M` | `wsl ./run covid 1M` | `reads/reads_1M.fa.gz` | 1,000,000 reads. Takes a while, so a precomputed result is in `mappings/mapping1M.sam`. |
+| `./run REF.fa READS.fa OUT.sam` | `wsl ./run REF.fa READS.fa OUT.sam` | any FASTA file (`.gz` works too) | Your own reference and reads; writes to `OUT.sam`. |
 
-Every run writes its alignments to `mappings/mapping.sam`, overwriting the previous result. The FM-Index file is only written for references of 50 bp or less, which is why only the demo produces it.
+The presets write their alignments to `mappings/mapping.sam`, overwriting the previous result. The FM-Index file is only written for references of 50 bp or less, which is why only the demo produces it.
+
+Reads that don't align still get a SAM record, flagged unmapped (`FLAG 4`). When a read aligns equally well in several places, the first is the primary record and the others are flagged secondary (`FLAG 256`).
+
+## Testing
+
+Debian / Ubuntu:
+
+```bash
+make test
+```
+
+Windows PowerShell:
+
+```powershell
+wsl make test
+```
+
+This needs `python3`, which Ubuntu includes. It runs three checks and fails on the first problem:
+
+1. **Unit tests** (`tests/test_units.c`) for CIGAR building, seed lookup and scoring. They're built with AddressSanitizer and UndefinedBehaviorSanitizer, so memory errors fail the test.
+2. **Known-answer test**: aligns `tests/fixtures/reads.fa`, 52 reads cut from the genome at known positions with injected SNPs and indels. Each must map at exactly its true position with the expected CIGAR.
+3. **Simulated reads**: aligns `reads/reads_1K.fa.gz` and checks every record replays cleanly against the reference. At least 99% of reads must map.
+
+Test output goes to `tests/out/`. To rebuild the fixture after changing `tests/make_fixture.py`, run `make fixture`.
 
 ## Viewing results in IGV
 
@@ -138,7 +164,7 @@ coronavirus-genome-variant
 ├── 2019-nCoV.fa          # nCov-19 genome sequence
 ├── dep.sh                # installs dependencies (Debian/Ubuntu)
 ├── dep.ps1               # runs dep.sh through WSL from PowerShell
-├── Makefile              # builds ./run
+├── Makefile              # builds ./run; `make test` runs the tests
 ├── src
 │   └── main.c            # entry point: builds the FM-Index, then runs the aligner
 ├── lib                   # headers: structures, globals, and function declarations
@@ -151,6 +177,13 @@ coronavirus-genome-variant
 │   ├── align.c
 │   ├── fmIndex.c
 │   └── misc.c
+├── tests
+│   ├── test_units.c      # unit tests (run under ASan/UBSan)
+│   ├── make_fixture.py   # generates the known-answer fixture
+│   ├── validate_sam.py   # checks SAM output against the reference
+│   └── fixtures
+│       ├── reads.fa      # 52 reads with known positions and variants
+│       └── truth.tsv     # true position, SNP count and indel type per read
 ├── default               # small demo input
 │   ├── reads-small.fa
 │   └── ref-small.fa
