@@ -7,8 +7,6 @@
 
 A basic seed-search alignment tool to compare read-variants to the nCov-19 virus genome using Burrows-Wheeler transform, suffix arrays, the FM-Index, and core dynamic programming principles.
 
-<img src="./png/IGV-10K.png" alt="Integrative Genomics Viewer showing coverage for 10K reads" width="800">
-
 </div>
 
 ## Contents
@@ -252,7 +250,7 @@ Test output goes to `tests/out/`. Other targets:
 2. **Seed.** Split each read into five equal seeds (20 bp for 100 bp reads) and find every exact occurrence of each seed with FM-Index backward search. A seed containing a variant simply finds nothing; the other seeds still place the read.
 3. **Extend.** For each candidate position, cut the reference with 5 bp of padding on both sides and run a fitting alignment, a dynamic-programming alignment where the whole read must align but reference bases outside it are free (`src/align.c`). The traceback gives the start position and CIGAR string.
 4. **Report.** Keep the best-scoring alignments across all seeds and write SAM: one primary record per read, equally good alternatives as secondary, and unmapped reads flagged.
-5. **Visualize.** The desktop app shows depth, reads and variant sites directly. From the command line, load the SAM into Integrative Genomics Viewer (IGV) to see coverage (the image at the top).
+5. **Visualize.** The desktop app shows depth, reads and variant sites directly. From the command line, load the SAM into Integrative Genomics Viewer (IGV) to see coverage.
 
 ## Troubleshooting
 
@@ -313,10 +311,8 @@ coronavirus-genome-variant
 │   └── reads_1M.fa.gz
 ├── fm-output
 │   └── FMindex.txt       # FM-Index output from the demo run
-├── mappings              # alignment output (.sam)
-│   └── mapping.sam       # output of the latest run
-└── png
-    └── IGV-10K.png       # IGV screenshot used above
+└── mappings              # alignment output (.sam)
+    └── mapping.sam       # output of the latest run
 ```
 
 `make` also creates `build/` (object files and test builds) and `./run` or `run.exe`. These are git-ignored.
