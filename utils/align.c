@@ -1,4 +1,5 @@
 #include "../lib/align.h"
+#include "../lib/fmIndex.h"
 #include "../lib/misc.h"
 #include <limits.h>
 KSEQ_INIT(gzFile, gzread)
@@ -144,46 +145,17 @@ int align(FM *fm, char *reads, char *output, double READ, bool makePB) {
 /* AUX FUNTIONS FOR ALIGN */
 /**************************/
 
-/* finds the suffix-array interval [start, end) whose suffixes begin with seed */
+/* finds the suffix-array interval [start, end) whose suffixes begin with seed (FM-Index backward search) */
 void getInterval(Interval *interval, int *matchLength, FM *fm, char* seed) {
-
-    /* reset interval to -1 */
-    interval->start = -1;
-    interval->end = -1;
-
     int seedLength = strlen(seed);
 
-    /* length of our original reference sequence (coronavirus genome) */
-    int refSeqLength = fm->length;
-
-    /* iterate thru suffix array to find matches to our seed */
-    for (int i = 0; i < refSeqLength; i++) {
-
-        /* current coronavirus suffix */
-        char *suffix = (fm->seq + fm->suffixArray[i]);
-
-        /* match seed to the start of the suffix */
-        bool match = strncmp(suffix, seed, seedLength) == 0;
-
-        /* if they match and this is the first match */
-        if (match && (interval->start == -1)) {
-            interval->start = i;
-        }
-
-        /* if they don't match, but we've seen a match before -- then this is the end of interval */
-        if (!match && (interval->start != -1)) {
-            interval->end = i;
-            break; /* break loop, we have our interval! */
-        }
+    if (seedLength > 0 && backwardSearch(fm, seed, seedLength, interval)) {
+        *matchLength = seedLength;
+    } else {
+        interval->start = -1;
+        interval->end = -1;
+        *matchLength = 0;
     }
-
-    /* matches ran to the last suffix */
-    if (interval->start != -1 && interval->end == -1) {
-        interval->end = refSeqLength;
-    }
-
-    /* matchLength = 0 if no match found, otherwise matchLength = strlen(seed) */
-    *matchLength = (interval->start == -1) ? 0 : seedLength;
 }
 
 /* returns reference positions of current seed */

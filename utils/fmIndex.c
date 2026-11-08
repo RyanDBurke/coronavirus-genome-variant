@@ -1,6 +1,8 @@
 #include "../lib/fmIndex.h"
 KSEQ_INIT(gzFile, gzread)
 
+/* references up to this length get their full FM-Index written to a text file */
+#define FM_WRITE_LIMIT 50
 
 int fmIndex(FM *fm, char *reference, char *output) {
 
@@ -23,57 +25,38 @@ int fmIndex(FM *fm, char *reference, char *output) {
         gzclose(fp);
         return 1;
     }
-    {
-        /* name (SAM RNAME), taken from the FASTA header; fall back if the header has none */
-        const char *name = (seq->name.l > 0) ? seq->name.s : "ref";
-        fm->name = malloc(strlen(name) + 1);
-        strcpy(fm->name, name);
 
-        /* seq */
-        fm->seq = malloc(strlen(seq->seq.s) + 1);
-        strcpy(fm->seq, seq->seq.s);
-        
-        /* length of seq */
-        fm->length = strlen(seq->seq.s);
+    /* name (SAM RNAME), taken from the FASTA header; fall back if the header has none */
+    const char *name = (seq->name.l > 0) ? seq->name.s : "ref";
+    fm->name = malloc(strlen(name) + 1);
+    strcpy(fm->name, name);
 
-        /* suffix array */
-        fm->suffixArray = (buildSuffixArray(seq->seq.s, strlen(seq->seq.s)));
+    /* seq */
+    fm->length = (int) seq->seq.l;
+    fm->seq = malloc(fm->length + 1);
+    memcpy(fm->seq, seq->seq.s, fm->length + 1);
 
-        /* burrows-wheeler matrix (bwm) */
-        fm->bwm = (buildBWM(seq->seq.s, strlen(seq->seq.s)));
+    kseq_destroy(seq);
+    gzclose(fp);
 
-        /* burrows-wheeler transform (bwt) */
-        fm->bwt = malloc(strlen(seq->seq.s) + 1);
-        buildBWT(fm->bwt, fm->bwm, strlen(seq->seq.s));
-
-        /* (F)irst and (L)ast columns of bwm */
-        fm->F = malloc(strlen(seq->seq.s) + 1);
-        fm->L = malloc(strlen(seq->seq.s) + 1);
-        getFL(fm->F, fm->L, fm->bwm, strlen(seq->seq.s));
-
-        /* Fast-rank arrays */
-        /* to be implemented */
-
-    }
+    /* suffix array, burrows-wheeler transform, and rank tables */
+    buildIndex(fm);
 
     /* write FM-Index to output */
-    FILE *f;
-    int seqLimit = 50; /* adjust seq-length for writing to output to your liking */
-    if (fm->length <= seqLimit) { 
-        f = fopen(output, "w");
+    if (fm->length <= FM_WRITE_LIMIT) {
+        FILE *f = fopen(output, "w");
         if (f == NULL) {
             fprintf(stderr, "error opening FM-Index output file: %s\n", output);
-            kseq_destroy(seq);
-            gzclose(fp);
             return 1;
         }
-        writeFM(fm, f, fm->length);
+        writeFM(fm, f);
+        fclose(f);
         printf("> You can find the serialized FM-Index for \"%s\" in: ", reference);
         printf("\033[1;31m");
         printf("%s\n\n", output);
         printf("\033[0m");
     } else {
-        printf("\t> Sequences over %d in length are not written to file\n", seqLimit);
+        printf("\t> Sequences over %d in length are not written to file\n", FM_WRITE_LIMIT);
         printf("\t> Your sequence length: %d\n", fm->length);
         printf("\t> Use ");
         printf("\033[1;31m");
@@ -82,124 +65,134 @@ int fmIndex(FM *fm, char *reference, char *output) {
         printf("to see a serialized FM-Index.\n\n");
     }
 
-    kseq_destroy(seq);
-	gzclose(fp);
-	return 0;
+    return 0;
 }
 
 /*****************************/
 /* AUX FUNTIONS FOR FM-INDEX */
 /*****************************/
 
-/* builds suffix array */
+/* text being sorted by cmpSA (qsort has no context argument) */
+static const char *sortText;
+
+/* comparison sort function for suffix array offsets: compares the suffixes in place.
+   The empty suffix (offset == length) compares smallest, which is exactly where '$' sorts. */
+int cmpSA(const void *a, const void *b) {
+    return strcmp(sortText + *(const int *) a, sortText + *(const int *) b);
+}
+
+/* builds suffix array of seq + '$' (length + 1 entries; entry 0 is always length) */
 int *buildSuffixArray(char *seq, int length) {
-
-    /* store suffixes and their offset */
-    SA suffixes[length];
-
-    /* starting adding SA objects to array */
-    for (int i = 0; i < length; i++) {
-
-        /* offset */
-        suffixes[i].offset = i;
-
-        /* build suffix */
-        char* currentSuffix = (seq + i);
-        suffixes[i].suffix = malloc(strlen(currentSuffix) + 1);
-        strcpy(suffixes[i].suffix, currentSuffix);
+    int *sa = malloc(sizeof(int) * (length + 1));
+    for (int i = 0; i <= length; i++) {
+        sa[i] = i;
     }
-
-    /* sort suffixes */
-    qsort(suffixes, length, sizeof(SA), &cmpSA);
-
-    /* build suffix array */
-    int *sa = malloc(sizeof(int) * length);
-    for (int i = 0; i < length; i++) {
-
-        /* store offset in our suffix array */
-        sa[i] = suffixes[i].offset;
-        free(suffixes[i].suffix);
-    }
-
+    sortText = seq;
+    qsort(sa, length + 1, sizeof(int), &cmpSA);
+    sortText = NULL;
     return sa;
 }
 
-/* build burrows-wheeler matrix */
-char **buildBWM(char *seq, int length) {
+/* builds the suffix array, BWT, F column, and rank tables for fm->seq */
+void buildIndex(FM *fm) {
+    int n = fm->length;
+    int rows = n + 1;
+    const unsigned char *s = (const unsigned char *) fm->seq;
 
-    /* store rotations and their offset */
-    R bwMatrix[length];
+    fm->suffixArray = buildSuffixArray(fm->seq, n);
 
-    /* starting adding rotations */
-    for (int i = 0; i < length; i++) {
-
-        /* offset */
-        bwMatrix[i].offset = i;
-
-        /* build rotation */
-        char *prefix = malloc(i + 1);
-        char *suffix = (seq + i);
-        bwMatrix[i].rotation = malloc(length + 1);
-        strcpy(bwMatrix[i].rotation, suffix);
-        strncpy(prefix, seq, i);
-        prefix[i] = '\0'; // add null terminator to prefix (crucial!)
-        strcat(bwMatrix[i].rotation, prefix);
-
-        /* free prefix, we don't need it anymore */
-        free(prefix);
+    /* alphabet: '$' is code 0, then every character present, in byte (= sort) order */
+    bool present[256] = {false};
+    for (int i = 0; i < n; i++) {
+        present[s[i]] = true;
     }
-
-    /* sort rotations */
-    qsort(bwMatrix, length, sizeof(R), &cmpBMW);
-
-    /* stores the actual matrix (rotations sorted) */
-    char **matrix = malloc(sizeof(char *) * (length + 1));
-
-    /* fill matrix (the sorted rotations become the matrix rows) */
-    for (int i = 0; i < length; i++) {
-        matrix[i] = bwMatrix[i].rotation;
+    fm->alphabetSize = 1;
+    for (int c = 0; c < 256; c++) {
+        fm->code[c] = present[c] ? fm->alphabetSize++ : -1;
     }
-    matrix[length] = NULL;
-    
-    return matrix;
+    int sigma = fm->alphabetSize;
+
+    /* BWT (L column) and F column, straight from the suffix array:
+       row r is the rotation starting at sa[r]; L is the character before it, F is the one at it */
+    fm->bwt = malloc(rows + 1);
+    fm->F = malloc(rows + 1);
+    fm->bwtCodes = malloc(rows);
+    for (int r = 0; r < rows; r++) {
+        int start = fm->suffixArray[r];
+        fm->F[r] = (start == n) ? FM_SENTINEL : fm->seq[start];
+        if (start == 0) {
+            fm->bwt[r] = FM_SENTINEL;
+            fm->bwtCodes[r] = 0;
+        } else {
+            fm->bwt[r] = fm->seq[start - 1];
+            fm->bwtCodes[r] = (unsigned char) fm->code[s[start - 1]];
+        }
+    }
+    fm->bwt[rows] = '\0';
+    fm->F[rows] = '\0';
+
+    /* C[c]: number of characters in T that sort before c */
+    fm->C = calloc(sigma, sizeof(int));
+    int *counts = calloc(sigma, sizeof(int));
+    for (int r = 0; r < rows; r++) {
+        counts[fm->bwtCodes[r]]++;
+    }
+    for (int c = 1; c < sigma; c++) {
+        fm->C[c] = fm->C[c - 1] + counts[c - 1];
+    }
+    free(counts);
+
+    /* occurrence checkpoints: occ[k][c] = count of c in bwt[0, k * OCC_SAMPLE) */
+    int checkpoints = rows / OCC_SAMPLE + 1;
+    fm->occ = calloc((size_t) checkpoints * sigma, sizeof(int));
+    int *running = calloc(sigma, sizeof(int));
+    for (int r = 0; r <= rows; r++) {
+        if (r % OCC_SAMPLE == 0) {
+            memcpy(fm->occ + (size_t) (r / OCC_SAMPLE) * sigma, running, sizeof(int) * sigma);
+        }
+        if (r < rows) {
+            running[fm->bwtCodes[r]]++;
+        }
+    }
+    free(running);
 }
 
-/* builds burrows-wheeler transform (i.e last column) */
-void buildBWT(char *bwt, char **BWM, int length) {
-    for (int i = 0; i < length; i++) {
-        bwt[i] = BWM[i][length - 1];
+/* number of occurrences of code c in bwt[0, row) */
+int occCount(FM *fm, int c, int row) {
+    int k = row / OCC_SAMPLE;
+    int count = fm->occ[(size_t) k * fm->alphabetSize + c];
+    for (int r = k * OCC_SAMPLE; r < row; r++) {
+        count += (fm->bwtCodes[r] == c);
     }
-    bwt[length] = '\0';
+    return count;
 }
 
-/* gets (F)irst and (L)ast columns of our burrows-wheeler matrix */
-void getFL(char *F, char *L, char **BWM, int length) {
-    for (int i = 0; i < length; i++) {
-        F[i] = BWM[i][0];
-        L[i] = BWM[i][length - 1];
+/* FM-Index backward search: rows [start, end) whose rotations begin with pattern */
+bool backwardSearch(FM *fm, const char *pattern, int m, Interval *interval) {
+    int start = 0;
+    int end = fm->length + 1;
+    for (int i = m - 1; i >= 0 && start < end; i--) {
+        int c = fm->code[(unsigned char) pattern[i]];
+        if (c < 0) {            /* character never occurs in the reference */
+            start = end;
+            break;
+        }
+        start = fm->C[c] + occCount(fm, c, start);
+        end = fm->C[c] + occCount(fm, c, end);
     }
-    F[length] = '\0';
-    L[length] = '\0';
+    interval->start = start;
+    interval->end = end;
+    return start < end;
 }
 
-/* comparison sort function for suffix arrays */
-int cmpSA(const void *a, const void *b) {
-    const SA *da = (const SA *) a;
-    const SA *db = (const SA *) b;
-
-    return strcmp(da->suffix, db->suffix);
-}
-
-/* comparison sort function for bwm */
-int cmpBMW(const void *a, const void *b) {
-    const R *da = (const R *) a;
-    const R *db = (const R *) b;
-
-    return strcmp(da->rotation, db->rotation);
+/* character at position i of T = seq + '$' */
+static char textAt(FM *fm, int i) {
+    return (i == fm->length) ? FM_SENTINEL : fm->seq[i];
 }
 
 /* write our fm-index to output */
-void writeFM(FM *fm, FILE *f, int length) {
+void writeFM(FM *fm, FILE *f) {
+    int rows = fm->length + 1;
 
     fprintf(f, "************\n");
     fprintf(f, "* FM-INDEX *\n");
@@ -211,16 +204,16 @@ void writeFM(FM *fm, FILE *f, int length) {
     /* sequence length */
     fprintf(f, "length: %d\n\n", fm->length);
 
-    /* write sequence if its under 512 chars */
+    /* sequence, with its end marker */
     fprintf(f, "Sequence\n");
-    fprintf(f, "%s\n\n", fm->seq);
+    fprintf(f, "%s%c\n\n", fm->seq, FM_SENTINEL);
 
     /* suffix array */
     int lineCount = 0;
     fprintf(f, "Suffix Array\n");
-    for (int i = 0; i < length; i++) {
+    for (int i = 0; i < rows; i++) {
         lineCount++;
-        if (i == length - 1) {
+        if (i == rows - 1) {
             fprintf(f, "%d\n\n", fm->suffixArray[i]);
         } else if (lineCount == 14) {
             fprintf(f, "%d,\n", fm->suffixArray[i]);
@@ -232,26 +225,20 @@ void writeFM(FM *fm, FILE *f, int length) {
 
     /* suffixes */
     fprintf(f, "Suffixes\n");
-    for (int i = 0; i < length; i++) {
-        int offset = fm->suffixArray[i];
-        char *suffix = (fm->seq + offset);
-
-        if (i == length - 1) {
-            fprintf(f, "%d:\t %s\n\n", i, suffix);
-        } else {
-            fprintf(f, "%d:\t %s\n", i, suffix);
-        }
+    for (int i = 0; i < rows; i++) {
+        fprintf(f, "%d:\t %s%c\n", i, fm->seq + fm->suffixArray[i], FM_SENTINEL);
     }
+    fprintf(f, "\n");
 
-    /* bwm */
+    /* bwm, generated one rotation at a time */
     fprintf(f, "Burrows-Wheeler Matrix\n");
-    for (int i = 0; i < length; i++) {
-        if (i == length - 1) {
-            fprintf(f, "%s\n\n", fm->bwm[i]);
-        } else {
-            fprintf(f, "%s\n", fm->bwm[i]);
+    for (int i = 0; i < rows; i++) {
+        for (int k = 0; k < rows; k++) {
+            fputc(textAt(fm, (fm->suffixArray[i] + k) % rows), f);
         }
+        fputc('\n', f);
     }
+    fprintf(f, "\n");
 
     /* bwt */
     fprintf(f, "BWT: ");
@@ -261,64 +248,26 @@ void writeFM(FM *fm, FILE *f, int length) {
     fprintf(f, "F: ");
     fprintf(f, "%s\n", fm->F);
     fprintf(f, "L: ");
-    fprintf(f, "%s\n", fm->L);
-
-    fclose(f);
+    fprintf(f, "%s\n", fm->bwt);
 }
 
-/* prints suffix array */
-void printSA(int *sa, int length) {
-
-    printf("Suffix Array\n");
-    for (int i = 0; i < length; i++) {
-        if (i == length - 1) {
-            printf("%d\n\n", sa[i]);
-        } else {
-            printf("%d, ", sa[i]);
-        }
-    }
-}
-
-/* prints bwm */
-void printBWM(char **b, int length) {
-
-    printf("Burrows-Wheeler Matrix\n");
-    for (int i = 0; i < length; i++) {
-        if (i == length - 1) {
-            printf("%s\n\n", b[i]);
-        } else {
-            printf("%s\n", b[i]);
-        }
-    }
-}
-
-/* prints bwt */
-void printBWT(char *bwt, int length) {
-    printf("BWT: ");
-    printf("%s\n\n", bwt);
-}
-
-/* prints F and L */
-void printFL(char *F, char *L, int length) {
-    printf("F: ");
-    printf("%s\n", F);
-
-    printf("L: ");
-    printf("%s\n\n", L);
+/* frees the index structures (not name/seq) */
+void freeIndex(FM *fm) {
+    free(fm->suffixArray);
+    free(fm->bwt);
+    free(fm->F);
+    free(fm->bwtCodes);
+    free(fm->C);
+    free(fm->occ);
+    fm->suffixArray = NULL;
+    fm->bwt = fm->F = NULL;
+    fm->bwtCodes = NULL;
+    fm->C = fm->occ = NULL;
 }
 
 /* destroys our FM-Index*/
 void destroy(FM *fm) {
-    free(fm->bwt);
-    free(fm->F);
-    free(fm->L);
-    if (fm->bwm != NULL) {
-        for (int i = 0; i < fm->length; i++) {
-            free(fm->bwm[i]);
-        }
-    }
-    free(fm->bwm);
-    free(fm->suffixArray);
+    freeIndex(fm);
     free(fm->seq);
     free(fm->name);
     free(fm);

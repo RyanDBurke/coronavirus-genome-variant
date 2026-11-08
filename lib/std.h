@@ -20,33 +20,27 @@
 #define MAXROW 200          /* row bounds on OPT-matrix */
 #define MAXCOL 200          /* column bounds on OPT-matrix */
 
-/* struct for FM-Index */
+#define FM_SENTINEL '$'    /* end-of-text marker; sorts before every other character */
+#define OCC_SAMPLE  64     /* rows between occurrence-count checkpoints */
+
+/* struct for FM-Index over the text T = seq + '$'
+   rows 0..length of the (conceptual) burrows-wheeler matrix are the sorted rotations of T;
+   row 0 is always the rotation starting at '$' */
 typedef struct fm {
-    char    *name;         // sequence name
-    char    *seq;          // actual sequence string
-    int     length;        // length of sequence
-    int     *suffixArray;  // suffix array of sequence
-    char    **bwm;         // burrows-wheeler matrix
-    char    *bwt;          // burrows-wheeler transform
-    char    *F;            // (F)irst column of bwm
-    char    *L;            // (L)ast column of bwm
+    char    *name;          // sequence name
+    char    *seq;           // actual sequence string
+    int     length;         // length of sequence (T has length + 1 characters)
+    int     *suffixArray;   // suffixArray[row] = offset in T where that row's rotation starts
+    char    *bwt;           // burrows-wheeler transform: (L)ast column, '$' included
+    char    *F;             // (F)irst column of the matrix
 
-    /* not implemented yet */
-    int     *F_rank;       // fast-rank calculation for (F)irst column
-    int     *L_rank;       // fast-rank calculation for (L)ast column
+    /* fast-rank structures for backward search */
+    int     alphabetSize;   // distinct characters in T, '$' included
+    int     code[256];      // character -> rank among T's characters (in sort order), -1 if absent
+    unsigned char *bwtCodes;// bwt as codes
+    int     *C;             // C[c] = # characters in T that sort before c (start of c's block in F)
+    int     *occ;           // occ[k * alphabetSize + c] = # of c in bwt[0, k * OCC_SAMPLE)
 } FM;
-
-/* suffix array struct */
-typedef struct suffixArray {
-    int     offset;
-    char    *suffix;
-} SA;
-
-/* rotation struct for burrows-wheeler matrix */
-typedef struct Rotation {
-    int     offset;
-    char    *rotation;
-} R;
 
 /* struct for an alignment and its score */
 typedef struct singleAlignment {

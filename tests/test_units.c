@@ -79,29 +79,97 @@ static void test_poor_alignment_stays_in_bounds(void) {
 }
 
 static void test_interval_reaching_end_of_suffix_array(void) {
-    /* suffixes of ACGTTT sorted: ACGTTT CGTTT GTTT T TT TTT
-       seed "TT" matches the last two entries [4, 6) */
+    /* rows of ACGTTT$ sorted: $ ACGTTT$ CGTTT$ GTTT$ T$ TT$ TTT$
+       seed "TT" matches the last two rows [5, 7) */
     char seq[] = "ACGTTT";
     FM fm = {0};
     fm.seq = seq;
     fm.length = strlen(seq);
-    fm.suffixArray = buildSuffixArray(seq, fm.length);
+    buildIndex(&fm);
+
+    CHECK(strcmp(fm.bwt, "T$ACTTG") == 0, "BWT of ACGTTT: %s, expected T$ACTTG", fm.bwt);
+    CHECK(strcmp(fm.F, "$ACGTTT") == 0, "F of ACGTTT: %s, expected $ACGTTT", fm.F);
 
     Interval interval;
     int matchLength = 0;
     getInterval(&interval, &matchLength, &fm, "TT");
     CHECK(matchLength == 2, "interval at end: matchLength %d, expected 2", matchLength);
-    CHECK(interval.start == 4 && interval.end == 6,
-          "interval at end: [%d, %d), expected [4, 6)", interval.start, interval.end);
+    CHECK(interval.start == 5 && interval.end == 7,
+          "interval at end: [%d, %d), expected [5, 7)", interval.start, interval.end);
 
     getInterval(&interval, &matchLength, &fm, "CG");
-    CHECK(interval.start == 1 && interval.end == 2,
-          "interval in middle: [%d, %d), expected [1, 2)", interval.start, interval.end);
+    CHECK(interval.start == 2 && interval.end == 3,
+          "interval in middle: [%d, %d), expected [2, 3)", interval.start, interval.end);
 
     getInterval(&interval, &matchLength, &fm, "GG");
     CHECK(matchLength == 0, "no match: matchLength %d, expected 0", matchLength);
 
-    free(fm.suffixArray);
+    getInterval(&interval, &matchLength, &fm, "TN");
+    CHECK(matchLength == 0, "character absent from reference: matchLength %d, expected 0", matchLength);
+
+    freeIndex(&fm);
+}
+
+/* backward search must find exactly the positions a brute-force scan finds */
+static void test_backward_search_matches_brute_force(void) {
+    /* pseudo-random sequence over ACGT plus a few N, with repeats so patterns hit many times */
+    enum { LENGTH = 3000 };
+    char *seq = malloc(LENGTH + 1);
+    unsigned int state = 2020;
+    for (int i = 0; i < LENGTH; i++) {
+        state = state * 1103515245u + 12345u;
+        seq[i] = (i % 997 == 0) ? 'N' : "ACGT"[(state >> 16) % 4];
+    }
+    memcpy(seq + 1500, seq + 100, 200);  /* a long repeat */
+    seq[LENGTH] = '\0';
+
+    FM fm = {0};
+    fm.seq = seq;
+    fm.length = LENGTH;
+    buildIndex(&fm);
+
+    int mismatches = 0;
+    int total = 0;
+    for (int trial = 0; trial < 400; trial++) {
+        /* patterns cut from the sequence (always present) and random ones (often absent) */
+        int m = 1 + trial % 25;
+        char pattern[32];
+        if (trial % 2 == 0) {
+            int at = (trial * 7919) % (LENGTH - m);
+            memcpy(pattern, seq + at, m);
+        } else {
+            for (int k = 0; k < m; k++) {
+                state = state * 1103515245u + 12345u;
+                pattern[k] = "ACGT"[(state >> 16) % 4];
+            }
+        }
+        pattern[m] = '\0';
+
+        /* brute force occurrence count */
+        int expected = 0;
+        for (int i = 0; i + m <= LENGTH; i++) {
+            expected += (memcmp(seq + i, pattern, m) == 0);
+        }
+
+        Interval interval;
+        bool found = backwardSearch(&fm, pattern, m, &interval);
+        int got = found ? interval.end - interval.start : 0;
+
+        /* every row in the interval must really start with the pattern */
+        bool rowsOk = true;
+        for (int r = interval.start; found && r < interval.end; r++) {
+            int at = fm.suffixArray[r];
+            rowsOk &= (at + m <= LENGTH && memcmp(seq + at, pattern, m) == 0);
+        }
+        if (got != expected || !rowsOk) {
+            mismatches++;
+        }
+        total++;
+    }
+    CHECK(mismatches == 0, "backward search disagreed with brute force on %d of %d patterns", mismatches, total);
+
+    freeIndex(&fm);
+    free(seq);
 }
 
 static void test_seed_skip(void) {
@@ -122,6 +190,7 @@ int main(void) {
     test_cigars();
     test_poor_alignment_stays_in_bounds();
     test_interval_reaching_end_of_suffix_array();
+    test_backward_search_matches_brute_force();
     test_seed_skip();
     test_score();
 
