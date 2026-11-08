@@ -2,6 +2,9 @@
 
 # :seedling: coronavirus-genome-variant
 
+[![CI](https://github.com/RyanDBurke/coronavirus-genome-variant/actions/workflows/ci.yml/badge.svg)](https://github.com/RyanDBurke/coronavirus-genome-variant/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A basic seed-search alignment tool to compare read-variants to the nCov-19 virus genome using Burrows-Wheeler transform, suffix arrays, the FM-Index, and core dynamic programming principles.
 
 <img src="./png/IGV-10K.png" alt="Integrative Genomics Viewer showing coverage for 10K reads" width="800">
@@ -21,6 +24,7 @@ A basic seed-search alignment tool to compare read-variants to the nCov-19 virus
 - [Project layout](#project-layout)
 - [References](#references)
 - [Future goals](#future-goals)
+- [License](#license)
 
 ## Quick start
 
@@ -119,11 +123,19 @@ wsl make test
 
 This needs `python3`, which Ubuntu includes. It runs three checks and fails on the first problem:
 
-1. **Unit tests** (`tests/test_units.c`) for CIGAR building, seed lookup and scoring. They're built with AddressSanitizer and UndefinedBehaviorSanitizer, so memory errors fail the test.
+1. **Unit tests** (`tests/test_units.c`) for CIGAR building, FM-Index backward search (checked against a brute-force scan), and scoring.
 2. **Known-answer test**: aligns `tests/fixtures/reads.fa`, 52 reads cut from the genome at known positions with injected SNPs and indels. Each must map at exactly its true position with the expected CIGAR.
 3. **Simulated reads**: aligns `reads/reads_1K.fa.gz` and checks every record replays cleanly against the reference. At least 99% of reads must map.
 
-Test output goes to `tests/out/`. To rebuild the fixture after changing `tests/make_fixture.py`, run `make fixture`.
+Checks 1 and 2 run under AddressSanitizer, UndefinedBehaviorSanitizer and LeakSanitizer, so memory errors and leaks fail the build. Everything compiles with `-Wall -Wextra -Werror`. CI runs `make test` on every push to `master` and every pull request.
+
+Test output goes to `tests/out/`. Other targets:
+
+| Target | What it does |
+|---|---|
+| `make asan` | Builds `build/run-asan`, the aligner with sanitizers, for debugging |
+| `make fixture` | Regenerates the known-answer fixture after changing `tests/make_fixture.py` |
+| `make clean` | Removes `./run`, `build/` and `tests/out/` |
 
 ## Viewing results in IGV
 
@@ -154,11 +166,11 @@ Test output goes to `tests/out/`. To rebuild the fixture after changing `tests/m
 
 ## How it works
 
-1. Take the nCov-19 genome sequence and build the auxiliary structures: Burrows-Wheeler transform, suffix arrays, and the FM-Index.
-2. Take the 100bp simulated reads and align them to nCov-19 using the seed-and-extend paradigm and dynamic programming.
-3. Build the `.sam` file mapping.
-4. Load the mapping into Integrative Genomics Viewer (IGV).
-5. View the coverage track for an alignment (see the image at the top).
+1. **Index the genome.** Build the suffix array of the genome (plus a `$` end marker), derive the Burrows-Wheeler transform from it, and add rank tables (occurrence counts checkpointed every 64 rows). Together these form the FM-Index (`src/fmIndex.c`).
+2. **Seed.** Split each read into five equal seeds (20 bp for 100 bp reads) and find every exact occurrence of each seed with FM-Index backward search. A seed containing a variant simply finds nothing; the other seeds still place the read.
+3. **Extend.** For each candidate position, cut the reference with 5 bp of padding on both sides and run a fitting alignment, a dynamic-programming alignment where the whole read must align but reference bases outside it are free (`src/align.c`). The traceback gives the start position and CIGAR string.
+4. **Report.** Keep the best-scoring alignments across all seeds and write SAM: one primary record per read, equally good alternatives as secondary, and unmapped reads flagged.
+5. **Visualize.** Load the SAM into Integrative Genomics Viewer (IGV) to see coverage (the image at the top).
 
 ## Troubleshooting
 
@@ -171,10 +183,13 @@ Test output goes to `tests/out/`. To rebuild the fixture after changing `tests/m
 ```
 coronavirus-genome-variant
 ├── README.md
+├── LICENSE               # MIT
 ├── 2019-nCoV.fa          # nCov-19 genome sequence
 ├── dep.sh                # installs dependencies (Debian/Ubuntu)
 ├── dep.ps1               # runs dep.sh through WSL from PowerShell
 ├── Makefile              # builds ./run; `make test` runs the tests
+├── .github/workflows
+│   └── ci.yml            # CI: runs make test on pushes and pull requests
 ├── include               # headers: structures and function declarations
 │   ├── align.h           # read alignment
 │   ├── fmIndex.h         # FM-Index construction and backward search
@@ -209,6 +224,8 @@ coronavirus-genome-variant
     └── IGV-10K.png       # IGV screenshot used above
 ```
 
+`make` also creates `build/` (object files and sanitizer builds) and `./run`. Both are git-ignored.
+
 ## References
 
 - [FASTA parser (readfq)](https://github.com/lh3/readfq)
@@ -216,5 +233,11 @@ coronavirus-genome-variant
 
 ## Future goals
 
-- [Compressed suffix array](https://www.cs.cmu.edu/~dga/csa.pdf), for more efficient look-ups
-- Fast-rank calculations on the FM-Index
+- **Soft-clipping.** Reads that cross a large deletion in the sample currently align end to end with a cluster of mismatches at one end; clipping that end (`S` in the CIGAR) would be more accurate. About 0.01% of the 1M simulated reads are affected.
+- **Reverse-strand reads.** Reads are aligned as given; reads from the opposite strand would also need their reverse complement tried, with SAM `FLAG 16`.
+- **Faster extension.** Most run time is now the dynamic-programming step; a banded alignment would cut it.
+- **Compressed suffix array** ([paper](https://www.cs.cmu.edu/~dga/csa.pdf)), to keep memory low for genomes much larger than this one.
+
+## License
+
+[MIT](LICENSE). `include/vendor/kseq.h` is third-party code (Heng Li, © Genome Research Ltd), also MIT-licensed; its license is in the file header.
