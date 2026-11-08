@@ -103,13 +103,6 @@ int min(int a, int b);
 int max(int a, int b);
 int maxAlign(int a, int b, int c);
 
-/* print methods 
-    * @param OPT: our OPT-matrix
-    * @param n, m: our genome-string lengths + 1
-    * @param x, y: our reference genome and read genome, respectively
- */
-void printMatrix(int OPT[MAXROW][MAXCOL], int n, int m, char *x, char *y);
-
 /* write to our .SAM file
     * @param sam: our SAM struct
  */

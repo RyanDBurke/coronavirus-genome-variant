@@ -397,38 +397,6 @@ int maxAlign(int a, int b, int c) {
     return max(a, max(b, c));
 }
 
-/* print our OPT-matrix */
-/* not useful for large genomes */
-void printMatrix(int OPT[MAXROW][MAXCOL], int n, int m, char *x, char *y) {
-
-    /* Y-axis */
-    for (int i = 0; i <= m + 1; i++) {
-        if (i == 0) {
-            printf("\t");
-        } else if (i == 1) {
-            printf("Y-axis\t");
-        } else {
-            printf("%c\t", y[i - 2]);
-        }
-    }
-
-    /* formatting */
-    printf("\n");
-
-    /* print our X-axis string and the OPT-matrix entries */
-    for (int i = 0; i <= n; i++) {
-        if (i > 0) {
-            printf("%c\t", x[i - 1]);
-        } else {
-            printf("X-axis\t");
-        }
-        for (int j = 0; j <= m; j++) {
-            printf("%d\t", OPT[i][j]);
-        }
-        printf("\n");
-    }
-}
-
 /* write to our .SAM file */
 void writeSAM(SAM *sam, FILE *f) {
     fprintf(f, "%s\t%d\t%s\t%d\t%d\t%s\t%s\t%d\t%d\t%s\t%s\n",

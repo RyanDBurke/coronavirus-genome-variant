@@ -47,9 +47,9 @@ $(BUILD) $(BUILD)/asan:
 # ---- tests ---------------------------------------------------------------
 
 test: run $(BUILD)/test_units $(BUILD)/run-asan
-	ASAN_OPTIONS=detect_leaks=0 ./$(BUILD)/test_units
+	./$(BUILD)/test_units
 	@mkdir -p $(OUT)
-	ASAN_OPTIONS=detect_leaks=0 ./$(BUILD)/run-asan 2019-nCoV.fa tests/fixtures/reads.fa $(OUT)/fixture.sam > /dev/null
+	./$(BUILD)/run-asan 2019-nCoV.fa tests/fixtures/reads.fa $(OUT)/fixture.sam > /dev/null
 	$(PYTHON) tests/validate_sam.py --ref 2019-nCoV.fa --sam $(OUT)/fixture.sam --truth tests/fixtures/truth.tsv
 	./run 2019-nCoV.fa reads/reads_1K.fa.gz $(OUT)/reads_1K.sam > /dev/null
 	$(PYTHON) tests/validate_sam.py --ref 2019-nCoV.fa --sam $(OUT)/reads_1K.sam --min-mapped $(MIN_MAPPED_1K)

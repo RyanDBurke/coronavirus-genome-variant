@@ -128,7 +128,7 @@ typedef struct __kstring_t {
 				break;													\
 			}															\
 		}																\
-		if (str->l == 0) {												\
+		if (str->s == 0) { /* local fix, as in upstream klib: was str->l == 0, which leaked str->s */												\
 			str->m = 1;													\
 			str->s = (char*)calloc(1, 1);								\
 		}																\
