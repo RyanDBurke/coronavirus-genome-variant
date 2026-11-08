@@ -12,6 +12,8 @@ function subscribe<T>(channel: string, listener: (value: T) => void) {
 }
 
 const api: AlignerApi = {
+  getAppInfo: () => ipcRenderer.invoke("app:info"),
+  openLicense: (id) => ipcRenderer.invoke("app:license", id),
   getPresets: () => ipcRenderer.invoke("presets:get"),
   chooseFile: (kind) => ipcRenderer.invoke("file:choose", kind),
   start: (request) => ipcRenderer.invoke("run:start", request),

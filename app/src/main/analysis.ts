@@ -192,12 +192,18 @@ export async function analyzeSam(samPath: string, reference: { name: string; seq
 
 export const MIN_DEPTH = 10;
 export const MIN_FREQ = 0.2;
+/** Insertion sites this close together are one event. The aligner can split a multi-base insertion
+ *  around a matching base (1I1M1I instead of 2I), which otherwise shows up as two neighbouring sites. */
+export const INSERTION_MERGE_BP = 2;
 
 /** Sites where at least MIN_FREQ of at least MIN_DEPTH reads differ from the reference.
- *  Consecutive deleted positions are merged into one deletion. Positions are 1-based. */
+ *  Consecutive deleted positions are merged into one deletion, and insertion sites within
+ *  INSERTION_MERGE_BP of each other into one insertion spanning them (counts from its strongest site).
+ *  Positions are 1-based. */
 export function callVariants(a: Analysis, minDepth = MIN_DEPTH, minFreq = MIN_FREQ): Variant[] {
   const out: Variant[] = [];
   let openDeletion: Variant | null = null;
+  let openInsertion: Variant | null = null;
 
   for (let p = 0; p < a.length; p++) {
     const d = a.depth[p];
@@ -231,7 +237,19 @@ export function callVariants(a: Analysis, minDepth = MIN_DEPTH, minFreq = MIN_FR
     }
     const ins = a.counts[row + COL.INS];
     if (ins / d >= minFreq) {
-      out.push({ type: "insertion", pos: p + 1, length: 1, ref: refBase, alt: "+", depth: d, altReads: ins, freq: ins / d });
+      const pos = p + 1;
+      if (openInsertion && pos - (openInsertion.pos + openInsertion.length - 1) <= INSERTION_MERGE_BP) {
+        openInsertion.length = pos - openInsertion.pos + 1;
+        openInsertion.ref = a.ref.slice(openInsertion.pos - 1, pos);
+        if (ins > openInsertion.altReads) {
+          openInsertion.altReads = ins;
+          openInsertion.depth = d;
+          openInsertion.freq = ins / d;
+        }
+      } else {
+        openInsertion = { type: "insertion", pos, length: 1, ref: refBase, alt: "+", depth: d, altReads: ins, freq: ins / d };
+        out.push(openInsertion);
+      }
     }
   }
   return out;
@@ -281,6 +299,7 @@ export function summarize(a: Analysis, bins = SUMMARY_BINS): ViewSummary {
     variants: callVariants(a),
     minDepth: MIN_DEPTH,
     minFreq: MIN_FREQ,
+    insertionMergeBp: INSERTION_MERGE_BP,
   };
 }
 

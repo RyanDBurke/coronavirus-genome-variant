@@ -81,7 +81,7 @@ jobs:
           Windows x64 installer and standalone command-line aligner. The app works offline.
 
           Download **$installer**. It installs for your user without administrator access.
-          This release is unsigned: if SmartScreen shows **Windows protected your PC**, choose **More info → Run anyway**.
+          This release is unsigned. If Edge says the file isn't commonly downloaded, open its downloads list (Ctrl+J) and choose **Keep**. If SmartScreen shows **Windows protected your PC**, choose **More info → Run anyway**.
 
           Download SHA256SUMS.txt alongside your chosen executable. Run ``Get-FileHash -Algorithm SHA256 .\$installer`` (or ``.\run.exe``) in PowerShell and compare the hash with its entry in SHA256SUMS.txt.
 

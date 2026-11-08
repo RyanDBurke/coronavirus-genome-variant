@@ -78,6 +78,18 @@ test("variants: SNVs, merged deletions and insertions above the thresholds", asy
   });
 });
 
+test("variants: insertion sites within 2 bp are one site; distant ones stay separate", async () => {
+  const reads = [];
+  // a 2-base insertion split around a matching base, as the aligner sometimes reports it
+  for (let i = 0; i < 10; i++) reads.push([`split${i}`, 0, 1, "6M1I1M1I4M", "ACGTACTGTTACG"]);
+  for (let i = 0; i < 10; i++) reads.push([`far${i}`, 0, 1, "15M1I5M", REF.slice(0, 15) + "A" + REF.slice(15, 20)]);
+  await withSam(reads, async (file) => {
+    const variants = a.callVariants(await a.analyzeSam(file, ref));
+    assert.deepEqual(variants.map((v) => `${v.type}@${v.pos}:${v.ref}/${v.length}:${v.altReads}/${v.depth}`),
+      ["insertion@6:CG/2:10/20", "insertion@15:G/1:10/10"]);
+  });
+});
+
 test("summary: bins, depth statistics and coverage", async () => {
   await withSam([["r", 0, 11, "20M", REF.slice(10, 30)]], async (file) => {
     const s = a.summarize(await a.analyzeSam(file, ref), 4);

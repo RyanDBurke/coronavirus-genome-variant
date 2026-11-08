@@ -1,7 +1,7 @@
 // Drives the real app window: align the 10K preset, check the result, then cancel a 1M run.
 // Screenshots go to test-results/ for a visual check.
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
@@ -52,6 +52,23 @@ test("align 10,000 reads, then cancel a 1,000,000-read run", { skip: !existsSync
     });
     assert.equal(foreignIpc, 'blocked');
 
+    // About box: version from the main process, licenses listed, closes again
+    await page.click("#aboutButton");
+    await page.waitForSelector("#aboutDialog[open]");
+    assert.match(await page.textContent("#aboutVersion"), /^Version \d+\.\d+\.\d+/);
+    for (const id of ["app", "electron", "chromium"]) {
+      assert.equal(await page.locator(`#aboutDialog [data-license="${id}"]`).count(), 1, `no ${id} license link`);
+    }
+    assert.match(await page.textContent("#aboutDialog"), /kseq\.h[\s\S]*zlib[\s\S]*Electron[\s\S]*Chromium/);
+    await page.screenshot({ path: path.join(shots, "6-about.png") });
+    await page.click("#aboutClose");
+    await page.waitForSelector("#aboutDialog:not([open])", { state: "attached" });
+    // the files those links open exist when running from source
+    const electronDist = path.join(appDir, "node_modules", "electron", "dist");
+    for (const file of [path.join(appDir, "..", "LICENSE"), path.join(electronDist, "LICENSE"), path.join(electronDist, "LICENSES.chromium.html")]) {
+      assert.ok(existsSync(file), `missing ${file}`);
+    }
+
     // 10K preset is selected by default
     assert.equal(await page.isChecked("#reads-10k"), true);
     await page.click("#runButton");
@@ -98,6 +115,26 @@ test("align 10,000 reads, then cancel a 1,000,000-read run", { skip: !existsSync
     await page.waitForFunction(() => /export-2/.test(document.getElementById("exportNote").textContent));
     assert.equal(readFileSync(path.join(exportDir, "export-2.csv"), "utf8").trim().split("\n").length, 29882 + 1);
     rmSync(exportDir, { recursive: true, force: true });
+
+    // the aligner's long-read warning is shown plainly with the result
+    assert.equal(await page.isVisible("#resultWarning"), false, "warning shown for the 10K run");
+    const longDir = mkdtempSync(path.join(tmpdir(), "gva-long-"));
+    const genome = readFileSync(path.join(appDir, "..", "2019-nCoV.fa"), "utf8").split("\n").slice(1).join("").replace(/\s/g, "");
+    const longReads = path.join(longDir, "long.fa");
+    writeFileSync(longReads, `>ok\n${genome.slice(1000, 1100)}\n>long\n${genome.slice(2000, 2200)}\n`);
+    await electronApp.evaluate(({ dialog }, file) => {
+      dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] });
+    }, longReads);
+    await page.click("label:has(#reads-__file__)");
+    await page.waitForFunction(() => /long\.fa/.test(document.getElementById("runSummary").textContent));
+    await page.click("#runButton");
+    await page.waitForSelector("#resultPanel:not([hidden])", { timeout: 30_000 });
+    assert.equal(await page.isVisible("#resultWarning"), true);
+    assert.match(await page.textContent("#resultWarning"), /longer than 189 bases[\s\S]*counted as unmapped/);
+    assert.equal(await page.textContent("#statUnmapped"), "1");
+    await page.locator("#resultPanel").scrollIntoViewIfNeeded();
+    await page.screenshot({ path: path.join(shots, "7-long-read-warning.png") });
+    rmSync(longDir, { recursive: true, force: true });
 
     // a long run can be cancelled
     await page.click("label:has(#reads-1m)");

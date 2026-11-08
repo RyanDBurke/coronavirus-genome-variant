@@ -22,14 +22,14 @@ Reviewed against https://www.electronjs.org/docs/latest/tutorial/security on 202
 | 12 | Webview options | Attachment blocked entirely. |
 | 13 | Navigation | Renderer navigation blocked. |
 | 14 | New windows | All requests denied. |
-| 15 | External URLs | No openExternal handler; reveal opens only a known run in Explorer. |
+| 15 | External URLs | No openExternal handler; reveal opens only a known run in Explorer. The About box opens one of three fixed, bundled license files (app LICENSE, Electron LICENSE, LICENSES.chromium.html) with `shell.openPath`, chosen by a fixed id; the page cannot supply a path. |
 | 16 | Current Electron | Release maintainer must check supported versions and patch availability. |
 | 17 | IPC sender | Exact index URL, owning BrowserWindow and main-frame identity required. |
 | 18 | Avoid file protocol | Deliberate bounded exception: exact URL allowlist for index.html, styles.css, renderer.js and viewer.js. All other request URLs denied, including other local files and UNC URLs. No general directory access. |
 | 19 | Fuses | runAsNode, NODE_OPTIONS and CLI inspector disabled; asar integrity and asar-only loading enabled; cookie encryption enabled. |
 | 20 | API exposure | Fixed contextBridge API; no raw ipcRenderer or IPC event objects exposed. |
 
-Packaged windows disable DevTools and remove the application menu. Development builds retain debugging for tests. File-picker tokens are random, held only in main-process memory, and valid for the current process session. They do not grant arbitrary path access. The aligner is spawned without a shell. Renderer isolation does not protect against every possible bug in native parsing of untrusted input.
+Packaged windows disable DevTools and remove the application menu. Development builds retain debugging for tests. File-picker tokens are random, held only in main-process memory, and valid for the current process session. They do not grant arbitrary path access. `app:info` returns only the app name and version. The aligner is spawned without a shell. Renderer isolation does not protect against every possible bug in native parsing of untrusted input.
 
 ## Dependency and update policy
 
@@ -67,3 +67,9 @@ Tag-triggered publication and this clean-machine test remain acceptance gates; l
 - An installed app was already running. Its child-process command lines confirm `%APPDATA%\Genome Variant Aligner` as userData. The attempted second packaged launch exited successfully under the single-instance lock; this does not establish that the newly built packaged UI works. Existing owner app processes were left running.
 - [Electron releases](https://releases.electronjs.org/releases/stable) and [44.10.2 notes](https://releases.electronjs.org/release/v44.10.2) checked: pinned 44.10.2 is the current patch of supported major 44 (latest three stable majors: 43–45), released November 3. Notes include upstream backports and Node updates; this is not an exhaustive Chromium advisory audit. The two-week maturity rule would permit that version from November 17, absent a separately agreed exception; recheck patch/support/advisory status when publishing.
 - Pending: actual GitHub release execution, clean-machine install/uninstall and new packaged UI/DevTools acceptance. No release published and no tag pushed.
+
+## Phase 7 release and phase 8 verification (2026-11-07)
+
+- CI for `20b6601` passed (Linux and Windows jobs). The authorized test tag `v0.1.0-rc.1` ran the release workflow successfully and published a prerelease with the installer, run.exe and SHA256SUMS.txt. Downloaded files matched the published checksums. Release notes rendered correctly. Tags with `+build` metadata remain unexercised in CI.
+- Partial owner acceptance in Windows Sandbox with the rc.1 installer: download, checksum verification, install, launch and a 10K run passed. Edge held both unsigned executables until **Keep** was chosen; this is now documented in the README and release notes. Sandbox became unstable before the viewer, export, DevTools-shortcut and uninstall checks, and its account is an administrator, so the no-UAC check is not established. The full checklist above will be repeated once on the final installer, using a standard Windows account.
+- Phase 8 added two IPC calls (`app:info`, `app:license`), both behind the existing sender check. The click-through test covers the About box and the long-read warning; all 15 desktop tests pass.

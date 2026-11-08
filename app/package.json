@@ -10,6 +10,7 @@
   "main": "build/main/main.js",
   "scripts": {
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.renderer.json && node scripts/copy-static.mjs",
+    "icon": "node scripts/make-icon.mjs",
     "start": "npm run build && electron .",
     "test": "npm run build && node --test \"test/*.test.mjs\"",
     "dist": "npm run build && node scripts/check-aligner.mjs && electron-builder --win --publish never"
@@ -24,8 +25,8 @@
   "build": {
     "appId": "io.github.ryandburke.genome-variant-aligner",
     "productName": "Genome Variant Aligner",
-    "copyright": "Copyright © 2026 Ryan Burke",
-    "directories": { "output": "dist" },
+    "copyright": "Copyright © 2020–2026 Ryan Burke",
+    "directories": { "output": "dist", "buildResources": "build-resources" },
     "files": ["build/**", "package.json"],
     "asar": true,
     "extraResources": [
@@ -42,7 +43,7 @@
       "enableEmbeddedAsarIntegrityValidation": true,
       "onlyLoadAppFromAsar": true
     },
-    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }], "requestedExecutionLevel": "asInvoker" },
+    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }], "icon": "build-resources/icon.ico", "requestedExecutionLevel": "asInvoker" },
     "nsis": {
       "oneClick": true,
       "perMachine": false,

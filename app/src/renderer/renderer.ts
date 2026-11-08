@@ -1,6 +1,6 @@
 // The window's behaviour: pick inputs, start a run, show progress, then the result or a clear error.
 
-import type { AlignerApi, FriendlyError, InputChoice, PickedFile, Preset, RunEvent, RunResult } from "../shared/types.js";
+import type { AlignerApi, FriendlyError, InputChoice, LicenseId, PickedFile, Preset, RunEvent, RunResult } from "../shared/types.js";
 import { Viewer } from "./viewer.js";
 
 declare global {
@@ -137,18 +137,60 @@ function show(panel: string | null) {
   }
 }
 
+let shownPercent: number | null = null;
+
+/** percent null shows the indeterminate animation. The bar only animates forward: leaving the
+ *  indeterminate state or starting a new stage at a lower percent jumps straight there. */
 function setProgress(percent: number | null, stage: string) {
   const bar = $("progressBar");
+  const fill = $("progressFill");
   $("stage").textContent = stage;
+  const snap = percent === null || shownPercent === null || percent < shownPercent;
+  if (snap) fill.style.transition = "none";
   if (percent === null) {
     bar.classList.add("indeterminate");
     bar.removeAttribute("aria-valuenow");
-    $("progressFill").style.width = "";
+    fill.style.width = "";
   } else {
     bar.classList.remove("indeterminate");
     bar.setAttribute("aria-valuenow", String(percent));
-    $("progressFill").style.width = `${percent}%`;
+    fill.style.width = `${percent}%`;
   }
+  if (snap) {
+    void fill.offsetWidth; // apply the jump before turning the transition back on
+    fill.style.transition = "";
+  }
+  shownPercent = percent;
+}
+
+// ---- warnings ------------------------------------------------------------------
+
+let runWarnings: string[] = [];
+
+/** The aligner's warnings in plain words. */
+function plainWarning(message: string) {
+  const long = /reads longer than (\d+) bp are reported as unmapped/.exec(message);
+  if (long) {
+    return `Some reads are longer than ${long[1]} bases. The aligner can't place reads that long, so they are counted as unmapped.`;
+  }
+  return message.charAt(0).toUpperCase() + message.slice(1) + ".";
+}
+
+function showWarnings() {
+  const box = $("resultWarning");
+  box.replaceChildren();
+  const unique = [...new Set(runWarnings)];
+  if (unique.length > 0) {
+    const title = document.createElement("strong");
+    title.textContent = unique.length === 1 ? "Warning" : "Warnings";
+    box.append(title);
+    for (const message of unique) {
+      const line = document.createElement("p");
+      line.textContent = plainWarning(message);
+      box.append(line);
+    }
+  }
+  box.hidden = unique.length === 0;
 }
 
 function setRunning(isRunning: boolean) {
@@ -184,12 +226,7 @@ async function start() {
   }
   setRunning(true);
   closeViewer();
-  // reset the bar without animating down from the previous run
-  const fill = $("progressFill");
-  fill.style.transition = "none";
-  setProgress(0, "");
-  void fill.offsetWidth;
-  fill.style.transition = "";
+  runWarnings = [];
   setProgress(null, "Building the genome index…");
   show("progressPanel");
   $("progressPanel").scrollIntoView({ block: "nearest" });
@@ -221,7 +258,7 @@ function onEvent(event: RunEvent) {
   } else if (event.event === "analyze") {
     setProgress(event.percent, `Preparing the results viewer… ${event.percent}%`);
   } else if (event.event === "warning") {
-    $("resultNote").dataset.warning = event.message;
+    runWarnings.push(event.message);
   }
 }
 
@@ -245,10 +282,8 @@ function onFinished(result: RunResult) {
   $("mapbarFill").style.width = `${share}%`;
   $("resultTime").textContent = `${share.toFixed(1)}% mapped · ${duration(result.seconds)}`;
 
-  const note = $("resultNote");
-  const warning = note.dataset.warning ? ` Note: ${note.dataset.warning}.` : "";
-  delete note.dataset.warning;
-  note.textContent = `The SAM file is ${bytes(result.samBytes)}. The app keeps your last 3 runs; save a copy to keep this one.${warning}`;
+  showWarnings();
+  $("resultNote").textContent = `The SAM file is ${bytes(result.samBytes)}. The app keeps your last 3 runs; save a copy to keep this one.`;
   show("resultPanel");
   $("resultPanel").scrollIntoView({ block: "nearest", behavior: "smooth" });
 
@@ -262,9 +297,37 @@ function onFinished(result: RunResult) {
   }
 }
 
+// ---- About box -----------------------------------------------------------------
+
+async function initAbout() {
+  const dialog = $<HTMLDialogElement>("aboutDialog");
+  $("aboutButton").addEventListener("click", () => {
+    $("aboutError").textContent = "";
+    dialog.showModal();
+  });
+  $("aboutClose").addEventListener("click", () => dialog.close());
+  // clicking the backdrop closes it too
+  dialog.addEventListener("click", (event) => {
+    if (event.target === dialog) dialog.close();
+  });
+  dialog.querySelectorAll<HTMLButtonElement>("[data-license]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      $("aboutError").textContent = "";
+      try {
+        await api.openLicense(button.dataset.license as LicenseId);
+      } catch {
+        $("aboutError").textContent = "That license file couldn't be opened.";
+      }
+    });
+  });
+  const info = await api.getAppInfo();
+  $("aboutVersion").textContent = `Version ${info.version}`;
+}
+
 // ---- wiring ------------------------------------------------------------------
 
 async function init() {
+  void initAbout();
   const presets = await api.getPresets();
   renderChoices("reference", presets.references);
   renderChoices("reads", presets.reads);

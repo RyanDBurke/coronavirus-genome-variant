@@ -65,6 +65,7 @@
           <div><dt>Unmapped</dt><dd id="statUnmapped" class="mono">0</dd></div>
         </dl>
         <div class="mapbar" aria-hidden="true"><div id="mapbarFill"></div></div>
+        <div id="resultWarning" class="callout" role="status" hidden></div>
         <p id="resultNote" class="muted"></p>
         <div class="actions">
           <button id="saveButton" class="primary" type="button">Save SAM file…</button>
@@ -150,6 +151,35 @@
     </section>
 
     <p id="viewerUnavailable" class="muted" hidden></p>
+
+    <footer class="footer">
+      <button id="aboutButton" class="link" type="button">About</button>
+    </footer>
   </main>
+
+  <dialog id="aboutDialog" class="about" aria-labelledby="about-title">
+    <h2 id="about-title">Genome Variant Aligner</h2>
+    <p id="aboutVersion" class="mono muted"></p>
+    <p>Aligns sequencing reads to the SARS-CoV-2 genome with an FM-index seed search and a dynamic-programming alignment, then shows depth, reads and variant sites. Works fully offline.</p>
+
+    <h3>License</h3>
+    <p>© 2020–2026 Ryan Burke. Released under the MIT License.
+      <button class="link" type="button" data-license="app">View license</button></p>
+
+    <h3>Third-party software</h3>
+    <ul>
+      <li><strong>kseq.h</strong> by Heng Li, © 2008 Genome Research Ltd. MIT License. Reads FASTA and FASTQ files.</li>
+      <li><strong>zlib</strong> by Jean-loup Gailly and Mark Adler. zlib License. Reads gzipped files.</li>
+      <li><strong>Electron</strong>, © Electron contributors and GitHub Inc. MIT License.
+        <button class="link" type="button" data-license="electron">View license</button></li>
+      <li><strong>Chromium</strong> and the components it includes, under their own licenses.
+        <button class="link" type="button" data-license="chromium">View notices</button></li>
+    </ul>
+    <p id="aboutError" class="about-error" role="alert"></p>
+
+    <div class="about-actions">
+      <button id="aboutClose" class="primary" type="button" autofocus>Close</button>
+    </div>
+  </dialog>
 </body>
 </html>

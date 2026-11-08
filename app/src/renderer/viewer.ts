@@ -198,7 +198,7 @@ export class Viewer {
     set("cov1", `${(s.covered1 * 100).toFixed(1)}%`);
     set("cov10", `${(s.covered10 * 100).toFixed(1)}%`);
     set("varCount", fmt(s.variants.length));
-    set("variantRule", `Sites where at least ${Math.round(s.minFreq * 100)}% of at least ${s.minDepth} reads differ from ${s.refName}.`);
+    set("variantRule", `Sites where at least ${Math.round(s.minFreq * 100)}% of at least ${s.minDepth} reads differ from ${s.refName}. Deletions over neighbouring bases, and insertions within ${s.insertionMergeBp} bp of each other, count as one site.`);
   }
 
   private renderVariants() {
@@ -213,7 +213,7 @@ export class Viewer {
       const cells = [
         fmt(v.pos) + (v.length > 1 ? `–${fmt(v.pos + v.length - 1)}` : ""),
         change(v),
-        v.type === "SNV" ? "SNV" : `${v.type}${v.length > 1 ? ` (${v.length} bp)` : ""}`,
+        v.type === "deletion" && v.length > 1 ? `deletion (${v.length} bp)` : v.type,
         fmt(v.depth),
       ];
       for (const text of cells) {
@@ -478,7 +478,7 @@ export class Viewer {
 function change(v: Variant) {
   if (v.type === "SNV") return `${v.ref} → ${v.alt}`;
   if (v.type === "deletion") return v.ref.length <= 12 ? `${v.ref} → –` : `${v.ref.length} bases deleted`;
-  return `${v.ref} → ${v.ref}+…`;
+  return v.length > 1 ? `bases inserted within ${v.ref}` : `${v.ref} → ${v.ref}+…`;
 }
 
 /** Greedy row packing: each read goes in the first row whose last read ended before it starts. */

@@ -7,7 +7,7 @@ import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import type { InputChoice, PickedFile, Presets, RunRequest, RunResult, Variant, ViewSummary } from "../shared/types";
+import type { AppInfo, InputChoice, LicenseId, PickedFile, Presets, RunRequest, RunResult, Variant, ViewSummary } from "../shared/types";
 import { runAligner, type AlignerRun } from "./aligner";
 import { analyzeSam, coverageCsv, loadReference, readRegion, summarize, variantsCsv, type Analysis } from "./analysis";
 import { friendlyError } from "./messages";
@@ -27,6 +27,18 @@ const alignerExe = app.isPackaged
   : path.join(resources, process.platform === "win32" ? "run.exe" : "run");
 const runsDir = () => path.join(app.getPath("userData"), "runs");
 const KEEP_RUNS = 3;
+
+/** Fixed license files for the About box. Electron's and Chromium's sit next to the executable,
+ *  both in the installed app and in node_modules/electron/dist when running from source. */
+const exeDir = path.dirname(process.execPath);
+const licenseFiles: Record<LicenseId, string> = {
+  app: path.join(resources, app.isPackaged ? "LICENSE.txt" : "LICENSE"),
+  electron: path.join(exeDir, app.isPackaged ? "LICENSE.electron.txt" : "LICENSE"),
+  chromium: path.join(exeDir, "LICENSES.chromium.html"),
+};
+
+/** The installed exe carries the icon already; running from source needs it set on the window. */
+const devIcon = app.isPackaged ? undefined : path.join(app.getAppPath(), "build-resources", "icon.ico");
 
 const indexHtml = path.join(__dirname, "..", "renderer", "index.html");
 const indexUrl = pathToFileURL(indexHtml).href;
@@ -196,6 +208,14 @@ function handle<T extends unknown[], R>(channel: string, fn: (event: IpcMainInvo
 }
 
 function registerIpc() {
+  handle("app:info", (): AppInfo => ({ name: app.getName(), version: app.getVersion() }));
+
+  handle("app:license", async (_event, id: LicenseId) => {
+    if (!Object.hasOwn(licenseFiles, id)) return;
+    const error = await shell.openPath(licenseFiles[id]);
+    if (error) throw new Error(`couldn't open the license file: ${error}`);
+  });
+
   handle("presets:get", () => presets);
 
   handle("file:choose", async (event, kind: "reference" | "reads"): Promise<PickedFile | null> => {
@@ -291,6 +311,7 @@ function createWindow() {
     minHeight: 600,
     show: false,
     title: "Genome Variant Aligner",
+    icon: devIcon,
     backgroundColor: nativeTheme.shouldUseDarkColors ? "#11181b" : "#f5f7f7",
     autoHideMenuBar: true,
     webPreferences: {

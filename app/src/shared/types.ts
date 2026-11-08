@@ -42,6 +42,7 @@ export type RunEvent = AlignerEvent | { event: "analyze"; percent: number };
 export interface Variant {
   type: "SNV" | "deletion" | "insertion";
   pos: number;
+  /** reference positions covered: deleted bases, or for insertions the span of merged insertion sites */
   length: number;
   ref: string;
   alt: string;
@@ -66,6 +67,8 @@ export interface ViewSummary {
   variants: Variant[];
   minDepth: number;
   minFreq: number;
+  /** insertion sites at most this many bp apart are reported as one */
+  insertionMergeBp: number;
 }
 
 /** One aligned read, as the pileup draws it. start is 0-based. */
@@ -107,8 +110,20 @@ export type RunResult =
   | { status: "cancelled"; runId: string }
   | { status: "failed"; runId: string; error: FriendlyError };
 
+/** Shown in the About box. */
+export interface AppInfo {
+  name: string;
+  version: string;
+}
+
+/** License files the About box can open: this app's, Electron's, and Chromium's third-party notices. */
+export type LicenseId = "app" | "electron" | "chromium";
+
 /** The API the preload script exposes to the window as `window.aligner`. */
 export interface AlignerApi {
+  getAppInfo(): Promise<AppInfo>;
+  /** opens a bundled license file in the default viewer */
+  openLicense(id: LicenseId): Promise<void>;
   getPresets(): Promise<Presets>;
   chooseFile(kind: "reference" | "reads"): Promise<PickedFile | null>;
   start(request: RunRequest): Promise<{ runId: string } | { error: FriendlyError }>;

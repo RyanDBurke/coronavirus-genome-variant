@@ -1,42 +1,96 @@
 <div align="center">
 
-# :seedling: coronavirus-genome-variant
+<img src="app/build-resources/icon.png" alt="" width="96">
+
+# coronavirus-genome-variant
 
 [![CI](https://github.com/RyanDBurke/coronavirus-genome-variant/actions/workflows/ci.yml/badge.svg)](https://github.com/RyanDBurke/coronavirus-genome-variant/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A basic seed-search alignment tool to compare read-variants to the nCov-19 virus genome using Burrows-Wheeler transform, suffix arrays, the FM-Index, and core dynamic programming principles.
+A seed-search alignment tool that compares sequencing reads to the SARS-CoV-2 (nCov-19) genome using the Burrows-Wheeler transform, suffix arrays, the FM-Index and dynamic programming, with a Windows desktop app to run it and explore the results.
 
 </div>
 
+<p align="center">
+  <img src="png/app-viewer-reads.png" alt="The app zoomed in on a variant site: reference bases, read depth with the variant column in red, and the aligned reads below" width="800">
+</p>
+
 ## Contents
 
-- [Download](#download)
-- [Quick start](#quick-start)
-- [Desktop app (Windows)](#desktop-app-windows)
-- [Requirements](#requirements)
-- [Setup](#setup)
-- [Running](#running)
-- [Testing](#testing)
-- [Viewing results in IGV](#viewing-results-in-igv)
+- [Download the app](#download-the-app)
+- [Using the app](#using-the-app)
 - [How it works](#how-it-works)
-- [Troubleshooting](#troubleshooting)
-- [Project layout](#project-layout)
+- [For developers](#for-developers)
+  - [Quick start (command line)](#quick-start-command-line)
+  - [Requirements](#requirements)
+  - [Setup](#setup)
+  - [Running](#running)
+  - [Testing](#testing)
+  - [Desktop app from source](#desktop-app-from-source)
+  - [Viewing results in IGV](#viewing-results-in-igv)
+  - [Troubleshooting](#troubleshooting)
+  - [Project layout](#project-layout)
 - [References](#references)
 - [Future goals](#future-goals)
 - [License](#license)
 
-## Download
+## Download the app
 
-Download the Windows x64 `GenomeVariantAligner-Setup-<version>.exe` from [GitHub Releases](https://github.com/RyanDBurke/coronavirus-genome-variant/releases). Releases will appear there when a release tag is published. The app includes the reference genome and example reads, works offline, and installs for your user without administrator access.
+For Windows 10 and 11 (x64). The app includes the SARS-CoV-2 reference genome and three example read sets, works fully offline, and installs for your user without administrator access.
 
-The installer is unsigned. If Windows SmartScreen displays **Windows protected your PC**, select **More info → Run anyway**.
+1. Open the [Releases page](https://github.com/RyanDBurke/coronavirus-genome-variant/releases) and, under the newest release, download `GenomeVariantAligner-Setup-<version>.exe`.
+2. The installer isn't code-signed yet, so Windows is cautious about it:
+   - If Edge says the file **isn't commonly downloaded**, open the downloads list (**Ctrl+J**), choose **⋯ → Keep**, then **Show more → Keep anyway**.
+   - When you run it, if SmartScreen shows **Windows protected your PC**, choose **More info → Run anyway**.
+3. The installer finishes on its own and opens the app. It's then in the Start menu as **Genome Variant Aligner**.
 
-To check a download, get `SHA256SUMS.txt` from the same release and run `Get-FileHash -Algorithm SHA256 .\GenomeVariantAligner-Setup-<version>.exe` in PowerShell. Compare the hash with the matching filename in the checksum file. The same command works for the standalone `run.exe` CLI download.
+**Optional: check the download.** Download `SHA256SUMS.txt` from the same release, then in PowerShell, in your Downloads folder:
 
-**Uninstalling deletes saved runs and app settings.** Export any results you want to keep before uninstalling. See [desktop security and acceptance checks](app/SECURITY.md).
+```powershell
+Get-FileHash -Algorithm SHA256 .\GenomeVariantAligner-Setup-<version>.exe
+Get-Content .\SHA256SUMS.txt
+```
 
-## Quick start
+The two hashes for the installer must match (`Get-FileHash` prints capitals, the file lowercase; that's fine). The same works for the standalone command-line `run.exe` in each release.
+
+**Uninstalling** (Settings → Apps → Installed apps) removes the app's saved runs and settings. Files you saved or exported elsewhere stay. Security details and release checks are in [app/SECURITY.md](app/SECURITY.md).
+
+## Using the app
+
+1. **Choose a reference genome.** SARS-CoV-2 is built in, or open your own FASTA file.
+2. **Choose reads.** Three simulated read sets are built in (1,000, 10,000 and 1,000,000 reads), or open your own FASTA/FASTQ file (`.gz` works too).
+3. **Press Align reads.** You get read counts and a SAM file you can save. Runs can be cancelled; the app keeps your last three.
+
+<p align="center">
+  <img src="png/app-result.png" alt="The app after aligning 10,000 reads: all 10,000 mapped, with buttons to save the SAM file" width="700">
+</p>
+
+After a run, the app shows the results directly, with no samtools or IGV needed:
+
+- **Whole-genome depth** with variant sites marked; click anywhere to jump there.
+- **A zoomable track** with the reference bases, read depth (coloured where reads disagree with the reference) and, below 2,000 bp, the reads themselves with mismatches, deletions and insertions marked. Drag to pan, double-click to zoom, hover for per-base counts, or type a position or range.
+- **Variant sites**: positions where at least 20% of at least 10 reads differ from the reference (SNVs, deletions, insertions), with depth and frequency. Neighbouring deleted bases, and insertions within 2 bp of each other, count as one site. Click one to jump to it.
+- **Exports**: variants and per-base coverage (depth and A/C/G/T/deleted/inserted counts) as CSV.
+
+This works for the 1,000,000-read set too: the app makes one pass over the SAM file (about 4 seconds) to build depth, allele counts and a position index, then reads only the reads in view straight from the file.
+
+<p align="center">
+  <img src="png/app-viewer-genome.png" alt="Results viewer: depth across the whole genome with variant sites marked, and the variant sites table" width="700">
+</p>
+
+## How it works
+
+1. **Index the genome.** Build the suffix array of the genome (plus a `$` end marker), derive the Burrows-Wheeler transform from it, and add rank tables (occurrence counts checkpointed every 64 rows). Together these form the FM-Index (`src/fmIndex.c`).
+2. **Seed.** Split each read into five equal seeds (20 bp for 100 bp reads) and find every exact occurrence of each seed with FM-Index backward search. A seed containing a variant simply finds nothing; the other seeds still place the read.
+3. **Extend.** For each candidate position, cut the reference with 5 bp of padding on both sides and run a fitting alignment, a dynamic-programming alignment where the whole read must align but reference bases outside it are free (`src/align.c`). The traceback gives the start position and CIGAR string.
+4. **Report.** Keep the best-scoring alignments across all seeds and write SAM: one primary record per read, equally good alternatives as secondary, and unmapped reads flagged.
+5. **Visualize.** The desktop app shows depth, reads and variant sites directly. From the command line, load the SAM into Integrative Genomics Viewer (IGV) to see coverage.
+
+## For developers
+
+Everything below is for building the aligner or the app yourself, using the command line, or calling the aligner from other programs. The command-line aligner works on Linux, on Windows natively, and on Windows through WSL.
+
+### Quick start (command line)
 
 On Debian/Ubuntu (or inside WSL):
 
@@ -48,36 +102,9 @@ make           # build ./run
 ./run          # small demo run
 ```
 
-On Windows, see [Setup → Option B: Windows native](#option-b-windows-native-msys2) or [Option C: Windows with WSL](#option-c-windows-with-wsl), or use the desktop app below.
+On Windows, see [Setup → Option B: Windows native](#option-b-windows-native-msys2) or [Option C: Windows with WSL](#option-c-windows-with-wsl).
 
-## Desktop app (Windows)
-
-A point-and-click app with the same aligner inside. Choose a reference and a read set (the SARS-CoV-2 genome and all three simulated read sets are built in, or open your own FASTA/FASTQ files), press **Align reads**, and get read counts plus a SAM file to save. It works fully offline.
-
-After a run, the app shows the results without needing samtools or IGV:
-
-- **Whole-genome depth** with variant sites marked; click anywhere to jump there.
-- **A zoomable track** with the reference bases, read depth (coloured where reads disagree with the reference) and, below 2,000 bp, the reads themselves with mismatches, deletions and insertions marked. Drag to pan, double-click to zoom, hover for per-base counts, or type a position or range.
-- **Variant sites**: positions where at least 20% of at least 10 reads differ from the reference (SNVs, deletions, insertions), with depth and frequency. Click one to jump to it.
-- **Exports**: variants and per-base coverage (depth and A/C/G/T/deleted/inserted counts) as CSV.
-
-This works for the 1,000,000-read set too: the app makes one pass over the SAM file (about 4 seconds) to build depth, allele counts and a position index, then reads only the reads in view straight from the file.
-
-**Install:** follow the [download instructions](#download) for the Windows installer and checksum verification.
-
-**Build from source** (needs Node.js 22 and `run.exe` from [Option B](#option-b-windows-native-msys2)):
-
-```powershell
-cd app
-npm install
-npm start          # run the app from source
-npm test           # unit tests, aligner integration tests and a click-through test of the window
-npm run dist       # build the installer into app/dist/
-```
-
-The app is Electron with the window locked down: no Node.js access in the page, no network requests, and file access only through the app's own dialogs. It runs the bundled `run.exe` with `--progress-json` and reads its events and exit codes ([below](#for-programs-calling-the-aligner)).
-
-## Requirements
+### Requirements
 
 - **Debian or Ubuntu:** `dep.sh` installs everything needed:
   - `gcc` and `make`: to build
@@ -85,16 +112,16 @@ The app is Electron with the window locked down: no Node.js access in the page, 
   - `samtools`: only needed to prepare results for IGV
 - **Windows:** either [MSYS2](https://www.msys2.org/) to build a native `run.exe`, or [WSL](https://learn.microsoft.com/windows/wsl/install) to use the Linux build.
 
-## Setup
+### Setup
 
-### 1. Clone
+#### 1. Clone
 
 ```bash
 git clone https://github.com/RyanDBurke/coronavirus-genome-variant.git
 cd coronavirus-genome-variant
 ```
 
-### 2. Install dependencies and build
+#### 2. Install dependencies and build
 
 Pick the option for your system:
 
@@ -102,14 +129,14 @@ Pick the option for your system:
 - [Option B: Windows native (MSYS2)](#option-b-windows-native-msys2): builds `run.exe`, which then runs from PowerShell with nothing else installed
 - [Option C: Windows with WSL](#option-c-windows-with-wsl)
 
-#### Option A: Debian or Ubuntu
+##### Option A: Debian or Ubuntu
 
 ```bash
 ./dep.sh       # install dependencies (uses sudo apt-get, so it asks for your password)
 make           # build ./run
 ```
 
-#### Option B: Windows native (MSYS2)
+##### Option B: Windows native (MSYS2)
 
 Install MSYS2 from PowerShell:
 
@@ -126,7 +153,7 @@ make           # build run.exe
 
 `run.exe` is self-contained: it uses only libraries built into Windows 10 and 11, so you can copy it anywhere. Every CI run also publishes it as the `run-windows-x64` artifact on the [Actions page](https://github.com/RyanDBurke/coronavirus-genome-variant/actions/workflows/ci.yml).
 
-#### Option C: Windows with WSL
+##### Option C: Windows with WSL
 
 Everything runs inside WSL. From the repo folder in PowerShell:
 
@@ -136,7 +163,7 @@ wsl --install            # one-time; restart if prompted
 wsl make                 # build ./run
 ```
 
-## Running
+### Running
 
 Run **one** of these:
 
@@ -163,7 +190,7 @@ Other options, which also work with the presets (for example `./run covid 1K -o 
 
 Status messages and the progress bar go to stderr, so they never mix with SAM output.
 
-### For programs calling the aligner
+#### For programs calling the aligner
 
 With `--progress-json`, stderr carries one JSON object per line instead of human messages:
 
@@ -186,7 +213,7 @@ Progress is the share of the reads file read so far, so it works for any input. 
 
 Reads that don't align still get a SAM record, flagged unmapped (`FLAG 4`). When a read aligns equally well in several places, the first is the primary record and the others are flagged secondary (`FLAG 256`).
 
-## Testing
+### Testing
 
 Debian / Ubuntu:
 
@@ -217,7 +244,23 @@ Test output goes to `tests/out/`. Other targets:
 | `make fixture` | Regenerates the known-answer fixture after changing `tests/make_fixture.py` |
 | `make clean` | Removes `./run` or `run.exe`, `build/` and `tests/out/` |
 
-## Viewing results in IGV
+### Desktop app from source
+
+Needs Node.js 22 and `run.exe` from [Option B](#option-b-windows-native-msys2):
+
+```powershell
+cd app
+npm install
+npm start          # run the app from source
+npm test           # unit tests, aligner integration tests and a click-through test of the window
+npm run dist       # build the installer into app/dist/
+```
+
+The app is Electron with the window locked down: no Node.js access in the page, no network requests, and file access only through the app's own dialogs. It runs the bundled `run.exe` with `--progress-json` and reads its events and exit codes (see [For programs calling the aligner](#for-programs-calling-the-aligner)).
+
+The app icon is drawn by `app/scripts/make-icon.mjs` (run `npm run icon` in `app/` after changing it), which writes `app/build-resources/icon.ico` and `icon.png`.
+
+### Viewing results in IGV
 
 1. Install [IGV](https://software.broadinstitute.org/software/igv/download).
 2. Convert the mapping to an indexed BAM file.
@@ -244,22 +287,14 @@ Test output goes to `tests/out/`. Other targets:
 4. Load the alignment: **File → Load From File**, then select `mappings/mapping_sorted.bam`. Keep `mapping_sorted.bam.bai` (created by `samtools index`) in the same folder.
 5. Optional: see IGV's guide to [navigating alignment data](https://software.broadinstitute.org/software/igv/AlignmentData).
 
-## How it works
-
-1. **Index the genome.** Build the suffix array of the genome (plus a `$` end marker), derive the Burrows-Wheeler transform from it, and add rank tables (occurrence counts checkpointed every 64 rows). Together these form the FM-Index (`src/fmIndex.c`).
-2. **Seed.** Split each read into five equal seeds (20 bp for 100 bp reads) and find every exact occurrence of each seed with FM-Index backward search. A seed containing a variant simply finds nothing; the other seeds still place the read.
-3. **Extend.** For each candidate position, cut the reference with 5 bp of padding on both sides and run a fitting alignment, a dynamic-programming alignment where the whole read must align but reference bases outside it are free (`src/align.c`). The traceback gives the start position and CIGAR string.
-4. **Report.** Keep the best-scoring alignments across all seeds and write SAM: one primary record per read, equally good alternatives as secondary, and unmapped reads flagged.
-5. **Visualize.** The desktop app shows depth, reads and variant sites directly. From the command line, load the SAM into Integrative Genomics Viewer (IGV) to see coverage.
-
-## Troubleshooting
+### Troubleshooting
 
 - **`./dep.sh: No such file or directory`, or errors mentioning `bash\r`.** The script was checked out with Windows line endings. Pull the latest version (which includes `.gitattributes`), delete `dep.sh` and `Makefile`, then run `git checkout -- dep.sh Makefile`.
 - **`wsl .\run` fails with `.run: command not found`.** Bash reads `\` as an escape character. Use `wsl ./run`.
 - **PowerShell refuses to run `dep.ps1`.** Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once, or use `wsl ./dep.sh` instead.
 - **`make: command not found` or `gcc: command not found` when building `run.exe`.** Build in the **MSYS2 UCRT64** terminal, not PowerShell or the plain "MSYS2 MSYS" terminal. Once built, `run.exe` runs from anywhere.
 
-## Project layout
+### Project layout
 
 ```
 coronavirus-genome-variant
@@ -270,9 +305,13 @@ coronavirus-genome-variant
 ├── dep.ps1               # runs dep.sh through WSL from PowerShell
 ├── Makefile              # builds ./run (run.exe on Windows); `make test` runs the tests
 ├── .github/workflows
-│   └── ci.yml            # CI: make test on Linux and Windows; app tests; publishes run.exe and the installer
+│   ├── ci.yml            # CI: make test on Linux and Windows; app tests; publishes run.exe and the installer
+│   └── release.yml       # on a v* tag: builds, tests and publishes a GitHub Release
 ├── app                   # Windows desktop app (Electron + TypeScript)
 │   ├── package.json      # scripts and installer settings
+│   ├── SECURITY.md       # Electron security review and release acceptance checks
+│   ├── build-resources   # app icon (icon.ico, icon.png)
+│   ├── scripts           # build helpers; make-icon.mjs draws the icon
 │   ├── src/main          # main process: window, dialogs, runs the aligner (aligner.ts), error messages,
 │   │                     #   SAM analysis for the viewer: depth, allele counts, variants, read index (analysis.ts)
 │   ├── src/preload       # the small API the window is allowed to use
@@ -311,8 +350,9 @@ coronavirus-genome-variant
 │   └── reads_1M.fa.gz
 ├── fm-output
 │   └── FMindex.txt       # FM-Index output from the demo run
-└── mappings              # alignment output (.sam)
-    └── mapping.sam       # output of the latest run
+├── mappings              # alignment output (.sam)
+│   └── mapping.sam       # output of the latest run
+└── png                   # README screenshots
 ```
 
 `make` also creates `build/` (object files and test builds) and `./run` or `run.exe`. These are git-ignored.
