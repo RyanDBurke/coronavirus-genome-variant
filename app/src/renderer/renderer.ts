@@ -297,6 +297,20 @@ function onFinished(result: RunResult) {
   }
 }
 
+// ---- section help --------------------------------------------------------------
+
+/** Each "?" button shows or hides the note it controls (aria-controls). */
+function initHelp() {
+  document.querySelectorAll<HTMLButtonElement>(".help-toggle").forEach((button) => {
+    const note = $(button.getAttribute("aria-controls")!);
+    button.addEventListener("click", () => {
+      const open = button.getAttribute("aria-expanded") !== "true";
+      button.setAttribute("aria-expanded", String(open));
+      note.hidden = !open;
+    });
+  });
+}
+
 // ---- About box -----------------------------------------------------------------
 
 async function initAbout() {
@@ -327,6 +341,7 @@ async function initAbout() {
 // ---- wiring ------------------------------------------------------------------
 
 async function init() {
+  initHelp();
   void initAbout();
   const presets = await api.getPresets();
   renderChoices("reference", presets.references);

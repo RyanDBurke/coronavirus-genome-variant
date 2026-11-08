@@ -138,6 +138,14 @@ tbody tr:hover, tbody tr:focus-visible { background: var(--accent-soft); outline
 td.freq { display: flex; align-items: center; gap: 8px; }
 .freqbar { width: 80px; height: 6px; border-radius: 99px; background: linear-gradient(90deg, var(--bad) calc(var(--f) * 100%), var(--line) 0); }
 
+/* "?" help next to each section heading */
+.help-head { display: flex; align-items: center; gap: 8px; }
+.help-toggle { width: 22px; height: 22px; padding: 0; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--muted); font: 600 12px var(--sans); line-height: 1; display: grid; place-items: center; }
+.help-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.help-toggle[aria-expanded="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.help { display: flex; flex-direction: column; gap: 6px; max-width: 72ch; padding: 10px 14px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 6px; font-size: 14px; }
+.variants-head .help { margin-top: 8px; }
+
 /* warnings about a finished run */
 .callout { border-left: 4px solid var(--warn); background: var(--warn-soft); padding: 10px 14px; border-radius: 6px; font-size: 14px; }
 .callout strong { display: block; }

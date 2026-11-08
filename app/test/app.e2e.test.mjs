@@ -82,6 +82,24 @@ test("align 10,000 reads, then cancel a 1,000,000-read run", { skip: !existsSync
 
     // results viewer: stats, variants table, jumping to a variant shows reads
     await page.waitForSelector("#viewerSection:not([hidden])");
+
+    // every section's "?" opens its note and closes it again
+    const helpIds = await page.$$eval(".help-toggle", (buttons) => buttons.map((b) => b.getAttribute("aria-controls")));
+    assert.deepEqual(helpIds, ["help-ref", "help-reads", "help-align", "help-viewer", "help-variants"]);
+    for (const id of helpIds) {
+      const toggle = `.help-toggle[aria-controls="${id}"]`;
+      assert.equal(await page.isVisible(`#${id}`), false, `${id} open by default`);
+      await page.click(toggle);
+      assert.equal(await page.isVisible(`#${id}`), true, `${id} didn't open`);
+      assert.equal(await page.getAttribute(toggle, "aria-expanded"), "true");
+      assert.ok((await page.textContent(`#${id}`)).trim().length > 80, `${id} is nearly empty`);
+    }
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: path.join(shots, "8-help.png") });
+    for (const id of helpIds) {
+      await page.click(`.help-toggle[aria-controls="${id}"]`);
+      assert.equal(await page.isVisible(`#${id}`), false, `${id} didn't close`);
+    }
     assert.match(await page.textContent("#covMean"), /^\d[\d,]*×$/);
     const variantRows = await page.locator("#variantRows tr").count();
     assert.ok(variantRows > 0, "no variants listed");

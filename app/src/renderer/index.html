@@ -20,6 +20,11 @@
       <div class="step-head">
         <span class="step-num" aria-hidden="true">1</span>
         <h2 id="ref-title">Reference genome</h2>
+        <button class="help-toggle" type="button" aria-expanded="false" aria-controls="help-ref" aria-label="About this step: reference genome">?</button>
+      </div>
+      <div id="help-ref" class="help" hidden>
+        <p>The reference is the known genome that every read is compared against. Differences from it are what the app reports as variants.</p>
+        <p>The built-in reference is SARS-CoV-2 isolate USA-IL1/2020 (MN988713.1, 29,882 bases). To align against another genome, choose your own FASTA file; only its first sequence is used.</p>
       </div>
       <div class="choices" id="referenceChoices" role="radiogroup" aria-labelledby="ref-title"></div>
     </section>
@@ -28,6 +33,11 @@
       <div class="step-head">
         <span class="step-num" aria-hidden="true">2</span>
         <h2 id="reads-title">Reads</h2>
+        <button class="help-toggle" type="button" aria-expanded="false" aria-controls="help-reads" aria-label="About this step: reads">?</button>
+      </div>
+      <div id="help-reads" class="help" hidden>
+        <p>Reads are the short stretches of sequence a sequencing machine produces from a sample. The app works out where on the reference each read came from.</p>
+        <p>The built-in sets are simulated reads from a SARS-CoV-2 genome with a few differences, so you can try the app without your own data. Your own reads can be FASTA or FASTQ, optionally gzipped. Reads longer than 189 bases can't be aligned and are counted as unmapped.</p>
       </div>
       <div class="choices" id="readsChoices" role="radiogroup" aria-labelledby="reads-title"></div>
     </section>
@@ -36,6 +46,11 @@
       <div class="step-head">
         <span class="step-num" aria-hidden="true">3</span>
         <h2 id="run-title">Align</h2>
+        <button class="help-toggle" type="button" aria-expanded="false" aria-controls="help-align" aria-label="About this step: align">?</button>
+      </div>
+      <div id="help-align" class="help" hidden>
+        <p>Aligning places every read on the reference. The app indexes the reference, finds exact matches for short pieces of each read, then fits the whole read around them, allowing for mismatches, insertions and deletions.</p>
+        <p><strong>Mapped</strong> reads found a good position; <strong>unmapped</strong> reads didn't. The result is a SAM file, the standard format that other tools such as samtools and IGV can open. The app keeps your last 3 runs, so save the SAM file to keep one longer.</p>
       </div>
 
       <div class="run-bar">
@@ -90,6 +105,11 @@
       <div class="step-head">
         <span class="step-num" aria-hidden="true">4</span>
         <h2 id="viewer-title">Explore the alignments</h2>
+        <button class="help-toggle" type="button" aria-expanded="false" aria-controls="help-viewer" aria-label="About this step: explore the alignments">?</button>
+      </div>
+      <div id="help-viewer" class="help" hidden>
+        <p>This shows how the reads cover the reference. <strong>Depth</strong> is the number of reads covering a position: the more reads agree, the more you can trust what they say about that position. <strong>Genome covered</strong> is the share of positions with at least one read.</p>
+        <p>The whole-genome track shows depth with variant sites marked in red; click it to jump somewhere. The track below shows the reference bases and depth for the selected region and, once you zoom in to 2,000 bases or less, the reads themselves. Bases where a read differs from the reference are coloured.</p>
       </div>
 
       <div class="panel">
@@ -131,8 +151,15 @@
       <div class="panel">
         <div class="variants-head">
           <div>
-            <h3>Variant sites</h3>
+            <div class="help-head">
+              <h3>Variant sites</h3>
+              <button class="help-toggle" type="button" aria-expanded="false" aria-controls="help-variants" aria-label="About this step: variant sites">?</button>
+            </div>
             <p id="variantRule" class="muted"></p>
+            <div id="help-variants" class="help" hidden>
+              <p>Variant sites are positions where many reads disagree with the reference, which points to a real difference between the sample and the reference. Sequencing errors affect only a few reads at a time, so the threshold above filters them out.</p>
+              <p><strong>Frequency</strong> is the share of reads carrying the change. Click a row to see its reads, or export the table, or per-base coverage for every position, as CSV.</p>
+            </div>
           </div>
           <div class="actions">
             <button id="exportVariants" class="secondary" type="button">Export variants (CSV)…</button>
