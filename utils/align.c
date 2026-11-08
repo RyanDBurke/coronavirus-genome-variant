@@ -1,6 +1,23 @@
 #include "../lib/align.h"
 #include "../lib/misc.h"
+#include <limits.h>
 KSEQ_INIT(gzFile, gzread)
+
+/* SAM flags we emit */
+#define FLAG_UNMAPPED  0x4
+#define FLAG_SECONDARY 0x100
+
+/* longest read the fixed-size OPT-matrix can hold */
+#define MAX_READ_LENGTH (MAXCOL - 2 * SLICE_PAD - 1)
+
+/* write a record for a read with no alignment */
+static void writeUnmapped(FILE *f, kseq_t *seq) {
+    SAM s = {
+        .QNAME = seq->name.s, .FLAG = FLAG_UNMAPPED, .RNAME = "*", .POS = 0, .MAPQ = 0,
+        .CIGAR = "*", .RNEXT = "*", .PNEXT = 0, .TLEN = 0, .SEQ = seq->seq.s, .QUAL = "*"
+    };
+    writeSAM(&s, f);
+}
 
 int align(FM *fm, char *reads, char *output, double READ, bool makePB) {
 
@@ -27,115 +44,89 @@ int align(FM *fm, char *reads, char *output, double READ, bool makePB) {
     }
 
     kseq_t *seq = kseq_init(fp);
-    int l;
-
-    double ninf = -INFINITY;
     int gap = -5; /* gap penalty */
+    bool warnedLongRead = false;
 
     /* .sam header */
-    fprintf(f, "@HD	VN:1.0	SO:unsorted\n");
-    fprintf(f, "@SQ	SN:%s	LN:%d\n", fm->name, fm->length);
+    fprintf(f, "@HD\tVN:1.0\tSO:unsorted\n");
+    fprintf(f, "@SQ\tSN:%s\tLN:%d\n", fm->name, fm->length);
 
-    /* parse .fa file containing our n-amount of 100bp reads */
-    while ((l = kseq_read(seq)) >= 0) {
+    /* best-scoring alignments of the current read, across all of its seeds */
+    Alignments hits = {0};
+
+    /* parse .fa file containing our reads */
+    while (kseq_read(seq) >= 0) {
 
         /* progress bar */
         if (makePB) {
             progress++;
-            double percentageDone = progress / READ;
-            pb(true, percentageDone);
+            pb(true, progress / READ);
         }
-        
 
-        /* an array where we'll store our alignments */
-        Alignment alignments[strlen(seq->seq.s)];
+        int readLength = (int) seq->seq.l;
+        int bestScore = INT_MIN;
+        clearAlignments(&hits);
 
-        double bestScore = ninf;
-        int skip = seedSkip(strlen(seq->seq.s));
-        int alignmentLength = -1;
-
-        /* for each (read-length / 5.0) seed (20bp seed in our case, since we have 100bp reads) */
-        for (int seedStart = 0; seedStart < strlen(seq->seq.s); seedStart += skip) {
-            int seedEnd = min(strlen(seq->seq.s), seedStart + skip);
-
-            /* finding match interval */
-            Interval *interval = malloc(sizeof(Interval));
-            int matchLength = 0;
-            char *seed = malloc(strlen(seq->seq.s) + 1);
-            substring(seed, seq->seq.s, seedStart, seedEnd);
-            getInterval(interval, &matchLength, fm, seed);
-
-            /* if there wasn't a match, break out of this seed */
-            if (matchLength == 0) {
-                break;
+        if (readLength > MAX_READ_LENGTH) {
+            if (!warnedLongRead) {
+                fprintf(stderr, "warning: reads longer than %d bp are reported as unmapped\n", MAX_READ_LENGTH);
+                warnedLongRead = true;
             }
+        } else if (readLength > 0) {
 
-            /* reference position */
-            int *refPos = malloc(sizeof(int) * (interval->end - interval->start));
-            int refPosLength = referencePos(refPos, interval, matchLength, fm, seedEnd);            
+            /* for each (read-length / 5) seed (20bp seeds for our 100bp reads) */
+            int skip = seedSkip(readLength);
+            char *seed = malloc(skip + 1);
+            for (int seedStart = 0; seedStart < readLength; seedStart += skip) {
+                int seedEnd = min(readLength, seedStart + skip);
 
-            /* fitting alignment: add it to alignments array and return that array length */
-            alignmentLength = alignment(alignments, seq->seq.s, fm->seq, refPos, refPosLength, gap, bestScore);
+                /* find where this seed matches the reference exactly */
+                Interval interval;
+                int matchLength = 0;
+                substring(seed, seq->seq.s, seedStart, seedEnd);
+                getInterval(&interval, &matchLength, fm, seed);
 
-            /* free memory */
-            free(refPos);
+                /* no exact match (e.g. a variant inside this seed): try the next seed */
+                if (matchLength == 0) {
+                    continue;
+                }
+
+                /* candidate read start positions in the reference */
+                int *refPos = malloc(sizeof(int) * (interval.end - interval.start));
+                int refPosLength = referencePos(refPos, &interval, matchLength, fm, seedEnd);
+
+                /* fitting alignment at each candidate, keeping the best across all seeds */
+                alignment(&hits, seq->seq.s, readLength, fm->seq, fm->length, refPos, refPosLength, gap, &bestScore);
+
+                free(refPos);
+            }
             free(seed);
-            free(interval);
         }
 
-        /* for each alignment in alignments, write to .sam file */
-        for (int a = 0; a < alignmentLength; a++) {
-            {
-
-                /* our SAM struct we will fill */
-                SAM *s = malloc(sizeof(SAM));
-
-                /* QNAME */
-                s->QNAME = malloc(strlen(seq->name.s) + 1);
-                strcpy(s->QNAME, seq->name.s);
-
-                /* FLAG */
-                s->FLAG = 0;
-
-                /* RNAME */
-                s->RNAME = malloc(strlen(fm->name) + 1);
-                strcpy(s->RNAME, fm->name);
-
-                /* POS */
-                s->POS = alignments[a].pos;
-
-                /* MAPQ */
-                s->MAPQ = 255;
-
-                /* CIGAR */
-                s->CIGAR = malloc(strlen(alignments[a].cigar) + 1);
-                strcpy(s->CIGAR, alignments[a].cigar);
-
-                /* RNEXT */
-                s->RNEXT = malloc(2);
-                strcpy(s->RNEXT, "*");
-
-                /* PNEXT */
-                s->PNEXT = 0;
-
-                /* TLEN */
-                s->TLEN = strlen(seq->seq.s);
-
-                /* SEQ */
-                s->SEQ = malloc(strlen(seq->seq.s) + 1);
-                strcpy(s->SEQ, seq->seq.s);
-
-                /* QUAL */
-                s->QUAL = malloc(2);
-                strcpy(s->QUAL, "*");
-                
-                /* write SAM */
-                writeSAM(s, f);
-                destroySAM(s);
-            }
-        }      
+        /* write to .sam file: first hit is primary, any equally good ones are secondary */
+        if (hits.count == 0) {
+            writeUnmapped(f, seq);
+        }
+        for (int a = 0; a < hits.count; a++) {
+            SAM s = {
+                .QNAME = seq->name.s,
+                .FLAG = (a == 0) ? 0 : FLAG_SECONDARY,
+                .RNAME = fm->name,
+                .POS = hits.items[a].pos,
+                .MAPQ = 255,                 /* not computed */
+                .CIGAR = hits.items[a].cigar,
+                .RNEXT = "*",
+                .PNEXT = 0,
+                .TLEN = 0,                   /* single-end reads */
+                .SEQ = seq->seq.s,
+                .QUAL = "*"
+            };
+            writeSAM(&s, f);
+        }
     }
 
+    clearAlignments(&hits);
+    free(hits.items);
     fclose(f);
 
     printf("\n\n> You can find the SAM-formatted alignments in: ");
@@ -145,20 +136,22 @@ int align(FM *fm, char *reads, char *output, double READ, bool makePB) {
 
     /* successful */
     kseq_destroy(seq);
-	gzclose(fp);
-	return 0;
+    gzclose(fp);
+    return 0;
 }
 
 /**************************/
 /* AUX FUNTIONS FOR ALIGN */
 /**************************/
 
-/* preforms backwards search and return an interval and matchLength */
+/* finds the suffix-array interval [start, end) whose suffixes begin with seed */
 void getInterval(Interval *interval, int *matchLength, FM *fm, char* seed) {
 
     /* reset interval to -1 */
     interval->start = -1;
     interval->end = -1;
+
+    int seedLength = strlen(seed);
 
     /* length of our original reference sequence (coronavirus genome) */
     int refSeqLength = fm->length;
@@ -166,40 +159,31 @@ void getInterval(Interval *interval, int *matchLength, FM *fm, char* seed) {
     /* iterate thru suffix array to find matches to our seed */
     for (int i = 0; i < refSeqLength; i++) {
 
-        /* index in coronavirus genome where this particular suffix begins */
-        int offset = fm->suffixArray[i];
-
         /* current coronavirus suffix */
-        char *suffix = (fm->seq + offset);
+        char *suffix = (fm->seq + fm->suffixArray[i]);
 
-        /* substring of suffix */
-        char *subSuffix = malloc(strlen(seed) + 1);
-        substring(subSuffix, suffix, 0, strlen(seed));
-
-        /* match seed to suffix */
-        int match = strcmp(subSuffix, seed);
+        /* match seed to the start of the suffix */
+        bool match = strncmp(suffix, seed, seedLength) == 0;
 
         /* if they match and this is the first match */
-        if (match == 0 && (interval->start == -1)) {
+        if (match && (interval->start == -1)) {
             interval->start = i;
         }
 
         /* if they don't match, but we've seen a match before -- then this is the end of interval */
-        if (match != 0 && (interval->start != -1)) {
+        if (!match && (interval->start != -1)) {
             interval->end = i;
             break; /* break loop, we have our interval! */
         }
+    }
 
-        /* free subSuffix substring memory */
-        free(subSuffix);
+    /* matches ran to the last suffix */
+    if (interval->start != -1 && interval->end == -1) {
+        interval->end = refSeqLength;
     }
 
     /* matchLength = 0 if no match found, otherwise matchLength = strlen(seed) */
-    if ((interval->start == -1) && (interval->end == -1)) {
-        *matchLength = 0;
-    } else {
-        *matchLength = strlen(seed);
-    }
+    *matchLength = (interval->start == -1) ? 0 : seedLength;
 }
 
 /* returns reference positions of current seed */
@@ -209,7 +193,7 @@ int referencePos(int *refPos, Interval *interval, int matchLength, FM *fm, int s
     int start = interval->start;
     int end = interval->end;
 
-    /* find reference positions in reference genome */
+    /* the read starts (seedEnd - matchLength) bases before where the seed matched */
     int refPosLength = 0;
     for (int i = start; i < end; i++) {
         int pos = (fm->suffixArray[i]) - (seedEnd - matchLength);
@@ -221,93 +205,90 @@ int referencePos(int *refPos, Interval *interval, int matchLength, FM *fm, int s
     return refPosLength;
 }
 
-/* return a single alignment struct to output parameter A */
-int alignment(Alignment alignments[], char *read, char *ref, int *refPos, int refPosLength, int gap, double bestScore) {
+/* empties an alignment list, freeing its CIGAR strings */
+void clearAlignments(Alignments *hits) {
+    for (int i = 0; i < hits->count; i++) {
+        free(hits->items[i].cigar);
+    }
+    hits->count = 0;
+}
+
+/* appends an alignment, growing the list as needed; takes ownership of cigar */
+static void addAlignment(Alignments *hits, int score, int pos, char *cigar) {
+    if (hits->count == hits->capacity) {
+        hits->capacity = hits->capacity ? hits->capacity * 2 : 4;
+        hits->items = realloc(hits->items, sizeof(Alignment) * hits->capacity);
+    }
+    hits->items[hits->count].score = score;
+    hits->items[hits->count].pos = pos;
+    hits->items[hits->count].cigar = cigar;
+    hits->count++;
+}
+
+/* fitting alignment of read at each candidate position; keeps the best-scoring hits */
+void alignment(Alignments *hits, char *read, int readLength, char *ref, int refLength, int *refPos, int refPosLength, int gap, int *bestScore) {
 
     /* X-axis is our coronavirus reference genome slice */
     /* Y-axis is our read we wish to align to our reference */
+    int OPT[MAXROW][MAXCOL];
+    char *x = malloc(readLength + 2 * SLICE_PAD + 1);
 
-    /* index for our alignments-array */
-    int alignmentIndex = 0;
+    for (int p = 0; p < refPosLength; p++) {
 
-    /* for each reference positions in our reference genome */
-    for (int pos = 0; pos < refPosLength; pos++) {
+        /* slice out the reference with SLICE_PAD bases on each side, clipped to the genome */
+        int sliceStart = max(refPos[p] - SLICE_PAD, 0);
+        int sliceEnd = min(refPos[p] + readLength + SLICE_PAD, refLength);
+        if (sliceStart >= sliceEnd) {
+            continue;
+        }
+        substring(x, ref, sliceStart, sliceEnd);
+        int n = sliceEnd - sliceStart;
 
-        /* x and y-axis strings we will align */
-        char *x = malloc(strlen(read) + 10 + 1); // len(read) + (2 * gap) + null terminator = 111
-                                                 // (100)     + (10)      + (1)             = 111
-
-        /* slice out reference genome with 5-gap on each side (110 total length) */
-        /* we use max and min here to avoid going below 0 or above length in index */
-        /* given that, our slice from reference genome is: 105 <= length <= 110 */
-        substring(x, ref, max(refPos[pos] - 5, 0), min(refPos[pos] + strlen(read) + 5, strlen(ref)));
-
-        /* setting y-axis is trivial */
-        char *y = read;
-
-        /* n and m are lengths of our current sliced-genome and read */
-        int n = strlen(x); /* 105 <= length <= 110 */
-        int m = strlen(read); /* length = 100 */
-
-        /* our OPT-matrix containing edit-distance between x and y */
-        int OPT[MAXROW][MAXCOL];
-
-        /* our edit-distance between strings x and y */
-        int score = editDistance(OPT, x, y, n, m, gap);
-
-        /* only create an alignment for those with >= best score */
-        if (score > bestScore) {
-
-            /* update the best score */
-            bestScore = score;
-
-            /* we set this to zero to simulate "clearing" the array */
-            alignmentIndex = 0;
-
-            /* backtrace OPT-matrix to find alignment and return CIGAR string */
-            int offset = -1;
-            char *cigar = buildCigar(OPT, n, m, gap, x, y, &offset);
-
-            /* add to alignments array */
-            alignments[alignmentIndex].score = score;
-            alignments[alignmentIndex].pos = (refPos[pos] + offset == 0) ? 1 : refPos[pos] + offset;
-            // alignments[alignmentIndex].pos = refPos[pos] + offset;
-            alignments[alignmentIndex].cigar = malloc(strlen(cigar) + 1);
-            strcpy(alignments[alignmentIndex].cigar, cigar);
-            alignmentIndex++;
-
-        } else if (score == bestScore) { /* if its equal we add it to alignments-array */
-
-            /* backtrace OPT-matrix to find alignment and return CIGAR string */
-            int offset = -1;
-            char *cigar = buildCigar(OPT, n, m, gap, x, y, &offset);
-
-            /* add to alignments array */
-            alignments[alignmentIndex].score = score;
-            alignments[alignmentIndex].pos = (refPos[pos] + offset == 0) ? 1 : refPos[pos] + offset;
-            // alignments[alignmentIndex].pos = refPos[pos] + offset;
-            alignments[alignmentIndex].cigar = malloc(strlen(cigar) + 1);
-            strcpy(alignments[alignmentIndex].cigar, cigar);
-            alignmentIndex++;
+        /* only keep alignments with >= best score */
+        int score = editDistance(OPT, x, read, n, readLength, gap);
+        if (score < *bestScore) {
+            continue;
+        }
+        if (score > *bestScore) {
+            clearAlignments(hits);
+            *bestScore = score;
         }
 
-        /* free variables */
-        free(x);
+        /* backtrace OPT-matrix to find alignment and its CIGAR string */
+        int offset = -1;
+        char *cigar = buildCigar(OPT, n, readLength, gap, x, read, &offset);
+
+        /* offset is where the read starts inside the slice; SAM POS is 1-based */
+        int pos = sliceStart + offset + 1;
+
+        /* different seeds of one read usually find the same locus; keep it once */
+        bool duplicate = false;
+        for (int a = 0; a < hits->count; a++) {
+            if (hits->items[a].pos == pos) {
+                duplicate = true;
+                break;
+            }
+        }
+        if (duplicate) {
+            free(cigar);
+        } else {
+            addAlignment(hits, score, pos, cigar);
+        }
     }
 
-    return alignmentIndex;
+    free(x);
 }
 
-/* builds OPT-matrix, and returns OPT[n][m] -- which is the edit distance between x and y */
+/* builds OPT-matrix for a fitting alignment of y inside x, and returns the best score
+   (max over the last column: reference bases before or after the read are free) */
 int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int gap) {
 
     /* (0, 0) is always 0 */
     OPT[0][0] = 0;
 
-    /* add our initial gap penalties to the first column of each row */
-    /* allow cost-free gap penalties */
+    /* cost-free gaps before the read starts on the reference */
     for (int i = 1; i <= n; i++) {
-            OPT[i][0] = 0;
+        OPT[i][0] = 0;
     }
 
     /* add our initial gap penalties to the first row of each column */
@@ -318,8 +299,6 @@ int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int ga
     /* fill matrix */
     for (int i = 1; i <= n; i++) {
         for (int j = 1; j <= m; j++) {
-
-            /* fil matrix entry */
             OPT[i][j] = maxAlign(
                     (score(x[i - 1], y[j - 1], gap) + OPT[i - 1][j - 1]),
                     (gap + OPT[i - 1][j]),
@@ -328,83 +307,62 @@ int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int ga
         }
     }
 
-    return OPT[n][m];
+    /* the read may end anywhere on the slice */
+    int best = OPT[0][m];
+    for (int i = 1; i <= n; i++) {
+        best = max(best, OPT[i][m]);
+    }
+    return best;
 }
 
 /* returns CIGAR-string */
 char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *y, int *offset) {
 
-    /* find out where we start our backtrace, and set n */
-    int temp = n;
-    int maxScore = -1;
-    for (int i = 0; i <= temp; i++) {
+    /* the read ends at the best-scoring row of the last column */
+    int row = 0;
+    int maxScore = INT_MIN;
+    for (int i = 0; i <= n; i++) {
         if (OPT[i][m] >= maxScore) {
             maxScore = OPT[i][m];
-            n = i;
+            row = i;
         }
     }
+    n = row;
 
-    /* result array we'll return */
-    int cigarIndex = 0;
-
-    char *cigarTemp = malloc(n * m);
-    while (true) {
-
-
-        /* for fitting alignment it ends when we reach row = 0 */
-        /* in our case, when m = 0 */
-        if (m == 0) {
-
-            /* Crucial
-                * this decides where exactly our read aligns best to our reference genome
-                * Allowing cost-free gaps at the beginning of our x-axis means our read
-                    can align (technically) anywhere on on the slice of our reference genome
-                    although it would typically be around of reference position
-             */
-
-            *offset = n;
-            break;
-        }
-
-        /* find scores for neighboring entries */
-        int up = gap + OPT[n - 1][m];
-        int diagonal = score(x[n - 1], y[m - 1], gap) + OPT[n - 1][m - 1];
-        int left = gap + OPT[n][m - 1];
-
-        /* find max of those neighboring entries to find path*/
-        int maxA = maxAlign(up, diagonal, left);
-
-        /* build cigar string based on path () */
-        if (maxA == diagonal) {
-            n = n - 1;
-            m = m - 1;
-            cigarTemp[cigarIndex] = 'M';
-            cigarIndex++;
-        } else if (maxA == left) {
-            m = m - 1;
-            cigarTemp[cigarIndex] = 'I';
-            cigarIndex++;
-        } else if (maxA == up) {
-            n = n - 1;
-            cigarTemp[cigarIndex] = 'D';
-            cigarIndex++;
+    /* backtrace from the end of the read to its start, collecting one op per step */
+    char *ops = malloc(n + m + 1);
+    int length = 0;
+    while (m > 0) {
+        if (n > 0 && OPT[n][m] == score(x[n - 1], y[m - 1], gap) + OPT[n - 1][m - 1]) {
+            ops[length++] = 'M';
+            n--;
+            m--;
+        } else if (OPT[n][m] == gap + OPT[n][m - 1]) {
+            ops[length++] = 'I';
+            m--;
+        } else if (n > 0 && OPT[n][m] == gap + OPT[n - 1][m]) {
+            ops[length++] = 'D';
+            n--;
         } else {
-            printf("Error in buildCigar()\n");
+            fprintf(stderr, "error in buildCigar(): inconsistent OPT-matrix\n");
             exit(1);
         }
-
     }
 
-    /* null terminator */
-    cigarTemp[cigarIndex] = '\0';
+    /* we stopped at the slice position where the read starts */
+    *offset = n;
 
-    /* now that we (almost) have our CIGAR-string, we need to format it properly */
-    char *cigar = formatCigar(cigarTemp, strlen(cigarTemp) * 2 + 1);
+    /* ops were collected end-to-start; reverse them into read order */
+    for (int i = 0, j = length - 1; i < j; i++, j--) {
+        char t = ops[i];
+        ops[i] = ops[j];
+        ops[j] = t;
+    }
+    ops[length] = '\0';
 
-    /* free used memory */
-    free(cigarTemp);
-
-    /* our complete cigar string */
+    /* run-length encode into a CIGAR string (i.e MMMDDMM -> 3M2D2M) */
+    char *cigar = formatCigar(ops);
+    free(ops);
     return cigar;
 }
 
@@ -412,105 +370,41 @@ char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *
 int score(char a, char b, int gap) {
     if (a == 'N' || b == 'N') { /* if you see 'N', assume it matches */
         return 0;
-    } else if (a == b) {
-        return 1;
-    } else if (a != b) {
-        return -1;
-    } else if (a == '-' || b == '-') {
-        return gap;
-    } else {
-        return 0;
     }
+    return (a == b) ? 1 : -1;
 }
 
 /* return substring of string from [start, end) */
 void substring(char* result, char* string, int start, int end) {
-    char *temp = string + start;
     int n = end - start;
-    result = strncpy(result, temp, n);
+    memcpy(result, string + start, n);
     result[n] = '\0';
 }
 
-/* return correctly formatted CIGAR-string (i.e 3M2D2M) */
-char *formatCigar(char *cigar, int length) {
+/* return correctly formatted CIGAR-string (i.e MMMDDMM -> 3M2D2M) */
+char *formatCigar(const char *ops) {
 
-    /* just make sure cigar input is uppercase */
-    cigar = upper(cigar);
+    /* a run of length r takes at most r + 1 characters, so 2 * length is enough */
+    size_t length = strlen(ops);
+    char *result = malloc(2 * length + 1);
+    size_t written = 0;
 
-    /* our properly formatted CIGAR-string we will return */
-    char *result = malloc(length + 1);
-    int resultIndex = 0;
-
-    /* build cigar string */
-    int count = 0;
-    char currentChar = '%'; /* random char, shouldn't matter */
-    for (int i = 0; i < length; i++) {
-        currentChar = cigar[i];
-
-        for (int j = i; j < length; j++) {
-            if (cigar[j] != currentChar) {
-                if (count > 9) {
-                    char array[64];
-                    int myInteger = count;
-                    sprintf(array, "%d", myInteger );
-
-                    for (int k = 0; k < strlen(array); k++) {
-                        result[resultIndex] = array[k];
-                        resultIndex++;
-                    }
-
-                } else {
-                    result[resultIndex] = count + '0';
-                    resultIndex++;
-                }
-                
-                result[resultIndex] = currentChar;
-                resultIndex++;
-
-                if (cigar[j + 1] == '\0') {
-                    j = length;
-                }
-                break;
-            } else {
-                count++;
-
-                if (cigar[j + 1] == '\0') {
-                    if (count > 9) {
-                        char array[64];
-                        int myInteger = count;
-                        sprintf( array, "%d", myInteger );
-
-                        for (int k = 0; k < strlen(array); k++) {
-                            result[resultIndex] = array[k];
-                            resultIndex++;
-                        }
-
-                    } else {
-                        result[resultIndex] = count + '0';
-                        resultIndex++;
-                    }
-
-                    result[resultIndex] = currentChar;
-                    resultIndex++;
-                    j = length;
-                }
-            }
-            i = j;
+    for (size_t i = 0; i < length;) {
+        size_t j = i;
+        while (j < length && ops[j] == ops[i]) {
+            j++;
         }
-
-        count = 0;
+        written += sprintf(result + written, "%zu%c", j - i, ops[i]);
+        i = j;
     }
-
-    /* null-terminator */
-    result[resultIndex] = '\0';    
+    result[written] = '\0';
 
     return result;
 }
 
-/* seed skip */
+/* seed skip (and seed length): a fifth of the read, at least 1 */
 int seedSkip(int L) {
-    int s = L / 5.0;
-    return s;
+    return max(L / 5, 1);
 }
 
 /* min */
@@ -547,7 +441,7 @@ void printMatrix(int OPT[MAXROW][MAXCOL], int n, int m, char *x, char *y) {
     printf("\n");
 
     /* print our X-axis string and the OPT-matrix entries */
-    for (int i = 0; i <= n; i++) {     
+    for (int i = 0; i <= n; i++) {
         if (i > 0) {
             printf("%c\t", x[i - 1]);
         } else {
@@ -562,32 +456,7 @@ void printMatrix(int OPT[MAXROW][MAXCOL], int n, int m, char *x, char *y) {
 
 /* write to our .SAM file */
 void writeSAM(SAM *sam, FILE *f) {
-    fprintf(f, "%s\t", sam->QNAME);
-    fprintf(f, "%d\t", sam->FLAG);
-    fprintf(f, "%s\t", sam->RNAME);
-    fprintf(f, "%d\t", sam->POS);
-    fprintf(f, "%d\t", sam->MAPQ);
-    fprintf(f, "%s\t", sam->CIGAR);
-    fprintf(f, "%s\t", sam->RNEXT);
-    fprintf(f, "%d\t", sam->PNEXT);
-    fprintf(f, "%d\t", sam->TLEN);
-    fprintf(f, "%s\t", sam->SEQ);
-    fprintf(f, "%s\n", sam->QUAL);
+    fprintf(f, "%s\t%d\t%s\t%d\t%d\t%s\t%s\t%d\t%d\t%s\t%s\n",
+            sam->QNAME, sam->FLAG, sam->RNAME, sam->POS, sam->MAPQ, sam->CIGAR,
+            sam->RNEXT, sam->PNEXT, sam->TLEN, sam->SEQ, sam->QUAL);
 }
-
-/* free our SAM struct */
-void destroySAM(SAM *sam) {
-
-    /* some SAM fields are free'd elsewhere */
-    // free(sam->QNAME);
-    // free(sam->RNAME);
-    free(sam->CIGAR);
-    free(sam->RNEXT);
-    // free(sam->PNEXT);
-    // free(sam->SEQ);
-    free(sam->QUAL);
-    free(sam);
-}
-
-/* destroy our alignment array */
-void destroyAlignment(Alignment *A) {}

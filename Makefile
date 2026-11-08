@@ -29,7 +29,7 @@ test: run tests/test_units
 	$(PYTHON) tests/validate_sam.py --ref 2019-nCoV.fa --sam $(OUT)/reads_1K.sam --min-mapped $(MIN_MAPPED_1K)
 
 # minimum fraction of the simulated 1K reads that must map
-MIN_MAPPED_1K ?= 0.40
+MIN_MAPPED_1K ?= 0.99
 
 clean:
 	$(RM) run tests/test_units
