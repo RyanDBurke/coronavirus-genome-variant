@@ -30,6 +30,28 @@ test("align 10,000 reads, then cancel a 1,000,000-read run", { skip: !existsSync
     assert.equal(await page.evaluate(() => typeof window.require), "undefined");
     assert.equal(await page.evaluate(() => typeof window.process), "undefined");
 
+    // Exercise the request policy without relying on the page's CSP.
+    const requests = await electronApp.evaluate(async ({ session }) => {
+      const result = [];
+      for (const url of ['file:///C:/Windows/win.ini', 'https://example.com', 'file://server/share/private.txt']) {
+        result.push(await session.defaultSession.fetch(url).then(() => 'allowed', () => 'blocked'));
+      }
+      return result;
+    });
+    assert.deepEqual(requests, ['blocked', 'blocked', 'blocked']);
+    await page.evaluate(() => { window.open('https://example.com'); });
+    assert.equal(electronApp.windows().length, 1);
+    const foreignIpc = await electronApp.evaluate(async ({ BrowserWindow }) => {
+      const foreign = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true, contextIsolation: false, sandbox: false } });
+      try {
+        await foreign.loadURL('about:blank');
+        return await foreign.webContents.executeJavaScript(`require('electron').ipcRenderer.invoke('presets:get').then(() => 'allowed', () => 'blocked')`);
+      } finally {
+        foreign.destroy();
+      }
+    });
+    assert.equal(foreignIpc, 'blocked');
+
     // 10K preset is selected by default
     assert.equal(await page.isChecked("#reads-10k"), true);
     await page.click("#runButton");
@@ -91,6 +113,20 @@ test("align 10,000 reads, then cancel a 1,000,000-read run", { skip: !existsSync
     // the window can't reach the network
     const fetched = await page.evaluate(() => fetch("https://example.com").then(() => "reached", () => "blocked"));
     assert.equal(fetched, "blocked");
+    // Keep navigation probing last: Playwright can retain a pending navigation
+    // after Electron cancels it and then wait forever before subsequent clicks.
+    const navigation = electronApp.evaluate(({ BrowserWindow }) => new Promise((resolve) => {
+      const contents = BrowserWindow.getAllWindows()[0].webContents;
+      contents.once('will-navigate', (event) => resolve(event.defaultPrevented));
+    }));
+    await page.evaluate(() => {
+      const link = document.createElement('a');
+      link.href = 'https://example.com';
+      document.body.append(link);
+      link.click();
+    });
+    assert.equal(await navigation, true);
+    assert.match(page.url(), /\/renderer\/index\.html$/);
   } finally {
     await electronApp.close();
     rmSync(userData, { recursive: true, force: true });

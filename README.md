@@ -13,6 +13,7 @@ A basic seed-search alignment tool to compare read-variants to the nCov-19 virus
 
 ## Contents
 
+- [Download](#download)
 - [Quick start](#quick-start)
 - [Desktop app (Windows)](#desktop-app-windows)
 - [Requirements](#requirements)
@@ -26,6 +27,16 @@ A basic seed-search alignment tool to compare read-variants to the nCov-19 virus
 - [References](#references)
 - [Future goals](#future-goals)
 - [License](#license)
+
+## Download
+
+Download the Windows x64 `GenomeVariantAligner-Setup-<version>.exe` from [GitHub Releases](https://github.com/RyanDBurke/coronavirus-genome-variant/releases). Releases will appear there when a release tag is published. The app includes the reference genome and example reads, works offline, and installs for your user without administrator access.
+
+The installer is unsigned. If Windows SmartScreen displays **Windows protected your PC**, select **More info → Run anyway**.
+
+To check a download, get `SHA256SUMS.txt` from the same release and run `Get-FileHash -Algorithm SHA256 .\GenomeVariantAligner-Setup-<version>.exe` in PowerShell. Compare the hash with the matching filename in the checksum file. The same command works for the standalone `run.exe` CLI download.
+
+**Uninstalling deletes saved runs and app settings.** Export any results you want to keep before uninstalling. See [desktop security and acceptance checks](app/SECURITY.md).
 
 ## Quick start
 
@@ -54,7 +65,7 @@ After a run, the app shows the results without needing samtools or IGV:
 
 This works for the 1,000,000-read set too: the app makes one pass over the SAM file (about 4 seconds) to build depth, allele counts and a position index, then reads only the reads in view straight from the file.
 
-**Install:** open the latest successful run on the [Actions page](https://github.com/RyanDBurke/coronavirus-genome-variant/actions/workflows/ci.yml), download the `installer-windows-x64` artifact, unzip it and run `GenomeVariantAligner-Setup-*.exe`. It installs for your user only, with no admin prompt. The installer isn't code-signed yet, so Windows SmartScreen shows "Windows protected your PC"; choose **More info → Run anyway**.
+**Install:** follow the [download instructions](#download) for the Windows installer and checksum verification.
 
 **Build from source** (needs Node.js 22 and `run.exe` from [Option B](#option-b-windows-native-msys2)):
 

@@ -1,0 +1,108 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate release tag
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          $tag = $env:RELEASE_TAG
+          $number = '(0|[1-9][0-9]*)'
+          $identifier = '(0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)'
+          $pattern = "\Av$number\.$number\.$number(?:-$identifier(?:\.$identifier)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?\z"
+          if ($tag -cnotmatch $pattern) { throw "Invalid SemVer tag: $tag" }
+          "RELEASE_VERSION=$($tag.Substring(1))" >> $env:GITHUB_ENV
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            make
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-zlib
+            mingw-w64-ucrt-x86_64-python
+      - name: Build and test native aligner
+        shell: msys2 {0}
+        run: make test
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Test desktop app
+        working-directory: app
+        run: |
+          npm ci
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          npm test
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          npm audit --omit=dev
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      # Future Azure Trusted Signing: authenticate with AZURE_TENANT_ID,
+      # AZURE_CLIENT_ID, AZURE_CLIENT_SECRET and configure win.azureSignOptions.
+      # Sign run.exe HERE before bundling it; then sign app/installer via builder.
+      # Do not add certificates, secrets or a paid service without owner approval.
+      - name: Version and package
+        working-directory: app
+        run: |
+          npm version --no-git-tag-version --allow-same-version $env:RELEASE_VERSION
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          # npm normalizes away SemVer build metadata; preserve the validated tag exactly.
+          node -e 'const fs=require("node:fs"); for(const name of ["package.json","package-lock.json"]){const p=JSON.parse(fs.readFileSync(name,"utf8")); p.version=process.env.RELEASE_VERSION; if(p.packages)p.packages[""].version=p.version; fs.writeFileSync(name,JSON.stringify(p,null,2)+"\n");}'
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          npm run dist
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Prepare assets and notes
+        run: |
+          $installer = "GenomeVariantAligner-Setup-$env:RELEASE_VERSION.exe"
+          New-Item -ItemType Directory release-assets | Out-Null
+          Copy-Item -LiteralPath "app/dist/$installer" -Destination release-assets
+          Copy-Item -LiteralPath run.exe -Destination release-assets
+          $lines = @($installer, 'run.exe') | ForEach-Object {
+            $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath "release-assets/$_").Hash.ToLowerInvariant()
+            "$hash  $_"
+          }
+          $lines | Set-Content -Encoding utf8NoBOM release-assets/SHA256SUMS.txt
+          @"
+          Windows x64 installer and standalone command-line aligner. The app works offline.
+
+          Download **$installer**. It installs for your user without administrator access.
+          This release is unsigned: if SmartScreen shows **Windows protected your PC**, choose **More info → Run anyway**.
+
+          Download SHA256SUMS.txt alongside your chosen executable. Run ``Get-FileHash -Algorithm SHA256 .\$installer`` (or ``.\run.exe``) in PowerShell and compare the hash with its entry in SHA256SUMS.txt.
+
+          Uninstalling deletes the app's saved runs and settings. Export results you want to keep before uninstalling.
+          "@ | Set-Content -Encoding utf8NoBOM release-notes.md
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          $options = @('--verify-tag', '--title', $env:RELEASE_TAG, '--notes-file', 'release-notes.md')
+          if ($env:RELEASE_VERSION.Split('+')[0].Contains('-')) { $options += @('--prerelease', '--latest=false') }
+          gh release create $env:RELEASE_TAG @options "release-assets/GenomeVariantAligner-Setup-$env:RELEASE_VERSION.exe" release-assets/run.exe release-assets/SHA256SUMS.txt
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: release-test-output
+          path: tests/out/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-app-screenshots
+          path: app/test-results/

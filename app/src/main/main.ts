@@ -184,7 +184,8 @@ async function startRun(window: BrowserWindow, request: RunRequest) {
 
 /** Only our own page may call the API. */
 function fromOurPage(event: IpcMainInvokeEvent) {
-  return event.senderFrame?.url === indexUrl;
+  return BrowserWindow.fromWebContents(event.sender) !== null &&
+    event.senderFrame === event.sender.mainFrame && event.senderFrame.url === indexUrl;
 }
 
 function handle<T extends unknown[], R>(channel: string, fn: (event: IpcMainInvokeEvent, ...args: T) => R) {
@@ -299,6 +300,7 @@ function createWindow() {
       nodeIntegration: false,
       webSecurity: true,
       spellcheck: false,
+      devTools: !app.isPackaged,
     },
   });
   window.once("ready-to-show", () => window.show());
@@ -308,7 +310,11 @@ function createWindow() {
 
 function harden() {
   // no network: the app is fully offline, so refuse every http(s)/ws request outright
-  session.defaultSession.webRequest.onBeforeRequest({ urls: ["*://*/*"] }, (_details, callback) => callback({ cancel: true }));
+  const allowedResources = new Set(["index.html", "styles.css", "renderer.js", "viewer.js"]
+    .map((name) => pathToFileURL(path.join(path.dirname(indexHtml), name)).href));
+  session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
+    callback({ cancel: !allowedResources.has(details.url) });
+  });
   // no camera, microphone, notifications, etc.
   session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
   session.defaultSession.setPermissionCheckHandler(() => false);
@@ -316,10 +322,7 @@ function harden() {
   app.on("web-contents-created", (_event, contents) => {
     contents.on("will-navigate", (event) => event.preventDefault());
     contents.on("will-attach-webview", (event) => event.preventDefault());
-    contents.setWindowOpenHandler(({ url }) => {
-      if (url.startsWith("https://")) void shell.openExternal(url);
-      return { action: "deny" };
-    });
+    contents.setWindowOpenHandler(() => ({ action: "deny" }));
   });
 }
 

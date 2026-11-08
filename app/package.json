@@ -6,6 +6,7 @@
   "author": "Ryan Burke",
   "license": "MIT",
   "private": true,
+  "_signingNotes": "Future signing: configure build.win.azureSignOptions (endpoint, codeSigningAccountName, certificateProfileName, publisherName) and AZURE_TENANT_ID/AZURE_CLIENT_ID/AZURE_CLIENT_SECRET. Sign ../run.exe before packaging. No signing is configured now.",
   "main": "build/main/main.js",
   "scripts": {
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.renderer.json && node scripts/copy-static.mjs",
@@ -23,6 +24,7 @@
   "build": {
     "appId": "io.github.ryandburke.genome-variant-aligner",
     "productName": "Genome Variant Aligner",
+    "copyright": "Copyright © 2026 Ryan Burke",
     "directories": { "output": "dist" },
     "files": ["build/**", "package.json"],
     "asar": true,
@@ -40,10 +42,11 @@
       "enableEmbeddedAsarIntegrityValidation": true,
       "onlyLoadAppFromAsar": true
     },
-    "win": { "target": ["nsis"] },
+    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }], "requestedExecutionLevel": "asInvoker" },
     "nsis": {
       "oneClick": true,
       "perMachine": false,
+      "deleteAppDataOnUninstall": true,
       "artifactName": "GenomeVariantAligner-Setup-${version}.${ext}"
     }
   }
