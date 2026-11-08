@@ -1,0 +1,53 @@
+name	pos	snps	indel
+exact_0	20406	0	
+exact_1	20400	0	
+exact_2	5819	0	
+exact_3	22068	0	
+exact_4	25282	0	
+exact_5	15207	0	
+exact_6	14600	0	
+exact_7	15638	0	
+exact_8	12180	0	
+exact_9	13841	0	
+snp_first_seed_0	17893	1	
+snp_first_seed_1	3104	1	
+snp_first_seed_2	6968	1	
+snp_first_seed_3	6828	1	
+snp_first_seed_4	15550	1	
+snp_first_seed_5	23224	1	
+snp_first_seed_6	28708	1	
+snp_first_seed_7	24584	1	
+snp_first_seed_8	14609	1	
+snp_first_seed_9	28130	1	
+snp_two_seeds_0	27712	2	
+snp_two_seeds_1	8718	2	
+snp_two_seeds_2	15302	2	
+snp_two_seeds_3	20608	2	
+snp_two_seeds_4	20298	2	
+snp_two_seeds_5	8147	2	
+snp_two_seeds_6	23872	2	
+snp_two_seeds_7	5409	2	
+snp_two_seeds_8	7797	2	
+snp_two_seeds_9	26327	2	
+insertion_0	3306	0	I
+insertion_1	11667	0	I
+insertion_2	28005	0	I
+insertion_3	20619	0	I
+insertion_4	28406	0	I
+insertion_5	2733	0	I
+insertion_6	11501	0	I
+insertion_7	19768	0	I
+insertion_8	12954	0	I
+insertion_9	10439	0	I
+deletion_0	29318	0	D
+deletion_1	13041	0	D
+deletion_2	12081	0	D
+deletion_3	19755	0	D
+deletion_4	13273	0	D
+deletion_5	9195	0	D
+deletion_6	10937	0	D
+deletion_7	14713	0	D
+deletion_8	3051	0	D
+deletion_9	4297	0	D
+genome_start	1	0	
+genome_end	29783	0	
