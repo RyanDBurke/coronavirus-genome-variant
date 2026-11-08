@@ -8,6 +8,9 @@
 
 #include "std.h"
 
+/* reference bases added on each side of a candidate position before aligning */
+#define SLICE_PAD 5
+
 /* takes the fmIndex of a ref-sequence, a .fa of single-end reads, and aligns them 
     * @param fm: fm-index
     * @param reads: FASTA file of 100bp reads
@@ -38,18 +41,22 @@ void getInterval(Interval *interval, int *matchLength, FM *fm, char* seed);
  */
 int referencePos(int *refPos, Interval *interval, int matchLength, FM *fm, int seedEnd);
 
-/* return a single alignment struct to output parameter A, and length of alignments-array
-    * @param alignments: an array of Alignment structs
-    * @param read: our current read-sequence
-    * @param ref: our reference genome sequence
-    * @param refPos: int-array of all reference positions in our reference genome
+/* fitting alignment of read at each candidate position; keeps only the best-scoring hits
+    * @param hits: best alignments so far for this read (across all seeds); updated in place
+    * @param read, readLength: our current read-sequence and its length
+    * @param ref, refLength: our reference genome sequence and its length
+    * @param refPos: int-array of candidate read start positions (0-based) in the reference
     * @param refPosLength: length of refPos int-array
     * @param gap: our gap penalty
-    * @param bestScore: our current best score
- */ 
-int alignment(Alignment alignments[], char *read, char *ref, int *refPos, int refPosLength, int gap, double bestScore);
+    * @param bestScore: best score so far for this read; updated in place
+ */
+void alignment(Alignments *hits, char *read, int readLength, char *ref, int refLength, int *refPos, int refPosLength, int gap, int *bestScore);
 
-/* builds OPT-matrix, and returns OPT[n][m] -- which is the edit distance between x and y
+/* empties an alignment list, freeing its CIGAR strings */
+void clearAlignments(Alignments *hits);
+
+/* builds OPT-matrix for a fitting alignment of y inside x, and returns the best score
+    (max over the last column, so reference bases before or after the read are free)
     * @param OPT: our OPT-matrix
     * @param x: our slice from the reference genome
     * @param y: our read
@@ -65,6 +72,7 @@ int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int ga
     * @param gap: our gap penalty
     * @param x: our slice from the reference genome
     * @param y: our read
+    * @param offset: set to the slice position (0-based) where the read starts
  */
 char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *y, int *offset);
 
@@ -83,11 +91,10 @@ int score(char a, char b, int gap);
  */
 void substring(char *result, char* string, int start, int end);
 
-/* return correctly formatted CIGAR-string (i.e 3M2D2M)
-    * @param cigar: incorrectly formatted cigar-string (i.e MMMDDMM)
-    * @param length: length of cigar-string passed in
+/* return run-length encoded CIGAR-string (i.e MMMDDMM -> 3M2D2M)
+    * @param ops: one CIGAR op per character, in read order
  */
-char *formatCigar(char *cigar, int length);
+char *formatCigar(const char *ops);
 
 /* returns our seed skip interval, and intuitively, our seed length */
 int seedSkip(int L);
@@ -96,7 +103,6 @@ int seedSkip(int L);
 int min(int a, int b);
 int max(int a, int b);
 int maxAlign(int a, int b, int c);
-int minAlign(int a, int b, int c);
 
 /* print methods 
     * @param OPT: our OPT-matrix
@@ -109,11 +115,5 @@ void printMatrix(int OPT[MAXROW][MAXCOL], int n, int m, char *x, char *y);
     * @param sam: our SAM struct
  */
 void writeSAM(SAM *sam, FILE *f);
-
-/* free our SAM struct */
-void destroySAM(SAM *sam);
-
-/* destroy our alignment array */
-void destroyAlignment(Alignment *A);
 
 #endif

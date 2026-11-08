@@ -63,77 +63,61 @@ void commands() {
     printf("   ./run\n");
     printf("   ./run covid 1K\n");
     printf("   ./run covid 10K\n");
-    printf("   ./run covid 1M\n\n");
+    printf("   ./run covid 1M\n");
+    printf("   ./run <reference.fa> <reads.fa[.gz]> <output.sam>\n\n");
     printf("\033[0m");
-    //printf("---------------------------------------------------------------------------------------------------\n\n");
 }
 
-/* handle command-line args */
-void handleArgs(char **argv, char **ref_seq, char **indexOut, char **reads, char **alignOut, double *READ, bool *makeProgressBar) {
+/* sets the paths for one of the "covid" presets */
+static void covidPreset(char **ref_seq, char **reads, char *readsFile, double *READ, double count, char *label) {
+    *ref_seq = "2019-nCoV.fa";
+    *reads = readsFile;
+    *READ = count;
+    printf("[Aligning over %s reads]\n\n", label);
+}
+
+/* handle command-line args; returns 0 on success, non-zero for invalid usage */
+int handleArgs(int argc, char **argv, char **ref_seq, char **indexOut, char **reads, char **alignOut, double *READ, bool *makeProgressBar) {
+
+    /* defaults shared by every mode */
+    *indexOut = "./fm-output/FMindex.txt";
+    *alignOut = "./mappings/mapping.sam";
+    *makeProgressBar = true;
 
     /* [./run] executes with small default inputs */
-    if (argv[1] == NULL) {
+    if (argc == 1) {
         *ref_seq = "./default/ref-small.fa";
-        *indexOut = "./fm-output/FMindex.txt";
         *reads = "./default/reads-small.fa";
-        *alignOut = "./mappings/mapping.sam";
-
-        /* pass # of reads and make progress bar */
         *READ = 1;
-        *makeProgressBar = true;
+        return 0;
     }
 
-    /* [./run covid 1k] executes for coronavirus genome with 1,000 reads*/
-    else if (strcmp(lower(argv[1]), "covid") == 0 && (strcmp(argv[2], "1K") == 0 || strcmp(argv[2], "1k") == 0)) {
-        *ref_seq = "2019-nCoV.fa";
-        *indexOut = "./fm-output/FMindex.txt";
-        *reads = "./reads/reads_1K.fa.gz";
-        *alignOut = "./mappings/mapping.sam";
-
-        printf("[Aligning over 1,000 reads]\n\n");
-
-        /* pass # of reads and make progress bar */
-        *READ = 1000;
-        *makeProgressBar = true;
+    /* [./run covid 1K|10K|1M] executes for coronavirus genome */
+    if (argc == 3 && strcasecmp(argv[1], "covid") == 0) {
+        if (strcasecmp(argv[2], "1K") == 0) {
+            covidPreset(ref_seq, reads, "./reads/reads_1K.fa.gz", READ, 1000, "1,000");
+            return 0;
+        }
+        if (strcasecmp(argv[2], "10K") == 0) {
+            covidPreset(ref_seq, reads, "./reads/reads_10K.fa.gz", READ, 10000, "10,000");
+            return 0;
+        }
+        if (strcasecmp(argv[2], "1M") == 0) {
+            covidPreset(ref_seq, reads, "./reads/reads_1M.fa.gz", READ, 1000000, "1M");
+            return 0;
+        }
+        return 1;
     }
 
-    /* [./run covid 10k] executes for coronavirus genome with 10,000 reads*/
-    else if (strcmp(lower(argv[1]), "covid") == 0 && (strcmp(argv[2], "10K") == 0 || strcmp(argv[2], "10k") == 0)) {
-        *ref_seq = "2019-nCoV.fa";
-        *indexOut = "./fm-output/FMindex.txt";
-        *reads = "./reads/reads_10K.fa.gz";
-        *alignOut = "./mappings/mapping.sam";
-
-        printf("[Aligning over 10,000 reads]\n\n");
-
-        /* pass # of reads and make progress bar */
-        *READ = 10000;
-        *makeProgressBar = true;
+    /* [./run <reference.fa> <reads.fa[.gz]> <output.sam>] explicit paths */
+    if (argc == 4) {
+        *ref_seq = argv[1];
+        *reads = argv[2];
+        *alignOut = argv[3];
+        *READ = 0;                  /* unknown read count */
+        *makeProgressBar = false;   /* so no progress bar */
+        return 0;
     }
 
-    /* [./run covid 1M] executes for coronavirus genome with 1 Million reads */
-    else if (strcmp(lower(argv[1]), "covid") == 0 && (strcmp(argv[2], "1M") == 0 || strcmp(argv[2], "1m") == 0)) {
-        *ref_seq = "2019-nCoV.fa";
-        *indexOut = "./fm-output/FMindex.txt";
-        *reads = "./reads/reads_1M.fa.gz";
-        *alignOut = "./mappings/mapping.sam";
-
-        printf("[Aligning over 1M reads]\n\n");
-
-        /* pass # of reads and make progress bar */
-        *READ = 1000000;
-        *makeProgressBar = true;
-    } 
-    
-    /* just execute default*/
-    else {
-        *ref_seq = "./default/ref-small.fa";
-        *indexOut = "./fm-output/FMindex.txt";
-        *reads = "./default/reads-small.fa";
-        *alignOut = "./mappings/mapping.sam";
-
-        /* pass # of reads and make progress bar */
-        *READ = 1;
-        *makeProgressBar = true;
-    }
+    return 1;
 }

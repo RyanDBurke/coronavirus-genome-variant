@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h> /* strcasecmp */
 #include <ctype.h>
 #include <stdbool.h>
 #include <math.h>
@@ -49,10 +50,17 @@ typedef struct Rotation {
 
 /* struct for an alignment and its score */
 typedef struct singleAlignment {
-    char    *cigar; // needs to be free'd in each alignment
+    char    *cigar; // owned; freed by clearAlignments()
     int     score;
-    int     pos;
+    int     pos;   // 1-based reference position (SAM POS)
 } Alignment;
+
+/* growable list of alignments */
+typedef struct alignments {
+    Alignment   *items;
+    int         count;
+    int         capacity;
+} Alignments;
 
 /* tuple for interval [start, end) */
 typedef struct interval {
