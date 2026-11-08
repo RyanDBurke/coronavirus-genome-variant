@@ -86,7 +86,7 @@ Run **one** of these:
 | `./run` | `wsl ./run` | `default/reads-small.fa` | Small demo against `default/ref-small.fa`. Also writes the FM-Index to `fm-output/FMindex.txt`. |
 | `./run covid 1K` | `wsl ./run covid 1K` | `reads/reads_1K.fa.gz` | 1,000 reads against `2019-nCoV.fa` |
 | `./run covid 10K` | `wsl ./run covid 10K` | `reads/reads_10K.fa.gz` | 10,000 reads |
-| `./run covid 1M` | `wsl ./run covid 1M` | `reads/reads_1M.fa.gz` | 1,000,000 reads. Takes a while, so a precomputed result is in `mappings/mapping1M.sam`. |
+| `./run covid 1M` | `wsl ./run covid 1M` | `reads/reads_1M.fa.gz` | 1,000,000 reads. Takes about 2½ minutes, so a precomputed result is in `mappings/mapping1M.sam`. |
 | `./run REF.fa READS.fa OUT.sam` | `wsl ./run REF.fa READS.fa OUT.sam` | any FASTA file (`.gz` works too) | Your own reference and reads; writes to `OUT.sam`. |
 
 The presets write their alignments to `mappings/mapping.sam`, overwriting the previous result. The FM-Index file is only written for references of 50 bp or less, which is why only the demo produces it.
