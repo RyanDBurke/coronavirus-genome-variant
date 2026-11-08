@@ -1,57 +1,24 @@
 #include "../lib/misc.h"
 
-/* lowercase of a string */
-char* lower(char* s) {
-    for (int i = 0; i < strlen(s); i++) {
-        s[i] = tolower(s[i]);
-    }
-    return s;
-}
-
-/* uppercase of a string */
-char* upper(char* s) {
-    for (int i = 0; i < strlen(s); i++) {
-        s[i] = toupper(s[i]);
-    }
-    return s;
-}
-
-/* progress bar */
+/* progress bar: redraws only when the whole-number percentage changes */
 void pb(bool makeProgressBar, double percentageDone) {
-    if(percentageDone >= 0 && percentageDone < .10) {
-            printf("\rProgress: [#           ] %.0lf%%", percentageDone*100);
-            fflush(stdout);
-        } else if (percentageDone > .10 && percentageDone < .20) {
-            printf("\rProgress: [##          ] %.0lf%%", percentageDone*100);
-            fflush(stdout);
-        } else if (percentageDone > .20 && percentageDone < .30) {
-            printf("\rProgress: [###         ] %.0lf%%", percentageDone*100);
-            fflush(stdout);
-        } else if (percentageDone > .30 && percentageDone < .40) {
-            printf("\rProgress: [####        ] %.0lf%%", percentageDone*100);
-            fflush(stdout);
-        } else if (percentageDone > .40 && percentageDone < .50) {
-            printf("\rProgress: [#####       ] %.0lf%%", percentageDone*100);
-            fflush(stdout);
-        } else if (percentageDone > .50 && percentageDone < .60) {
-            printf("\rProgress: [######      ] %.0lf%%", percentageDone*100);
-            fflush(stdout);
-        } else if (percentageDone > .60 && percentageDone < .70) {
-            printf("\rProgress: [########    ] %.0lf%%", percentageDone*100);
-            fflush(stdout);
-        } else if (percentageDone > .70 && percentageDone < .80) {
-            printf("\rProgress: [#########   ] %.0lf%%", percentageDone*100);
-            fflush(stdout);
-        } else if (percentageDone > .80 && percentageDone < .90) {
-            printf("\rProgress: [##########  ] %.0lf%%", percentageDone*100);
-            fflush(stdout);
-        } else if (percentageDone > .90 && percentageDone < .98) {
-            printf("\rProgress: [########### ] %.0lf%%", percentageDone*100);
-            fflush(stdout);
-        } else {
-            printf("\rProgress: [############] %.0lf%%", percentageDone*100);
-            fflush(stdout);
-        }
+    static int lastPercent = -1;
+    if (!makeProgressBar) {
+        return;
+    }
+
+    /* clamp to [0, 100] */
+    int percent = (int) (percentageDone * 100);
+    percent = percent < 0 ? 0 : (percent > 100 ? 100 : percent);
+    if (percent == lastPercent) {
+        return;
+    }
+    lastPercent = percent;
+
+    /* 12-character bar with at least one '#' */
+    int filled = 1 + percent * 11 / 100;
+    printf("\rProgress: [%.*s%*s] %d%%", filled, "############", 12 - filled, "", percent);
+    fflush(stdout);
 }
 
 /* print commands */
