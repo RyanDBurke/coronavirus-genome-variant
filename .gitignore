@@ -7,3 +7,6 @@
 /app/build/
 /app/dist/
 /app/test-results/
+
+# local handoff notes
+/HANDOFF.md
