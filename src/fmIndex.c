@@ -1,4 +1,5 @@
 #include "fmIndex.h"
+#include "misc.h"
 KSEQ_INIT(gzFile, gzread)
 
 /* references up to this length get their full FM-Index written to a text file */
@@ -28,12 +29,12 @@ int fmIndex(FM *fm, char *reference, char *output) {
 
     /* name (SAM RNAME), taken from the FASTA header; fall back if the header has none */
     const char *name = (seq->name.l > 0) ? seq->name.s : "ref";
-    fm->name = malloc(strlen(name) + 1);
+    fm->name = xmalloc(strlen(name) + 1);
     strcpy(fm->name, name);
 
     /* seq */
     fm->length = (int) seq->seq.l;
-    fm->seq = malloc(fm->length + 1);
+    fm->seq = xmalloc(fm->length + 1);
     memcpy(fm->seq, seq->seq.s, fm->length + 1);
 
     kseq_destroy(seq);
@@ -83,7 +84,7 @@ int cmpSA(const void *a, const void *b) {
 
 /* builds suffix array of seq + '$' (length + 1 entries; entry 0 is always length) */
 int *buildSuffixArray(char *seq, int length) {
-    int *sa = malloc(sizeof(int) * (length + 1));
+    int *sa = xmalloc(sizeof(int) * (length + 1));
     for (int i = 0; i <= length; i++) {
         sa[i] = i;
     }
@@ -114,9 +115,9 @@ void buildIndex(FM *fm) {
 
     /* BWT (L column) and F column, straight from the suffix array:
        row r is the rotation starting at sa[r]; L is the character before it, F is the one at it */
-    fm->bwt = malloc(rows + 1);
-    fm->F = malloc(rows + 1);
-    fm->bwtCodes = malloc(rows);
+    fm->bwt = xmalloc(rows + 1);
+    fm->F = xmalloc(rows + 1);
+    fm->bwtCodes = xmalloc(rows);
     for (int r = 0; r < rows; r++) {
         int start = fm->suffixArray[r];
         fm->F[r] = (start == n) ? FM_SENTINEL : fm->seq[start];
@@ -132,8 +133,8 @@ void buildIndex(FM *fm) {
     fm->F[rows] = '\0';
 
     /* C[c]: number of characters in T that sort before c */
-    fm->C = calloc(sigma, sizeof(int));
-    int *counts = calloc(sigma, sizeof(int));
+    fm->C = xcalloc(sigma, sizeof(int));
+    int *counts = xcalloc(sigma, sizeof(int));
     for (int r = 0; r < rows; r++) {
         counts[fm->bwtCodes[r]]++;
     }
@@ -144,8 +145,8 @@ void buildIndex(FM *fm) {
 
     /* occurrence checkpoints: occ[k][c] = count of c in bwt[0, k * OCC_SAMPLE) */
     int checkpoints = rows / OCC_SAMPLE + 1;
-    fm->occ = calloc((size_t) checkpoints * sigma, sizeof(int));
-    int *running = calloc(sigma, sizeof(int));
+    fm->occ = xcalloc((size_t) checkpoints * sigma, sizeof(int));
+    int *running = xcalloc(sigma, sizeof(int));
     for (int r = 0; r <= rows; r++) {
         if (r % OCC_SAMPLE == 0) {
             memcpy(fm->occ + (size_t) (r / OCC_SAMPLE) * sigma, running, sizeof(int) * sigma);

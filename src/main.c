@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
     }
 
     /* our FM-Index struct */
-    FM *fm = calloc(1, sizeof(FM));
+    FM *fm = xcalloc(1, sizeof(FM));
 
     /* run fmIndex, then the aligner */
     int status = fmIndex(fm, ref_seq, indexOut);

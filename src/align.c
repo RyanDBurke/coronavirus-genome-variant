@@ -77,7 +77,7 @@ int align(FM *fm, char *reads, char *output, double READ, bool makePB) {
 
             /* for each (read-length / 5) seed (20bp seeds for our 100bp reads) */
             int skip = seedSkip(readLength);
-            char *seed = malloc(skip + 1);
+            char *seed = xmalloc(skip + 1);
             for (int seedStart = 0; seedStart < readLength; seedStart += skip) {
                 int seedEnd = min(readLength, seedStart + skip);
 
@@ -93,7 +93,7 @@ int align(FM *fm, char *reads, char *output, double READ, bool makePB) {
                 }
 
                 /* candidate read start positions in the reference */
-                int *refPos = malloc(sizeof(int) * (interval.end - interval.start));
+                int *refPos = xmalloc(sizeof(int) * (interval.end - interval.start));
                 int refPosLength = referencePos(refPos, &interval, matchLength, fm, seedEnd);
 
                 /* fitting alignment at each candidate, keeping the best across all seeds */
@@ -189,7 +189,7 @@ void clearAlignments(Alignments *hits) {
 static void addAlignment(Alignments *hits, int score, int pos, char *cigar) {
     if (hits->count == hits->capacity) {
         hits->capacity = hits->capacity ? hits->capacity * 2 : 4;
-        hits->items = realloc(hits->items, sizeof(Alignment) * hits->capacity);
+        hits->items = xrealloc(hits->items, sizeof(Alignment) * hits->capacity);
     }
     hits->items[hits->count].score = score;
     hits->items[hits->count].pos = pos;
@@ -203,7 +203,7 @@ void alignment(Alignments *hits, char *read, int readLength, char *ref, int refL
     /* X-axis is our coronavirus reference genome slice */
     /* Y-axis is our read we wish to align to our reference */
     int OPT[MAXROW][MAXCOL];
-    char *x = malloc(readLength + 2 * SLICE_PAD + 1);
+    char *x = xmalloc(readLength + 2 * SLICE_PAD + 1);
 
     for (int p = 0; p < refPosLength; p++) {
 
@@ -272,7 +272,7 @@ int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int ga
     for (int i = 1; i <= n; i++) {
         for (int j = 1; j <= m; j++) {
             OPT[i][j] = maxAlign(
-                    (score(x[i - 1], y[j - 1], gap) + OPT[i - 1][j - 1]),
+                    (score(x[i - 1], y[j - 1]) + OPT[i - 1][j - 1]),
                     (gap + OPT[i - 1][j]),
                     (gap + OPT[i][j - 1])
                 );
@@ -302,10 +302,10 @@ char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *
     n = row;
 
     /* backtrace from the end of the read to its start, collecting one op per step */
-    char *ops = malloc(n + m + 1);
+    char *ops = xmalloc(n + m + 1);
     int length = 0;
     while (m > 0) {
-        if (n > 0 && OPT[n][m] == score(x[n - 1], y[m - 1], gap) + OPT[n - 1][m - 1]) {
+        if (n > 0 && OPT[n][m] == score(x[n - 1], y[m - 1]) + OPT[n - 1][m - 1]) {
             ops[length++] = 'M';
             n--;
             m--;
@@ -339,7 +339,7 @@ char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *
 }
 
 /* return score between two characters */
-int score(char a, char b, int gap) {
+int score(char a, char b) {
     if (a == 'N' || b == 'N') { /* if you see 'N', assume it matches */
         return 0;
     }
@@ -358,7 +358,7 @@ char *formatCigar(const char *ops) {
 
     /* a run of length r takes at most r + 1 characters, so 2 * length is enough */
     size_t length = strlen(ops);
-    char *result = malloc(2 * length + 1);
+    char *result = xmalloc(2 * length + 1);
     size_t written = 0;
 
     for (size_t i = 0; i < length;) {
@@ -366,7 +366,10 @@ char *formatCigar(const char *ops) {
         while (j < length && ops[j] == ops[i]) {
             j++;
         }
-        written += sprintf(result + written, "%zu%c", j - i, ops[i]);
+        char run[32];
+        int runLength = snprintf(run, sizeof run, "%zu%c", j - i, ops[i]);
+        memcpy(result + written, run, runLength);
+        written += runLength;
         i = j;
     }
     result[written] = '\0';

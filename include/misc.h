@@ -22,4 +22,9 @@ void commands();
  */
 int handleArgs(int argc, char **argv, char **ref_seq, char **indexOut, char **reads, char **alignOut, double *READ, bool *makeProgressBar);
 
+/* allocation wrappers: print an error and exit if memory runs out, so callers never see NULL */
+void *xmalloc(size_t size);
+void *xcalloc(size_t count, size_t size);
+void *xrealloc(void *ptr, size_t size);
+
 #endif

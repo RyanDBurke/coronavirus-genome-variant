@@ -88,3 +88,33 @@ int handleArgs(int argc, char **argv, char **ref_seq, char **indexOut, char **re
 
     return 1;
 }
+
+/* allocation wrappers: report and exit instead of returning NULL */
+static void outOfMemory(size_t bytes) {
+    fprintf(stderr, "out of memory allocating %zu bytes\n", bytes);
+    exit(1);
+}
+
+void *xmalloc(size_t size) {
+    void *p = malloc(size);
+    if (p == NULL && size != 0) {
+        outOfMemory(size);
+    }
+    return p;
+}
+
+void *xcalloc(size_t count, size_t size) {
+    void *p = calloc(count, size);
+    if (p == NULL && count != 0 && size != 0) {
+        outOfMemory(count * size);
+    }
+    return p;
+}
+
+void *xrealloc(void *ptr, size_t size) {
+    void *p = realloc(ptr, size);
+    if (p == NULL && size != 0) {
+        outOfMemory(size);
+    }
+    return p;
+}

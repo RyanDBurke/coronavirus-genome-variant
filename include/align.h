@@ -76,12 +76,11 @@ int editDistance(int OPT[MAXROW][MAXCOL], char *x, char *y, int n, int m, int ga
  */
 char *buildCigar(int OPT[MAXROW][MAXCOL], int n, int m, int gap, char *x, char *y, int *offset);
 
-/* return score between two characters
+/* return score between two characters: +1 match, -1 mismatch, 0 if either is 'N'
     * @param a: a character in x-axis string (reference genome)
     * @param b: a character in y-axis string (read)
-    * @param gap: our gap penalty
  */
-int score(char a, char b, int gap);
+int score(char a, char b);
 
 /* return substring from [start, end)
     * @param res: output for substring
