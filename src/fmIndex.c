@@ -5,7 +5,7 @@ KSEQ_INIT(gzFile, gzread)
 /* references up to this length get their full FM-Index written to a text file */
 #define FM_WRITE_LIMIT 50
 
-int fmIndex(FM *fm, char *reference, char *output) {
+int fmIndex(FM *fm, const char *reference, const char *output) {
 
     /* fasta stuff */
     if (reference == NULL) {
@@ -52,18 +52,10 @@ int fmIndex(FM *fm, char *reference, char *output) {
         }
         writeFM(fm, f);
         fclose(f);
-        printf("> You can find the serialized FM-Index for \"%s\" in: ", reference);
-        printf("\033[1;31m");
-        printf("%s\n\n", output);
-        printf("\033[0m");
+        info("> FM-Index for \"%s\" written to %s%s%s\n", reference, highlight(), output, highlightEnd());
     } else {
-        printf("\t> Sequences over %d in length are not written to file\n", FM_WRITE_LIMIT);
-        printf("\t> Your sequence length: %d\n", fm->length);
-        printf("\t> Use ");
-        printf("\033[1;31m");
-        printf("./run ");
-        printf("\033[0m");
-        printf("to see a serialized FM-Index.\n\n");
+        info("> Reference is %d bp; the FM-Index is only written to a file for references up to %d bp (try ./run)\n",
+             fm->length, FM_WRITE_LIMIT);
     }
 
     return 0;

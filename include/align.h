@@ -18,7 +18,7 @@
     * @param READ: total # of reads (for progress bar)
     * @param makePB: to PB or not to PB, that is the question! (PB = progress bar)
  */
-int align(FM *fm, char *reads, char *output, double READ, bool makePB);
+int align(FM *fm, const char *reads, const char *output, double READ, bool makePB);
 
 /**************************/
 /* AUX FUNTIONS FOR ALIGN */

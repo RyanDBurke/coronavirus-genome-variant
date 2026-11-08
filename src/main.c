@@ -6,28 +6,26 @@
 #include "fmIndex.h"
 #include "misc.h"
 
-/* runs align and fmIndex */
+/* builds the FM-Index of the reference, then aligns the reads to it */
 int main(int argc, char **argv) {
 
-    /* string path to each relevant file */
-    char *ref_seq, *indexOut, *reads, *alignOut;
-    double READ = 0;
-    bool makeProgressBar = false;
-
-    /* handle args */
-    if (handleArgs(argc, argv, &ref_seq, &indexOut, &reads, &alignOut, &READ, &makeProgressBar) != 0) {
-        fprintf(stderr, "invalid arguments\n");
-        commands();
-        return 1;
+    Options opt;
+    switch (parseArgs(argc, argv, &opt)) {
+        case ARGS_HELP:
+            return 0;
+        case ARGS_ERROR:
+            fprintf(stderr, "run: try 'run --help'\n");
+            return 1;
     }
+    quietMode = opt.quiet;
 
     /* our FM-Index struct */
     FM *fm = xcalloc(1, sizeof(FM));
 
-    /* run fmIndex, then the aligner */
-    int status = fmIndex(fm, ref_seq, indexOut);
+    /* run fmIndex, then the aligner (progress bar only when the read count is known) */
+    int status = fmIndex(fm, opt.ref, opt.indexOut);
     if (status == 0) {
-        status = align(fm, reads, alignOut, READ, makeProgressBar);
+        status = align(fm, opt.reads, opt.out, opt.readCount, opt.readCount > 0);
     }
 
     /* free our fm-index */

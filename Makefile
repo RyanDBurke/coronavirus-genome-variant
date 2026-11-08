@@ -49,9 +49,9 @@ $(BUILD) $(BUILD)/asan:
 test: run $(BUILD)/test_units $(BUILD)/run-asan
 	./$(BUILD)/test_units
 	@mkdir -p $(OUT)
-	./$(BUILD)/run-asan 2019-nCoV.fa tests/fixtures/reads.fa $(OUT)/fixture.sam > /dev/null
+	./$(BUILD)/run-asan --quiet -r 2019-nCoV.fa -q tests/fixtures/reads.fa -o $(OUT)/fixture.sam
 	$(PYTHON) tests/validate_sam.py --ref 2019-nCoV.fa --sam $(OUT)/fixture.sam --truth tests/fixtures/truth.tsv
-	./run 2019-nCoV.fa reads/reads_1K.fa.gz $(OUT)/reads_1K.sam > /dev/null
+	./run --quiet -r 2019-nCoV.fa -q reads/reads_1K.fa.gz -o $(OUT)/reads_1K.sam
 	$(PYTHON) tests/validate_sam.py --ref 2019-nCoV.fa --sam $(OUT)/reads_1K.sam --min-mapped $(MIN_MAPPED_1K)
 
 # regenerate the end-to-end fixture (output is committed; only needed if the generator changes)

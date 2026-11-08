@@ -87,9 +87,19 @@ Run **one** of these:
 | `./run covid 1K` | `wsl ./run covid 1K` | `reads/reads_1K.fa.gz` | 1,000 reads against `2019-nCoV.fa` |
 | `./run covid 10K` | `wsl ./run covid 10K` | `reads/reads_10K.fa.gz` | 10,000 reads |
 | `./run covid 1M` | `wsl ./run covid 1M` | `reads/reads_1M.fa.gz` | 1,000,000 reads. Takes about 2½ minutes. |
-| `./run REF.fa READS.fa OUT.sam` | `wsl ./run REF.fa READS.fa OUT.sam` | any FASTA file (`.gz` works too) | Your own reference and reads; writes to `OUT.sam`. |
+| `./run -r REF.fa -q READS.fa -o OUT.sam` | `wsl ./run -r REF.fa -q READS.fa -o OUT.sam` | any FASTA file (`.gz` works too) | Your own reference and reads. |
 
-The presets write their alignments to `mappings/mapping.sam`, overwriting the previous result. The FM-Index file is only written for references of 50 bp or less, which is why only the demo produces it.
+Without `-o`, alignments go to `mappings/mapping.sam`, overwriting the previous result. The FM-Index file is only written for references of 50 bp or less, which is why only the demo produces it.
+
+Other options, which also work with the presets (for example `./run covid 1K -o 1k.sam`):
+
+| Option | Effect |
+|---|---|
+| `-o -` | Write SAM to stdout, e.g. `./run -r REF.fa -q READS.fa -o - \| samtools sort -o out.bam` |
+| `--quiet` | No progress bar or status messages |
+| `-h`, `--help` | List all options |
+
+Status messages and the progress bar go to stderr, so they never mix with SAM output.
 
 Reads that don't align still get a SAM record, flagged unmapped (`FLAG 4`). When a read aligns equally well in several places, the first is the primary record and the others are flagged secondary (`FLAG 256`).
 

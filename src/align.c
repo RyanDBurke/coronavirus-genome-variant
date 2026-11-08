@@ -20,7 +20,7 @@ static void writeUnmapped(FILE *f, kseq_t *seq) {
     writeSAM(&s, f);
 }
 
-int align(FM *fm, char *reads, char *output, double READ, bool makePB) {
+int align(FM *fm, const char *reads, const char *output, double READ, bool makePB) {
 
     /* keep track of our progress */
     double progress = 0.0;
@@ -36,8 +36,9 @@ int align(FM *fm, char *reads, char *output, double READ, bool makePB) {
         return 1;
     }
 
-    /* open our output file (.sam) */
-    FILE *f = fopen(output, "w");
+    /* open our output file (.sam), or write to stdout for "-" */
+    bool toStdout = strcmp(output, "-") == 0;
+    FILE *f = toStdout ? stdout : fopen(output, "w");
     if (f == NULL) {
         fprintf(stderr, "error opening output file: %s\n", output);
         gzclose(fp);
@@ -54,6 +55,7 @@ int align(FM *fm, char *reads, char *output, double READ, bool makePB) {
 
     /* best-scoring alignments of the current read, across all of its seeds */
     Alignments hits = {0};
+    info("> Aligning reads from %s\n", reads);
 
     /* parse .fa file containing our reads */
     while (kseq_read(seq) >= 0) {
@@ -128,16 +130,21 @@ int align(FM *fm, char *reads, char *output, double READ, bool makePB) {
 
     clearAlignments(&hits);
     free(hits.items);
-    fclose(f);
-
-    printf("\n\n> You can find the SAM-formatted alignments in: ");
-    printf("\033[1;31m");
-    printf("%s\n", output);
-    printf("\033[0m");
-
-    /* successful */
     kseq_destroy(seq);
     gzclose(fp);
+
+    /* a failed write (e.g. a full disk) only shows up here */
+    bool writeFailed = ferror(f) != 0;
+    writeFailed |= toStdout ? fflush(f) != 0 : fclose(f) != 0;
+    if (writeFailed) {
+        fprintf(stderr, "error writing output file: %s\n", output);
+        return 1;
+    }
+
+    if (makePB) {
+        info("\n");  /* end the progress bar line */
+    }
+    info("> SAM alignments written to %s%s%s\n", highlight(), output, highlightEnd());
     return 0;
 }
 
