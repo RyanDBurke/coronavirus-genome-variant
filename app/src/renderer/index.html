@@ -10,44 +10,74 @@
   <script type="module" src="renderer.js"></script>
 </head>
 <body>
-  <main class="app">
-    <header class="masthead">
-      <h1>Genome Variant Aligner</h1>
-      <p>Align sequencing reads to a reference genome and see where they map.</p>
-    </header>
+  <h1 class="visually-hidden">Genome Variant Aligner</h1>
 
-    <section class="step" aria-labelledby="ref-title">
-      <div class="step-head">
-        <span class="step-num" aria-hidden="true">1</span>
-        <h2 id="ref-title">Reference genome</h2>
-        <button class="help-toggle" type="button" aria-expanded="false" aria-controls="help-ref" aria-label="About this step: reference genome">?</button>
-      </div>
+  <!-- Step indicator: a glass pill at the top, as on rburke.dev. Later steps unlock as you go. -->
+  <nav class="steps" aria-label="Steps">
+    <span class="logo" aria-hidden="true">GVA</span>
+    <ol>
+      <li><button type="button" data-step="reference"><span class="act">Prologue</span><span class="label">Reference</span></button></li>
+      <li><button type="button" data-step="reads"><span class="act">Act I</span><span class="label">Reads</span></button></li>
+      <li><button type="button" data-step="align"><span class="act">Act II</span><span class="label">Align</span></button></li>
+      <li><button type="button" data-step="explore"><span class="act">Act III</span><span class="label">Explore</span></button></li>
+      <li><button type="button" data-step="variants"><span class="act">Epilogue</span><span class="label">Variants</span></button></li>
+    </ol>
+    <button id="aboutButton" class="link about-link" type="button">About</button>
+  </nav>
+
+  <main class="app">
+
+    <!-- ===== Prologue: reference ===== -->
+    <section class="page" data-page="reference" aria-labelledby="ref-title">
+      <div class="banner" data-word="REFERENCE" aria-hidden="true"></div>
+      <header class="page-head">
+        <span class="act">Prologue</span>
+        <div class="title-row">
+          <h2 id="ref-title" tabindex="-1">Reference genome</h2>
+          <button class="help-toggle" type="button" aria-expanded="false" aria-controls="help-ref" aria-label="About this step: reference genome">?</button>
+        </div>
+      </header>
       <div id="help-ref" class="help" hidden>
         <p>The reference is the known genome that every read is compared against. Differences from it are what the app reports as variants.</p>
         <p>The built-in reference is SARS-CoV-2 isolate USA-IL1/2020 (MN988713.1, 29,882 bases). To align against another genome, choose your own FASTA file; only its first sequence is used.</p>
       </div>
       <div class="choices" id="referenceChoices" role="radiogroup" aria-labelledby="ref-title"></div>
+      <div class="page-actions">
+        <button class="primary" type="button" data-next>Continue</button>
+      </div>
     </section>
 
-    <section class="step" aria-labelledby="reads-title">
-      <div class="step-head">
-        <span class="step-num" aria-hidden="true">2</span>
-        <h2 id="reads-title">Reads</h2>
-        <button class="help-toggle" type="button" aria-expanded="false" aria-controls="help-reads" aria-label="About this step: reads">?</button>
-      </div>
+    <!-- ===== Act I: reads ===== -->
+    <section class="page" data-page="reads" aria-labelledby="reads-title" hidden>
+      <div class="banner" data-word="READS" aria-hidden="true"></div>
+      <header class="page-head">
+        <span class="act">Act I</span>
+        <div class="title-row">
+          <h2 id="reads-title" tabindex="-1">Reads</h2>
+          <button class="help-toggle" type="button" aria-expanded="false" aria-controls="help-reads" aria-label="About this step: reads">?</button>
+        </div>
+      </header>
       <div id="help-reads" class="help" hidden>
         <p>Reads are the short stretches of sequence a sequencing machine produces from a sample. The app works out where on the reference each read came from.</p>
         <p>The built-in sets are simulated reads from a SARS-CoV-2 genome with a few differences, so you can try the app without your own data. Your own reads can be FASTA or FASTQ, optionally gzipped. Reads longer than 189 bases can't be aligned and are counted as unmapped.</p>
       </div>
       <div class="choices" id="readsChoices" role="radiogroup" aria-labelledby="reads-title"></div>
+      <div class="page-actions">
+        <button class="secondary" type="button" data-back>Back</button>
+        <button class="primary" type="button" data-next>Continue</button>
+      </div>
     </section>
 
-    <section class="step run" aria-labelledby="run-title">
-      <div class="step-head">
-        <span class="step-num" aria-hidden="true">3</span>
-        <h2 id="run-title">Align</h2>
-        <button class="help-toggle" type="button" aria-expanded="false" aria-controls="help-align" aria-label="About this step: align">?</button>
-      </div>
+    <!-- ===== Act II: align ===== -->
+    <section class="page" data-page="align" aria-labelledby="run-title" hidden>
+      <div class="banner" data-word="ALIGN" aria-hidden="true"></div>
+      <header class="page-head">
+        <span class="act">Act II</span>
+        <div class="title-row">
+          <h2 id="run-title" tabindex="-1">Align</h2>
+          <button class="help-toggle" type="button" aria-expanded="false" aria-controls="help-align" aria-label="About this step: align">?</button>
+        </div>
+      </header>
       <div id="help-align" class="help" hidden>
         <p>Aligning places every read on the reference. The app indexes the reference, finds exact matches for short pieces of each read, then fits the whole read around them, allowing for mismatches, insertions and deletions.</p>
         <p><strong>Mapped</strong> reads found a good position; <strong>unmapped</strong> reads didn't. The result is a SAM file, the standard format that other tools such as samtools and IGV can open. The app keeps your last 3 runs, so save the SAM file to keep one longer.</p>
@@ -83,7 +113,7 @@
         <div id="resultWarning" class="callout" role="status" hidden></div>
         <p id="resultNote" class="muted"></p>
         <div class="actions">
-          <button id="saveButton" class="primary" type="button">Save SAM file…</button>
+          <button id="saveButton" class="secondary" type="button">Save SAM file…</button>
           <button id="revealButton" class="secondary" type="button">Show in folder</button>
         </div>
         <p id="savedNote" class="saved" role="status"></p>
@@ -99,14 +129,24 @@
       </div>
 
       <p id="cancelledNote" class="muted" hidden>Run cancelled. Nothing was saved.</p>
+      <p id="viewerUnavailable" class="muted" hidden></p>
+
+      <div class="page-actions">
+        <button class="secondary" type="button" data-back>Back</button>
+        <button id="alignContinue" class="primary" type="button" data-next disabled>Continue</button>
+      </div>
     </section>
 
-    <section class="step" id="viewerSection" aria-labelledby="viewer-title" hidden>
-      <div class="step-head">
-        <span class="step-num" aria-hidden="true">4</span>
-        <h2 id="viewer-title">Explore the alignments</h2>
-        <button class="help-toggle" type="button" aria-expanded="false" aria-controls="help-viewer" aria-label="About this step: explore the alignments">?</button>
-      </div>
+    <!-- ===== Act III: explore ===== -->
+    <section class="page" id="viewerSection" data-page="explore" aria-labelledby="viewer-title" hidden>
+      <div class="banner" data-word="EXPLORE" aria-hidden="true"></div>
+      <header class="page-head">
+        <span class="act">Act III</span>
+        <div class="title-row">
+          <h2 id="viewer-title" tabindex="-1">Explore the alignments</h2>
+          <button class="help-toggle" type="button" aria-expanded="false" aria-controls="help-viewer" aria-label="About this step: explore the alignments">?</button>
+        </div>
+      </header>
       <div id="help-viewer" class="help" hidden>
         <p>This shows how the reads cover the reference. <strong>Depth</strong> is the number of reads covering a position: the more reads agree, the more you can trust what they say about that position. <strong>Genome covered</strong> is the share of positions with at least one read.</p>
         <p>The whole-genome track shows depth with variant sites marked in red; click it to jump somewhere. The track below shows the reference bases and depth for the selected region and, once you zoom in to 2,000 bases or less, the reads themselves. Bases where a read differs from the reference are coloured.</p>
@@ -148,19 +188,30 @@
         </div>
       </div>
 
+      <div class="page-actions">
+        <button class="secondary" type="button" data-back>Back</button>
+        <button class="primary" type="button" data-next>Continue</button>
+      </div>
+    </section>
+
+    <!-- ===== Epilogue: variants ===== -->
+    <section class="page" data-page="variants" aria-labelledby="variants-title" hidden>
+      <div class="banner" data-word="VARIANTS" aria-hidden="true"></div>
+      <header class="page-head">
+        <span class="act">Epilogue</span>
+        <div class="title-row">
+          <h2 id="variants-title" tabindex="-1">Variant sites</h2>
+          <button class="help-toggle" type="button" aria-expanded="false" aria-controls="help-variants" aria-label="About this step: variant sites">?</button>
+        </div>
+      </header>
+      <div id="help-variants" class="help" hidden>
+        <p>Variant sites are positions where many reads disagree with the reference, which points to a real difference between the sample and the reference. Sequencing errors affect only a few reads at a time, so the threshold below filters them out.</p>
+        <p><strong>Frequency</strong> is the share of reads carrying the change. Click a row to see its reads, or export the table, or per-base coverage for every position, as CSV.</p>
+      </div>
+
       <div class="panel">
         <div class="variants-head">
-          <div>
-            <div class="help-head">
-              <h3>Variant sites</h3>
-              <button class="help-toggle" type="button" aria-expanded="false" aria-controls="help-variants" aria-label="About this step: variant sites">?</button>
-            </div>
-            <p id="variantRule" class="muted"></p>
-            <div id="help-variants" class="help" hidden>
-              <p>Variant sites are positions where many reads disagree with the reference, which points to a real difference between the sample and the reference. Sequencing errors affect only a few reads at a time, so the threshold above filters them out.</p>
-              <p><strong>Frequency</strong> is the share of reads carrying the change. Click a row to see its reads, or export the table, or per-base coverage for every position, as CSV.</p>
-            </div>
-          </div>
+          <p id="variantRule" class="muted"></p>
           <div class="actions">
             <button id="exportVariants" class="secondary" type="button">Export variants (CSV)…</button>
             <button id="exportCoverage" class="secondary" type="button">Export coverage (CSV)…</button>
@@ -175,13 +226,12 @@
         <p id="variantEmpty" class="muted" hidden>No sites pass the threshold: the reads match the reference.</p>
         <p id="exportNote" class="saved" role="status"></p>
       </div>
+
+      <div class="page-actions">
+        <button class="secondary" type="button" data-back>Back</button>
+        <button id="startOver" class="primary" type="button">Start over</button>
+      </div>
     </section>
-
-    <p id="viewerUnavailable" class="muted" hidden></p>
-
-    <footer class="footer">
-      <button id="aboutButton" class="link" type="button">About</button>
-    </footer>
   </main>
 
   <dialog id="aboutDialog" class="about" aria-labelledby="about-title">
@@ -197,6 +247,8 @@
     <ul>
       <li><strong>kseq.h</strong> by Heng Li, © 2008 Genome Research Ltd. MIT License. Reads FASTA and FASTQ files.</li>
       <li><strong>zlib</strong> by Jean-loup Gailly and Mark Adler. zlib License. Reads gzipped files.</li>
+      <li><strong>Playfair Display</strong> and <strong>Oi</strong> fonts, © their project authors. SIL Open Font License 1.1.
+        <button class="link" type="button" data-license="fonts">View license</button></li>
       <li><strong>Electron</strong>, © Electron contributors and GitHub Inc. MIT License.
         <button class="link" type="button" data-license="electron">View license</button></li>
       <li><strong>Chromium</strong> and the components it includes, under their own licenses.

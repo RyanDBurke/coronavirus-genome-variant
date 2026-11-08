@@ -116,8 +116,9 @@ export interface AppInfo {
   version: string;
 }
 
-/** License files the About box can open: this app's, Electron's, and Chromium's third-party notices. */
-export type LicenseId = "app" | "electron" | "chromium";
+/** License files the About box can open: this app's, Electron's, Chromium's third-party notices,
+ *  and the bundled fonts'. */
+export type LicenseId = "app" | "electron" | "chromium" | "fonts";
 
 /** The API the preload script exposes to the window as `window.aligner`. */
 export interface AlignerApi {

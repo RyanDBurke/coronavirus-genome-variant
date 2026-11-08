@@ -16,6 +16,8 @@
     "dist": "npm run build && node scripts/check-aligner.mjs && electron-builder --win --publish never"
   },
   "devDependencies": {
+    "@fontsource-variable/playfair-display": "5.3.0",
+    "@fontsource/oi": "5.3.0",
     "@types/node": "22.20.5",
     "electron": "44.10.2",
     "electron-builder": "26.18.0",
@@ -33,7 +35,8 @@
       { "from": "../run.exe", "to": "aligner/run.exe" },
       { "from": "../2019-nCoV.fa", "to": "data/2019-nCoV.fa" },
       { "from": "../reads", "to": "data/reads", "filter": ["*.fa.gz"] },
-      { "from": "../LICENSE", "to": "LICENSE.txt" }
+      { "from": "../LICENSE", "to": "LICENSE.txt" },
+      { "from": "build/fonts-OFL.txt", "to": "fonts-OFL.txt" }
     ],
     "electronFuses": {
       "runAsNode": false,

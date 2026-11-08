@@ -1,5 +1,6 @@
 // Draws the app icon and writes build-resources/icon.ico (16-256 px) and build-resources/icon.png (256 px).
 // The design is a stylised read pileup: reads stacked over the genome, sharing one variant base.
+// Colours follow the app (and rburke.dev): near-black tile, cream reads, red variant column.
 // No dependencies: shapes are rasterised with 4x4 supersampling, then encoded as PNG and BMP by hand.
 // Run with `node scripts/make-icon.mjs` from app/ after changing the design; the outputs are committed.
 
@@ -9,10 +10,12 @@ import { fileURLToPath } from "node:url";
 
 const outDir = fileURLToPath(new URL("../build-resources/", import.meta.url));
 
-const TEAL_TOP = [0x13, 0x85, 0x97];
-const TEAL_BOTTOM = [0x0b, 0x5a, 0x66];
-const READ = [0xff, 0xff, 0xff];
-const VARIANT = [0xf6, 0xb7, 0x3c];
+const TILE_TOP = [0x1c, 0x1b, 0x18];
+const TILE_BOTTOM = [0x0c, 0x0c, 0x0c];
+/** a thin edge so the dark tile still stands out on a dark taskbar */
+const EDGE = [0x6e, 0x6c, 0x5c];
+const READ = [0xfd, 0xfb, 0xd4];
+const VARIANT = [0xe3, 0x17, 0x17];
 
 // Shapes in unit coordinates (0..1). Small sizes use three thicker reads so they stay legible.
 const layouts = {
@@ -44,8 +47,9 @@ function colourAt(x, y, layout) {
       return x >= layout.variant[0] && x <= layout.variant[1] ? VARIANT : READ;
     }
   }
+  if (!inRoundedRect(x, y, 0.045, 0.045, 0.955, 0.955, 0.175)) return EDGE;
   const t = (y - 0.03) / 0.94;
-  return TEAL_TOP.map((c, i) => c + (TEAL_BOTTOM[i] - c) * t);
+  return TILE_TOP.map((c, i) => c + (TILE_BOTTOM[i] - c) * t);
 }
 
 /** RGBA pixels, top row first. */

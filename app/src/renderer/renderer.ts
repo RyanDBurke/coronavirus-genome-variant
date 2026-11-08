@@ -1,6 +1,8 @@
 // The window's behaviour: pick inputs, start a run, show progress, then the result or a clear error.
+// Each step is its own page (pages.ts); a finished run unlocks the Explore and Variants pages.
 
 import type { AlignerApi, FriendlyError, InputChoice, LicenseId, PickedFile, Preset, RunEvent, RunResult } from "../shared/types.js";
+import { Pages } from "./pages.js";
 import { Viewer } from "./viewer.js";
 
 declare global {
@@ -10,6 +12,7 @@ declare global {
 }
 
 const api = window.aligner;
+const pages = new Pages();
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
 const FILE_CHOICE = "__file__";
@@ -77,6 +80,7 @@ function renderChoices(kind: Kind, presets: Preset[]) {
     input.addEventListener("change", () => {
       inputs[kind].selected = preset.id;
       updateSummary();
+      inputsChanged();
     });
     container.append(label);
   }
@@ -104,6 +108,7 @@ function renderChoices(kind: Kind, presets: Preset[]) {
     }
     renderChoices(kind, presets);
     updateSummary();
+    if (file) inputsChanged();
   });
   container.append(label);
 }
@@ -123,6 +128,14 @@ function describe(kind: Kind) {
 
 function updateSummary() {
   $("runSummary").textContent = `${describe("reads")} against ${describe("reference")}`;
+}
+
+/** A result belongs to the inputs it was made from: changing them clears it and locks the results pages. */
+function inputsChanged() {
+  if (running) return;
+  closeViewer();
+  show(null);
+  currentRunId = null;
 }
 
 function setInputsEnabled(enabled: boolean) {
@@ -198,6 +211,7 @@ function setRunning(isRunning: boolean) {
   $<HTMLButtonElement>("runButton").disabled = isRunning;
   $("cancelButton").hidden = !isRunning;
   setInputsEnabled(!isRunning);
+  pages.setBusy(isRunning);
   window.clearInterval(timer);
   if (isRunning) {
     startedAt = performance.now();
@@ -244,7 +258,8 @@ async function start() {
 function closeViewer() {
   viewer?.destroy();
   viewer = null;
-  $("viewerSection").hidden = true;
+  $<HTMLButtonElement>("alignContinue").disabled = true;
+  pages.lockAfter("align");
   $("viewerUnavailable").hidden = true;
   $("exportNote").textContent = "";
 }
@@ -288,8 +303,9 @@ function onFinished(result: RunResult) {
   $("resultPanel").scrollIntoView({ block: "nearest", behavior: "smooth" });
 
   if (result.summary) {
-    $("viewerSection").hidden = false;
-    viewer = new Viewer(api, result.runId, result.summary);
+    viewer = new Viewer(api, result.runId, result.summary, () => pages.goTo("explore"));
+    $<HTMLButtonElement>("alignContinue").disabled = false;
+    pages.unlock("explore");
   } else {
     const unavailable = $("viewerUnavailable");
     unavailable.textContent = `The results viewer isn't available for this run: ${result.summaryError ?? "unknown error"}. The SAM file is still complete.`;
@@ -352,6 +368,7 @@ async function init() {
   api.onFinished(onFinished);
 
   $("runButton").addEventListener("click", () => void start());
+  $("startOver").addEventListener("click", () => pages.goTo("reference"));
   $("cancelButton").addEventListener("click", () => {
     setProgress(null, "Cancelling…");
     void api.cancel();

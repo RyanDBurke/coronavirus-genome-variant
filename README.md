@@ -12,7 +12,7 @@ A Windows desktop app and command-line tool that aligns sequencing reads to the 
 </div>
 
 <p align="center">
-  <img src="png/app-viewer-reads.png" alt="The app zoomed in on a variant site: reference bases, read depth with the variant column in red, and the aligned reads below" width="800">
+  <img src="png/app-explore.png" alt="The Explore page: read depth across the whole genome with variant sites marked in red, and coverage statistics" width="800">
 </p>
 
 ## Download
@@ -21,7 +21,7 @@ Get `GenomeVariantAligner-Setup-<version>.exe` from [Releases](https://github.co
 
 ## Using the app
 
-Pick a reference (SARS-CoV-2 is built in) and a read set (1K, 10K or 1M simulated reads, or your own FASTA/FASTQ, optionally gzipped), then press **Align reads**. You get:
+The app walks you through five pages: pick a reference (SARS-CoV-2 is built in), pick a read set (1K, 10K or 1M simulated reads, or your own FASTA/FASTQ, optionally gzipped), press **Align reads**, then explore the result. You get:
 
 - read counts and a SAM file you can save;
 - read depth across the genome, with variant sites marked;
@@ -30,7 +30,7 @@ Pick a reference (SARS-CoV-2 is built in) and a read set (1K, 10K or 1M simulate
 - CSV exports of the variants and per-base coverage.
 
 <p align="center">
-  <img src="png/app-viewer-genome.png" alt="Results viewer: depth across the whole genome with variant sites marked, and the variant sites table" width="700">
+  <img src="png/app-variants.png" alt="The Variants page: a table of variant sites with position, change, type, depth and frequency" width="700">
 </p>
 
 ## How it works

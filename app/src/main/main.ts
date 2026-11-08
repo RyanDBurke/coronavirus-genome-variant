@@ -35,6 +35,8 @@ const licenseFiles: Record<LicenseId, string> = {
   app: path.join(resources, app.isPackaged ? "LICENSE.txt" : "LICENSE"),
   electron: path.join(exeDir, app.isPackaged ? "LICENSE.electron.txt" : "LICENSE"),
   chromium: path.join(exeDir, "LICENSES.chromium.html"),
+  // written by scripts/copy-static.mjs; outside the asar so the default viewer can open it
+  fonts: app.isPackaged ? path.join(resources, "fonts-OFL.txt") : path.join(app.getAppPath(), "build", "fonts-OFL.txt"),
 };
 
 /** The installed exe carries the icon already; running from source needs it set on the window. */
@@ -312,7 +314,7 @@ function createWindow() {
     show: false,
     title: "Genome Variant Aligner",
     icon: devIcon,
-    backgroundColor: nativeTheme.shouldUseDarkColors ? "#11181b" : "#f5f7f7",
+    backgroundColor: "#0C0C0C",
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, "..", "preload", "preload.js"),
@@ -331,8 +333,10 @@ function createWindow() {
 
 function harden() {
   // no network: the app is fully offline, so refuse every http(s)/ws request outright
-  const allowedResources = new Set(["index.html", "styles.css", "renderer.js", "viewer.js"]
-    .map((name) => pathToFileURL(path.join(path.dirname(indexHtml), name)).href));
+  const allowedResources = new Set([
+    "index.html", "styles.css", "renderer.js", "viewer.js", "pages.js",
+    "fonts/playfair-display-latin-wght-normal.woff2", "fonts/oi-latin-400-normal.woff2",
+  ].map((name) => pathToFileURL(path.join(path.dirname(indexHtml), name)).href));
   session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
     callback({ cancel: !allowedResources.has(details.url) });
   });
@@ -360,6 +364,8 @@ if (!app.requestSingleInstanceLock()) {
 
   void app.whenReady().then(() => {
     if (app.isPackaged) Menu.setApplicationMenu(null);
+    // the window is dark only; this makes file dialogs and scrollbars match
+    nativeTheme.themeSource = "dark";
     harden();
     registerIpc();
     createWindow();

@@ -5,8 +5,9 @@ import type { AlignerApi, RegionData, Variant, ViewSummary } from "../shared/typ
 
 const MAX_READ_REGION = 2000;   // must match analysis.ts
 const MIN_WIDTH = 40;           // narrowest region, bp
-const BASE_COLOURS: Record<string, string> = { A: "#2e9e4f", C: "#2f6fd6", G: "#d38b00", T: "#d0352f", N: "#888888" };
-const INSERTION_COLOUR = "#8e44ad";
+// tuned for the dark background; the legend swatches in styles.css must match
+const BASE_COLOURS: Record<string, string> = { A: "#3ECF6E", C: "#5B93FF", G: "#F5A524", T: "#FF5A4E", N: "#8A8A80" };
+const INSERTION_COLOUR = "#C77DFF";
 
 const ROW_HEIGHT = 9;
 const ROW_GAP = 2;
@@ -58,7 +59,9 @@ export class Viewer {
   private readonly overview = document.getElementById("overviewCanvas") as HTMLCanvasElement;
   private readonly detail = document.getElementById("detailCanvas") as HTMLCanvasElement;
 
-  constructor(private readonly api: AlignerApi, private readonly runId: string, private readonly summary: ViewSummary) {
+  /** onJump runs before a variant-table click moves the view, so the page holding the tracks can be shown */
+  constructor(private readonly api: AlignerApi, private readonly runId: string, private readonly summary: ViewSummary,
+              private readonly onJump: () => void = () => {}) {
     this.end = summary.length;
     this.renderStats();
     this.renderVariants();
@@ -231,7 +234,10 @@ export class Viewer {
       freq.append(bar, pct);
       tr.append(freq);
 
-      const jump = () => this.centerOn(v.pos - 1 + v.length / 2, Math.max(100, v.length + 60));
+      const jump = () => {
+        this.onJump();
+        this.centerOn(v.pos - 1 + v.length / 2, Math.max(100, v.length + 60));
+      };
       tr.addEventListener("click", jump);
       tr.addEventListener("keydown", (e) => {
         if (e.key === "Enter" || e.key === " ") {
