@@ -84,6 +84,72 @@
 
       <p id="cancelledNote" class="muted" hidden>Run cancelled. Nothing was saved.</p>
     </section>
+
+    <section class="step" id="viewerSection" aria-labelledby="viewer-title" hidden>
+      <div class="step-head">
+        <span class="step-num" aria-hidden="true">4</span>
+        <h2 id="viewer-title">Explore the alignments</h2>
+      </div>
+
+      <div class="panel">
+        <dl class="cov-stats">
+          <div><dt>Mean depth</dt><dd id="covMean" class="mono"></dd></div>
+          <div><dt>Max depth</dt><dd id="covMax" class="mono"></dd></div>
+          <div><dt>Genome covered</dt><dd id="cov1" class="mono"></dd></div>
+          <div><dt>Covered ≥ 10×</dt><dd id="cov10" class="mono"></dd></div>
+          <div><dt>Variant sites</dt><dd id="varCount" class="mono"></dd></div>
+        </dl>
+
+        <div class="track-label">Whole genome: read depth, variant sites marked in red. Click to jump.</div>
+        <canvas id="overviewCanvas" class="track overview" aria-label="Read depth across the whole genome"></canvas>
+
+        <div class="nav">
+          <div class="nav-buttons">
+            <button id="panLeft" class="secondary icon" type="button" aria-label="Move left">←</button>
+            <button id="panRight" class="secondary icon" type="button" aria-label="Move right">→</button>
+            <button id="zoomOut" class="secondary icon" type="button" aria-label="Zoom out">−</button>
+            <button id="zoomIn" class="secondary icon" type="button" aria-label="Zoom in">+</button>
+            <button id="showAll" class="secondary" type="button">Whole genome</button>
+          </div>
+          <form id="gotoForm" class="goto">
+            <label for="gotoInput">Go to</label>
+            <input id="gotoInput" type="text" inputmode="numeric" placeholder="28,000 or 27,950–28,050" autocomplete="off">
+          </form>
+          <span id="regionLabel" class="mono muted region-label"></span>
+        </div>
+
+        <canvas id="detailCanvas" class="track detail" aria-label="Reference, depth and reads in the selected region"></canvas>
+        <p id="hoverInfo" class="mono hover-info">Hover over the track for base counts.</p>
+        <p id="detailNote" class="muted note"></p>
+        <div class="legend" aria-hidden="true">
+          <span><i class="sw a"></i>A</span><span><i class="sw c"></i>C</span><span><i class="sw g"></i>G</span><span><i class="sw t"></i>T</span>
+          <span><i class="sw del"></i>deletion</span><span><i class="sw ins"></i>insertion</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="variants-head">
+          <div>
+            <h3>Variant sites</h3>
+            <p id="variantRule" class="muted"></p>
+          </div>
+          <div class="actions">
+            <button id="exportVariants" class="secondary" type="button">Export variants (CSV)…</button>
+            <button id="exportCoverage" class="secondary" type="button">Export coverage (CSV)…</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="variantTable">
+            <thead><tr><th>Position</th><th>Change</th><th>Type</th><th>Depth</th><th>Frequency</th></tr></thead>
+            <tbody id="variantRows"></tbody>
+          </table>
+        </div>
+        <p id="variantEmpty" class="muted" hidden>No sites pass the threshold: the reads match the reference.</p>
+        <p id="exportNote" class="saved" role="status"></p>
+      </div>
+    </section>
+
+    <p id="viewerUnavailable" class="muted" hidden></p>
   </main>
 </body>
 </html>

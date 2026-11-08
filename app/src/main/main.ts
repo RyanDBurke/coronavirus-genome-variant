@@ -7,8 +7,9 @@ import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import type { InputChoice, PickedFile, Presets, RunRequest, RunResult } from "../shared/types";
+import type { InputChoice, PickedFile, Presets, RunRequest, RunResult, Variant, ViewSummary } from "../shared/types";
 import { runAligner, type AlignerRun } from "./aligner";
+import { analyzeSam, coverageCsv, loadReference, readRegion, summarize, variantsCsv, type Analysis } from "./analysis";
 import { friendlyError } from "./messages";
 
 // ---- locations ---------------------------------------------------------------
@@ -68,9 +69,20 @@ function resolveInput(choice: InputChoice, table: Record<string, string>): strin
 interface ActiveRun {
   id: string;
   aligner: AlignerRun;
+  /** set by Cancel; also stops the results-preparation step */
+  cancelled: boolean;
 }
 let activeRun: ActiveRun | null = null;
-const finishedRuns = new Map<string, { samPath: string; label: string }>();
+
+interface FinishedRun {
+  samPath: string;
+  label: string;
+  analysis: Analysis | null;
+  variants: Variant[];
+}
+const finishedRuns = new Map<string, FinishedRun>();
+
+class Cancelled extends Error {}
 
 function samPathFor(runId: string) {
   return path.join(runsDir(), runId, "alignments.sam");
@@ -118,22 +130,51 @@ async function startRun(window: BrowserWindow, request: RunRequest) {
       if (!window.isDestroyed()) window.webContents.send("run:event", event);
     },
   });
-  activeRun = { id: runId, aligner };
+  const run: ActiveRun = { id: runId, aligner, cancelled: false };
+  activeRun = run;
+  const send = (channel: string, value: unknown) => {
+    if (!window.isDestroyed()) window.webContents.send(channel, value);
+  };
 
   void aligner.done.then(async (exit) => {
-    activeRun = null;
-    let result: RunResult;
-    if (exit.cancelled) {
-      await fs.rm(runDir, { recursive: true, force: true });
+    let result: RunResult | undefined;
+    if (exit.cancelled || run.cancelled) {
       result = { status: "cancelled", runId };
     } else if (exit.code === 0) {
-      finishedRuns.set(runId, { samPath: samPathFor(runId), label });
-      const stat = await fs.stat(samPathFor(runId)).catch(() => null);
-      result = { status: "done", runId, ...counts, samBytes: stat?.size ?? 0 };
+      const samPath = samPathFor(runId);
+      const stat = await fs.stat(samPath).catch(() => null);
+      const finished: FinishedRun = { samPath, label, analysis: null, variants: [] };
+      let summary: ViewSummary | null = null;
+      let summaryError: string | undefined;
+
+      // prepare the viewer: one pass over the SAM for depth, allele counts and a read index
+      try {
+        send("run:event", { event: "analyze", percent: 0 });
+        const ref = await loadReference(reference);
+        finished.analysis = await analyzeSam(samPath, ref, (fraction) => {
+          if (run.cancelled) throw new Cancelled();
+          send("run:event", { event: "analyze", percent: Math.floor(fraction * 100) });
+        });
+        summary = summarize(finished.analysis);
+        finished.variants = summary.variants;
+      } catch (err) {
+        if (err instanceof Cancelled) {
+          result = { status: "cancelled", runId };
+        } else {
+          summaryError = err instanceof Error ? err.message : String(err);
+        }
+      }
+      if (result === undefined) {
+        result = { status: "done", runId, ...counts, samBytes: stat?.size ?? 0, summary, summaryError };
+        finishedRuns.set(runId, finished);
+      }
     } else {
       result = { status: "failed", runId, error: friendlyError(exit) };
     }
-    if (!window.isDestroyed()) window.webContents.send("run:finished", result);
+
+    if (result.status === "cancelled") await fs.rm(runDir, { recursive: true, force: true });
+    activeRun = null;
+    send("run:finished", result);
   });
 
   return { runId };
@@ -182,7 +223,41 @@ function registerIpc() {
   });
 
   handle("run:cancel", () => {
-    activeRun?.aligner.cancel();
+    if (activeRun) {
+      activeRun.cancelled = true;
+      activeRun.aligner.cancel();
+    }
+  });
+
+  handle("view:region", (_event, runId: string, start: number, end: number) => {
+    const run = finishedRuns.get(runId);
+    if (!run?.analysis || !Number.isFinite(start) || !Number.isFinite(end)) return null;
+    return readRegion(run.analysis, run.samPath, start, end);
+  });
+
+  const saveText = async (event: IpcMainInvokeEvent, name: string, kind: string, text: string) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (!window) return null;
+    const target = await dialog.showSaveDialog(window, {
+      title: `Save ${kind}`,
+      defaultPath: path.join(app.getPath("documents"), name),
+      filters: [{ name: "CSV", extensions: ["csv"] }],
+    });
+    if (target.canceled || !target.filePath) return null;
+    await fs.writeFile(target.filePath, text);
+    return target.filePath;
+  };
+
+  handle("export:variants", (event, runId: string) => {
+    const run = finishedRuns.get(runId);
+    if (!run?.analysis) return null;
+    return saveText(event, `${run.label}-variants.csv`, "variants", variantsCsv(run.variants, run.analysis.refName));
+  });
+
+  handle("export:coverage", (event, runId: string) => {
+    const run = finishedRuns.get(runId);
+    if (!run?.analysis) return null;
+    return saveText(event, `${run.label}-coverage.csv`, "coverage", coverageCsv(run.analysis));
   });
 
   handle("run:save", async (event, runId: string) => {
@@ -209,8 +284,8 @@ function registerIpc() {
 
 function createWindow() {
   const window = new BrowserWindow({
-    width: 980,
-    height: 760,
+    width: 1100,
+    height: 860,
     minWidth: 720,
     minHeight: 600,
     show: false,
@@ -266,6 +341,11 @@ if (!app.requestSingleInstanceLock()) {
     createWindow();
   });
 
-  app.on("before-quit", () => activeRun?.aligner.cancel());
+  app.on("before-quit", () => {
+    if (activeRun) {
+      activeRun.cancelled = true;
+      activeRun.aligner.cancel();
+    }
+  });
   app.on("window-all-closed", () => app.quit());
 }

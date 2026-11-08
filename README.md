@@ -45,6 +45,15 @@ On Windows, see [Setup → Option B: Windows native](#option-b-windows-native-ms
 
 A point-and-click app with the same aligner inside. Choose a reference and a read set (the SARS-CoV-2 genome and all three simulated read sets are built in, or open your own FASTA/FASTQ files), press **Align reads**, and get read counts plus a SAM file to save. It works fully offline.
 
+After a run, the app shows the results without needing samtools or IGV:
+
+- **Whole-genome depth** with variant sites marked; click anywhere to jump there.
+- **A zoomable track** with the reference bases, read depth (coloured where reads disagree with the reference) and, below 2,000 bp, the reads themselves with mismatches, deletions and insertions marked. Drag to pan, double-click to zoom, hover for per-base counts, or type a position or range.
+- **Variant sites**: positions where at least 20% of at least 10 reads differ from the reference (SNVs, deletions, insertions), with depth and frequency. Click one to jump to it.
+- **Exports**: variants and per-base coverage (depth and A/C/G/T/deleted/inserted counts) as CSV.
+
+This works for the 1,000,000-read set too: the app makes one pass over the SAM file (about 4 seconds) to build depth, allele counts and a position index, then reads only the reads in view straight from the file.
+
 **Install:** open the latest successful run on the [Actions page](https://github.com/RyanDBurke/coronavirus-genome-variant/actions/workflows/ci.yml), download the `installer-windows-x64` artifact, unzip it and run `GenomeVariantAligner-Setup-*.exe`. It installs for your user only, with no admin prompt. The installer isn't code-signed yet, so Windows SmartScreen shows "Windows protected your PC"; choose **More info → Run anyway**.
 
 **Build from source** (needs Node.js 22 and `run.exe` from [Option B](#option-b-windows-native-msys2)):
@@ -232,7 +241,7 @@ Test output goes to `tests/out/`. Other targets:
 2. **Seed.** Split each read into five equal seeds (20 bp for 100 bp reads) and find every exact occurrence of each seed with FM-Index backward search. A seed containing a variant simply finds nothing; the other seeds still place the read.
 3. **Extend.** For each candidate position, cut the reference with 5 bp of padding on both sides and run a fitting alignment, a dynamic-programming alignment where the whole read must align but reference bases outside it are free (`src/align.c`). The traceback gives the start position and CIGAR string.
 4. **Report.** Keep the best-scoring alignments across all seeds and write SAM: one primary record per read, equally good alternatives as secondary, and unmapped reads flagged.
-5. **Visualize.** Load the SAM into Integrative Genomics Viewer (IGV) to see coverage (the image at the top).
+5. **Visualize.** The desktop app shows depth, reads and variant sites directly. From the command line, load the SAM into Integrative Genomics Viewer (IGV) to see coverage (the image at the top).
 
 ## Troubleshooting
 
@@ -255,9 +264,10 @@ coronavirus-genome-variant
 │   └── ci.yml            # CI: make test on Linux and Windows; app tests; publishes run.exe and the installer
 ├── app                   # Windows desktop app (Electron + TypeScript)
 │   ├── package.json      # scripts and installer settings
-│   ├── src/main          # main process: window, dialogs, runs the aligner (aligner.ts), error messages
+│   ├── src/main          # main process: window, dialogs, runs the aligner (aligner.ts), error messages,
+│   │                     #   SAM analysis for the viewer: depth, allele counts, variants, read index (analysis.ts)
 │   ├── src/preload       # the small API the window is allowed to use
-│   ├── src/renderer      # the window: HTML, CSS and TypeScript
+│   ├── src/renderer      # the window: HTML, CSS and TypeScript; viewer.ts draws the results viewer
 │   ├── src/shared        # types shared by all three
 │   └── test              # node:test unit, integration and click-through tests
 ├── include               # headers: structures and function declarations

@@ -1,6 +1,7 @@
 // The window's behaviour: pick inputs, start a run, show progress, then the result or a clear error.
 
-import type { AlignerApi, AlignerEvent, FriendlyError, InputChoice, PickedFile, Preset, RunResult } from "../shared/types.js";
+import type { AlignerApi, FriendlyError, InputChoice, PickedFile, Preset, RunEvent, RunResult } from "../shared/types.js";
+import { Viewer } from "./viewer.js";
 
 declare global {
   interface Window {
@@ -26,6 +27,7 @@ const presetLabels: Record<Kind, Map<string, string>> = { reference: new Map(), 
 
 let running = false;
 let currentRunId: string | null = null;
+let viewer: Viewer | null = null;
 let timer: number | undefined;
 let startedAt = 0;
 
@@ -181,6 +183,7 @@ async function start() {
     return;
   }
   setRunning(true);
+  closeViewer();
   // reset the bar without animating down from the previous run
   const fill = $("progressFill");
   fill.style.transition = "none";
@@ -201,12 +204,22 @@ async function start() {
   currentRunId = started.runId;
 }
 
-function onEvent(event: AlignerEvent) {
+function closeViewer() {
+  viewer?.destroy();
+  viewer = null;
+  $("viewerSection").hidden = true;
+  $("viewerUnavailable").hidden = true;
+  $("exportNote").textContent = "";
+}
+
+function onEvent(event: RunEvent) {
   if (!running) return;
   if (event.event === "index") {
     setProgress(0, "Aligning reads…");
   } else if (event.event === "progress") {
     setProgress(event.percent, `Aligning reads… ${event.percent}%`);
+  } else if (event.event === "analyze") {
+    setProgress(event.percent, `Preparing the results viewer… ${event.percent}%`);
   } else if (event.event === "warning") {
     $("resultNote").dataset.warning = event.message;
   }
@@ -238,6 +251,15 @@ function onFinished(result: RunResult) {
   note.textContent = `The SAM file is ${bytes(result.samBytes)}. The app keeps your last 3 runs; save a copy to keep this one.${warning}`;
   show("resultPanel");
   $("resultPanel").scrollIntoView({ block: "nearest", behavior: "smooth" });
+
+  if (result.summary) {
+    $("viewerSection").hidden = false;
+    viewer = new Viewer(api, result.runId, result.summary);
+  } else {
+    const unavailable = $("viewerUnavailable");
+    unavailable.textContent = `The results viewer isn't available for this run: ${result.summaryError ?? "unknown error"}. The SAM file is still complete.`;
+    unavailable.hidden = false;
+  }
 }
 
 // ---- wiring ------------------------------------------------------------------
@@ -263,6 +285,16 @@ async function init() {
   });
   $("revealButton").addEventListener("click", () => {
     if (currentRunId) void api.reveal(currentRunId);
+  });
+  $("exportVariants").addEventListener("click", async () => {
+    if (!currentRunId) return;
+    const saved = await api.exportVariants(currentRunId);
+    if (saved) $("exportNote").textContent = `Saved to ${saved}`;
+  });
+  $("exportCoverage").addEventListener("click", async () => {
+    if (!currentRunId) return;
+    const saved = await api.exportCoverage(currentRunId);
+    if (saved) $("exportNote").textContent = `Saved to ${saved}`;
   });
 }
 

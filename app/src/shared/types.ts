@@ -35,6 +35,61 @@ export type AlignerEvent =
   | { event: "warning"; message: string }
   | { event: "error"; code: string; message: string };
 
+/** Events the window receives during a run: the aligner's own, plus the app's results-preparation step. */
+export type RunEvent = AlignerEvent | { event: "analyze"; percent: number };
+
+/** A site where reads disagree with the reference. Positions are 1-based. */
+export interface Variant {
+  type: "SNV" | "deletion" | "insertion";
+  pos: number;
+  length: number;
+  ref: string;
+  alt: string;
+  depth: number;
+  altReads: number;
+  freq: number;
+}
+
+/** Everything the viewer shows before zooming in. */
+export interface ViewSummary {
+  refName: string;
+  length: number;
+  meanDepth: number;
+  maxDepth: number;
+  /** share of positions with depth >= 1 and >= 10 */
+  covered1: number;
+  covered10: number;
+  /** genome-wide depth, binned */
+  binSize: number;
+  binMean: number[];
+  binMax: number[];
+  variants: Variant[];
+  minDepth: number;
+  minFreq: number;
+}
+
+/** One aligned read, as the pileup draws it. start is 0-based. */
+export interface ReadRow {
+  name: string;
+  flag: number;
+  start: number;
+  cigar: string;
+  seq: string;
+}
+
+/** A zoomed-in region: [start, end) 0-based, with per-base depth and (for small regions) reads. */
+export interface RegionData {
+  start: number;
+  end: number;
+  ref: string;
+  depth: number[];
+  /** per position: A, C, G, T, N, deleted, insertion-after (7 numbers each); empty for wide regions */
+  counts: number[];
+  reads: ReadRow[];
+  /** reads overlapping the region; reads[] may be a sample of them */
+  totalReads: number;
+}
+
 /** Plain-language description of a failed run. */
 export interface FriendlyError {
   title: string;
@@ -43,7 +98,12 @@ export interface FriendlyError {
 }
 
 export type RunResult =
-  | { status: "done"; runId: string; reads: number; mapped: number; unmapped: number; seconds: number; samBytes: number }
+  | {
+      status: "done"; runId: string; reads: number; mapped: number; unmapped: number; seconds: number; samBytes: number;
+      /** null if the results couldn't be prepared for viewing (summaryError says why) */
+      summary: ViewSummary | null;
+      summaryError?: string;
+    }
   | { status: "cancelled"; runId: string }
   | { status: "failed"; runId: string; error: FriendlyError };
 
@@ -55,6 +115,10 @@ export interface AlignerApi {
   cancel(): Promise<void>;
   saveSam(runId: string): Promise<string | null>;
   reveal(runId: string): Promise<void>;
-  onEvent(listener: (event: AlignerEvent) => void): () => void;
+  /** depth, reference and reads for [start, end) (0-based); null if the run is no longer available */
+  region(runId: string, start: number, end: number): Promise<RegionData | null>;
+  exportVariants(runId: string): Promise<string | null>;
+  exportCoverage(runId: string): Promise<string | null>;
+  onEvent(listener: (event: RunEvent) => void): () => void;
   onFinished(listener: (result: RunResult) => void): () => void;
 }
