@@ -24,8 +24,8 @@ Get `GenomeVariantAligner-Setup-<version>.exe` from [Releases](https://github.co
 The app walks you through five pages: pick a reference (SARS-CoV-2 is built in), pick a read set (1K, 10K or 1M simulated reads, or your own FASTA/FASTQ, optionally gzipped), press **Align reads**, then explore the result. You get:
 
 - read counts and a SAM file you can save;
-- read depth across the genome, with variant sites marked;
-- a zoomable view of the reference, depth and individual reads;
+- read depth across the genome, with variant sites marked; when you zoom in, the part you're viewing stays highlighted and the rest is dimmed;
+- a zoomable view of the reference, depth and individual reads that you can drag, or slide along with the arrow buttons;
 - a table of variant sites: positions where at least 20% of at least 10 reads differ from the reference;
 - CSV exports of the variants and per-base coverage.
 
