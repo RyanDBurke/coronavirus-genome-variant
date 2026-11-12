@@ -23,7 +23,6 @@ export class Pages {
       }));
     document.querySelectorAll<HTMLButtonElement>("[data-back]").forEach((button) =>
       button.addEventListener("click", () => this.goTo(PAGES[this.current - 1])));
-    fillBanners();
     this.render(false);
   }
 
@@ -75,28 +74,4 @@ export class Pages {
       this.sections[this.current].querySelector<HTMLElement>("h2")?.focus({ preventScroll: true });
     }
   }
-}
-
-/** Fills each decorative banner with its word repeated, separated by stars (as on rburke.dev).
- *  Two identical rows let the CSS animation loop seamlessly. */
-function fillBanners() {
-  document.querySelectorAll<HTMLElement>(".banner[data-word]").forEach((banner) => {
-    const track = document.createElement("div");
-    track.className = "banner-track";
-    for (let row = 0; row < 2; row++) {
-      const line = document.createElement("div");
-      line.className = "banner-row";
-      for (let i = 0; i < 8; i++) {
-        const item = document.createElement("span");
-        item.className = "banner-item";
-        const star = document.createElement("span");
-        star.className = "star";
-        star.textContent = "*";
-        item.append(banner.dataset.word!, " ", star);
-        line.append(item);
-      }
-      track.append(line);
-    }
-    banner.replaceChildren(track);
-  });
 }

@@ -25,7 +25,7 @@ Reviewed against https://www.electronjs.org/docs/latest/tutorial/security on 202
 | 15 | External URLs | No openExternal handler; reveal opens only a known run in Explorer. The About box opens one of three fixed, bundled license files (app LICENSE, Electron LICENSE, LICENSES.chromium.html) with `shell.openPath`, chosen by a fixed id; the page cannot supply a path. |
 | 16 | Current Electron | Release maintainer must check supported versions and patch availability. |
 | 17 | IPC sender | Exact index URL, owning BrowserWindow and main-frame identity required. |
-| 18 | Avoid file protocol | Deliberate bounded exception: exact URL allowlist for index.html, styles.css, renderer.js, viewer.js, pages.js and the two bundled font files (Playfair Display and Oi, under fonts/). All other request URLs denied, including other local files and UNC URLs. No general directory access. |
+| 18 | Avoid file protocol | Deliberate bounded exception: exact URL allowlist for index.html, styles.css, renderer.js, viewer.js, pages.js and the bundled font file (Playfair Display, under fonts/). All other request URLs denied, including other local files and UNC URLs. No general directory access. |
 | 19 | Fuses | runAsNode, NODE_OPTIONS and CLI inspector disabled; asar integrity and asar-only loading enabled; cookie encryption enabled. |
 | 20 | API exposure | Fixed contextBridge API; no raw ipcRenderer or IPC event objects exposed. |
 

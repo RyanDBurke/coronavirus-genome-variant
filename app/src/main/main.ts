@@ -335,7 +335,7 @@ function harden() {
   // no network: the app is fully offline, so refuse every http(s)/ws request outright
   const allowedResources = new Set([
     "index.html", "styles.css", "renderer.js", "viewer.js", "pages.js",
-    "fonts/playfair-display-latin-wght-normal.woff2", "fonts/oi-latin-400-normal.woff2",
+    "fonts/playfair-display-latin-wght-normal.woff2",
   ].map((name) => pathToFileURL(path.join(path.dirname(indexHtml), name)).href));
   session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
     callback({ cancel: !allowedResources.has(details.url) });

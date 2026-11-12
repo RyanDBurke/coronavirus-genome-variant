@@ -71,6 +71,7 @@ export class Viewer {
   }
 
   destroy() {
+    this.stopGlide();
     this.resize.disconnect();
     this.unbind.forEach((fn) => fn());
   }
@@ -79,16 +80,50 @@ export class Viewer {
 
   /** Shows [start, end), clamped to the genome and to the minimum width. */
   goTo(start: number, end: number) {
+    this.stopGlide();
+    this.show(...this.clamp(start, end));
+  }
+
+  /** [start, end) clamped to the genome and to the minimum width. */
+  private clamp(start: number, end: number): [number, number] {
     const length = this.summary.length;
     let width = Math.max(MIN_WIDTH, Math.min(length, Math.round(end - start)));
     let s = Math.round(start);
     if (s < 0) s = 0;
     if (s + width > length) s = Math.max(0, length - width);
     width = Math.min(width, length - s);
-    if (s === this.start && s + width === this.end && this.region) return;
+    return [s, s + width];
+  }
+
+  private show(s: number, e: number) {
+    if (s === this.start && e === this.end && this.region) return;
     this.start = s;
-    this.end = s + width;
+    this.end = e;
     void this.load();
+  }
+
+  // the arrow buttons slide the window to its target instead of jumping there
+  private glide: { frame: number; target: [number, number] } | null = null;
+
+  private stopGlide() {
+    if (this.glide) cancelAnimationFrame(this.glide.frame);
+    this.glide = null;
+  }
+
+  private glideTo(target: [number, number]) {
+    this.stopGlide();
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return this.show(...target);
+    const [s0, e0] = [this.start, this.end];
+    const t0 = performance.now();
+    const DURATION = 350;
+    const step = (now: number) => {
+      const t = Math.min(1, (now - t0) / DURATION);
+      const k = 1 - (1 - t) ** 3;   // ease out
+      this.show(Math.round(s0 + (target[0] - s0) * k), Math.round(e0 + (target[1] - e0) * k));
+      if (t < 1) this.glide!.frame = requestAnimationFrame(step);
+      else this.glide = null;
+    };
+    this.glide = { frame: requestAnimationFrame(step), target };
   }
 
   centerOn(pos0: number, width = this.end - this.start) {
@@ -101,8 +136,10 @@ export class Viewer {
   }
 
   pan(fraction: number) {
-    const shift = (this.end - this.start) * fraction;
-    this.goTo(this.start + shift, this.end + shift);
+    // repeated clicks build on where the window is heading, not where it is mid-slide
+    const [s, e] = this.glide ? this.glide.target : [this.start, this.end];
+    const shift = (e - s) * fraction;
+    this.glideTo(this.clamp(s + shift, e + shift));
   }
 
   private async load() {
@@ -271,23 +308,41 @@ export class Viewer {
     const x = (pos: number) => (pos / s.length) * width;
     const y = (d: number) => top + plotH - (d / Math.max(s.maxDepth, 1)) * plotH;
 
-    // depth: bin max as a light area, bin mean as the solid area
-    for (const [values, colour] of [[s.binMax, css("--accent-soft")], [s.binMean, css("--accent")]] as const) {
-      ctx.beginPath();
-      ctx.moveTo(0, y(0));
-      values.forEach((d, i) => {
-        ctx.lineTo(x(i * s.binSize), y(d));
-        ctx.lineTo(x(Math.min(s.length, (i + 1) * s.binSize)), y(d));
-      });
-      ctx.lineTo(width, y(0));
-      ctx.closePath();
-      ctx.fillStyle = colour;
-      ctx.fill();
-    }
+    // depth (bin max as a light area, bin mean as the solid area) and variant ticks along the top
+    const drawData = () => {
+      for (const [values, colour] of [[s.binMax, css("--accent-soft")], [s.binMean, css("--accent")]] as const) {
+        ctx.beginPath();
+        ctx.moveTo(0, y(0));
+        values.forEach((d, i) => {
+          ctx.lineTo(x(i * s.binSize), y(d));
+          ctx.lineTo(x(Math.min(s.length, (i + 1) * s.binSize)), y(d));
+        });
+        ctx.lineTo(width, y(0));
+        ctx.closePath();
+        ctx.fillStyle = colour;
+        ctx.fill();
+      }
+      ctx.fillStyle = css("--bad");
+      for (const v of s.variants) ctx.fillRect(Math.round(x(v.pos - 1)) - 0.5, 0, 1.5, 5);
+    };
 
-    // variant ticks along the top
-    ctx.fillStyle = css("--bad");
-    for (const v of s.variants) ctx.fillRect(Math.round(x(v.pos - 1)) - 0.5, 0, 1.5, 5);
+    // when zoomed in, everything outside the current window is muted; inside it keeps full colour
+    const zoomed = this.end - this.start < s.length;
+    const x0 = x(this.start);
+    const w = Math.max(3, x(this.end) - x0);
+    if (zoomed) {
+      ctx.globalAlpha = 0.28;
+      drawData();
+      ctx.globalAlpha = 1;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x0, 0, w, height);
+      ctx.clip();
+      drawData();
+      ctx.restore();
+    } else {
+      drawData();
+    }
 
     // axis
     ctx.fillStyle = css("--muted");
@@ -302,9 +357,7 @@ export class Viewer {
     }
 
     // current window
-    if (this.end - this.start < s.length) {
-      const x0 = x(this.start);
-      const w = Math.max(3, x(this.end) - x0);
+    if (zoomed) {
       ctx.strokeStyle = css("--fg");
       ctx.lineWidth = 1.5;
       ctx.strokeRect(x0, top - 2, w, plotH + 4);

@@ -1,5 +1,5 @@
 /* One page per step, styled after rburke.dev: near-black, cream type, Playfair Display, red and
-   blue accents, a glass step indicator and scrolling title banners. Data stays monospace. */
+   blue accents and a glass step indicator. Data stays monospace. */
 
 @font-face {
   font-family: "Playfair Display Variable";
@@ -7,13 +7,6 @@
   font-weight: 400 900;
   font-display: swap;
   src: url("fonts/playfair-display-latin-wght-normal.woff2") format("woff2-variations");
-}
-@font-face {
-  font-family: "Oi";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("fonts/oi-latin-400-normal.woff2") format("woff2");
 }
 
 :root {
@@ -85,17 +78,6 @@ strong { font-weight: 700; }
 .app { max-width: 1000px; margin: 0 auto; padding: 84px 32px 48px; }
 .page { display: flex; flex-direction: column; gap: 22px; animation: page-in .5s ease; }
 @keyframes page-in { from { opacity: 0; transform: translateY(12px); } }
-
-/* scrolling title, like the site's section headings */
-.banner {
-  margin: 0 -32px; overflow: hidden; white-space: nowrap; pointer-events: none;
-  font-size: clamp(40px, 6.5vw, 64px); font-weight: 800; line-height: 1.2; letter-spacing: -.01em;
-}
-.banner-track { display: flex; width: max-content; animation: banner-scroll 60s linear infinite; }
-.banner-row { display: flex; flex: 0 0 auto; gap: 28px; padding-right: 28px; }
-.banner-item { display: inline-flex; align-items: center; gap: 28px; }
-.star { color: var(--red); font-family: "Oi", cursive; font-weight: 400; line-height: 1; transform: translateY(.18em); }
-@keyframes banner-scroll { from { transform: translateX(-50%); } to { transform: translateX(0); } }
 
 .page-head { display: flex; flex-direction: column; gap: 4px; }
 .page-head .act { font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
@@ -234,12 +216,10 @@ td.freq { display: flex; align-items: center; gap: 10px; }
   .steps ol button { padding: 6px 8px; }
   .cov-stats { grid-template-columns: repeat(3, 1fr); }
   .app { padding-left: 20px; padding-right: 20px; }
-  .banner { margin: 0 -20px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .page { animation: none; }
-  .banner-track { animation: none; transform: translateX(-25%); }
   .progress-fill { transition: none; }
   .progress.indeterminate .progress-fill { animation: none; width: 100%; opacity: .5; }
 }

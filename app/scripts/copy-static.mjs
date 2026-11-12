@@ -1,5 +1,5 @@
-// Copies the renderer's HTML and CSS next to its compiled script, bundles the two fonts
-// (the app is offline, so they can't come from a font service), and writes their license.
+// Copies the renderer's HTML and CSS next to its compiled script, bundles the font
+// (the app is offline, so they can't come from a font service), and writes its license.
 import { cpSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
@@ -11,14 +11,13 @@ for (const file of ["index.html", "styles.css"]) {
 /** Font files the window loads; main.ts allows exactly these. */
 const fonts = [
   ["@fontsource-variable/playfair-display", "playfair-display-latin-wght-normal.woff2"],
-  ["@fontsource/oi", "oi-latin-400-normal.woff2"],
 ];
 mkdirSync(`${root}build/renderer/fonts`, { recursive: true });
 for (const [pkg, file] of fonts) {
   cpSync(`${root}node_modules/${pkg}/files/${file}`, `${root}build/renderer/fonts/${file}`);
 }
 
-// One license file for both fonts, opened from the About box (and shipped with the installer).
+// The font license, opened from the About box (and shipped with the installer).
 const licenses = fonts.map(([pkg]) => readFileSync(`${root}node_modules/${pkg}/LICENSE`, "utf8").trim());
 writeFileSync(`${root}build/fonts-OFL.txt`,
-  `Fonts bundled with Genome Variant Aligner: Playfair Display and Oi.\n\n${licenses.join("\n\n" + "-".repeat(72) + "\n\n")}\n`);
+  `Font bundled with Genome Variant Aligner: Playfair Display.\n\n${licenses.join("\n\n" + "-".repeat(72) + "\n\n")}\n`);

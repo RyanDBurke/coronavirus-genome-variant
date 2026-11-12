@@ -51,13 +51,12 @@ test("walk through the pages: align 10,000 reads, explore them, then cancel a 1,
       assert.equal(await page.isVisible(`#${id}`), false, `${id} visible before any run`);
     }
 
-    // both bundled fonts load (the window has no network access, so they must come from the app)
+    // the bundled font loads (the window has no network access, so they must come from the app)
     const loadedFonts = await page.evaluate(async () => {
       await document.fonts.ready;
       return [...document.fonts].filter((f) => f.status === "loaded").map((f) => f.family.replace(/"/g, ""));
     });
     assert.ok(loadedFonts.includes("Playfair Display Variable"), `fonts loaded: ${loadedFonts}`);
-    assert.ok(loadedFonts.includes("Oi"), `fonts loaded: ${loadedFonts}`);
 
     await page.click('.help-toggle[aria-controls="help-ref"]');
     await shot("1-reference");
@@ -68,8 +67,8 @@ test("walk through the pages: align 10,000 reads, explore them, then cancel a 1,
     // the window has no Node.js access
     assert.equal(await page.evaluate(() => typeof window.require), "undefined");
     assert.equal(await page.evaluate(() => typeof window.process), "undefined");
-    // the request policy allows the app's own font files and nothing else outside the page's files
-    const fontUrl = pathToFileURL(path.join(appDir, "build", "renderer", "fonts", "oi-latin-400-normal.woff2")).href;
+    // the request policy allows the app's own font file and nothing else outside the page's files
+    const fontUrl = pathToFileURL(path.join(appDir, "build", "renderer", "fonts", "playfair-display-latin-wght-normal.woff2")).href;
     const requests = await electronApp.evaluate(async ({ session }, urls) => {
       const result = [];
       for (const url of urls) result.push(await session.defaultSession.fetch(url).then(() => "allowed", () => "blocked"));
